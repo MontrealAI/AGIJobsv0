@@ -1,0 +1,50 @@
+{
+  "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+  "scope": "Exact extracted pure endpoint/credential-header functions and executeICS; fetch replaced by nonnetwork stop; does not validate backend authorization",
+  "checks": [
+    {
+      "prefix": "",
+      "noBaseEndpoint": "null",
+      "configuredOrigin": "https://configured.invalid"
+    },
+    {
+      "prefix": "jobs",
+      "noBaseEndpoint": "null",
+      "configuredOrigin": "https://configured.invalid"
+    },
+    {
+      "prefix": "../../other",
+      "noBaseEndpoint": "null",
+      "configuredOrigin": "https://configured.invalid"
+    },
+    {
+      "prefix": "https://other.invalid/path",
+      "noBaseEndpoint": "null",
+      "configuredOrigin": "https://configured.invalid"
+    },
+    {
+      "prefix": "//other.invalid",
+      "noBaseEndpoint": "null",
+      "configuredOrigin": "https://configured.invalid"
+    },
+    {
+      "prefix": "?other=path",
+      "noBaseEndpoint": "null",
+      "configuredOrigin": "https://configured.invalid"
+    },
+    {
+      "prefix": "#fragment",
+      "noBaseEndpoint": "null",
+      "configuredOrigin": "https://configured.invalid"
+    }
+  ],
+  "missingEndpointFetchCalls": 0,
+  "configuredEndpointFetchCalls": 1,
+  "calls": [
+    {
+      "url": "https://configured.invalid/jobs/execute",
+      "method": "POST",
+      "authorization": "Bearer public-local-fixture-token"
+    }
+  ]
+}

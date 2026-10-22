@@ -1,0 +1,120 @@
+{
+  "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+  "scope": "Offline exact-source extraction; real EIP-191 cryptography; no network or transaction; dependency I/O isolated",
+  "checks": [
+    {
+      "case": "malformed-contributor-entry-dropped",
+      "status": "PASS"
+    },
+    {
+      "case": "verified-contributor-proof-bound-to-real-signer-and-payload",
+      "status": "PASS"
+    },
+    {
+      "case": "wrong-contributor-address-refused",
+      "status": "PASS"
+    },
+    {
+      "case": "altered-contributor-payload-refused",
+      "status": "PASS"
+    },
+    {
+      "case": "malformed-signature-refused",
+      "status": "PASS"
+    },
+    {
+      "case": "signature-without-payload-refused",
+      "status": "PASS"
+    },
+    {
+      "case": "unsigned-attribution-does-not-gain-signature-or-principal",
+      "status": "PASS"
+    },
+    {
+      "case": "http-auth-missing-credentials-unauthorized",
+      "status": "PASS"
+    },
+    {
+      "case": "http-auth-signature-only-unauthorized",
+      "status": "PASS"
+    },
+    {
+      "case": "http-auth-address-only-unauthorized",
+      "status": "PASS"
+    },
+    {
+      "case": "http-auth-malformed-signature-unauthorized",
+      "status": "PASS"
+    },
+    {
+      "case": "http-auth-unmanaged-real-signer-refused",
+      "status": "PASS"
+    },
+    {
+      "case": "http-auth-mismatched-claimed-address-refused",
+      "status": "PASS"
+    },
+    {
+      "case": "http-auth-managed-real-signer-gets-wallet-principal",
+      "status": "PASS"
+    },
+    {
+      "case": "http-auth-consumed-challenge-replay-refused",
+      "status": "PASS"
+    },
+    {
+      "case": "http-auth-only-configured-key-gets-operator-principal",
+      "status": "PASS"
+    }
+  ],
+  "unused": [
+    {
+      "file": "scripts/release/publish-source-release-rc16.cjs",
+      "name": "scannerReviewPath",
+      "identifierOccurrences": 1,
+      "classification": "TRUE_NONSECURITY_UNUSED_BINDING"
+    },
+    {
+      "file": "scripts/release/source-native-gates-rc16.cjs",
+      "name": "execFileSync",
+      "identifierOccurrences": 1,
+      "classification": "TRUE_NONSECURITY_UNUSED_BINDING"
+    },
+    {
+      "file": "scripts/release/source-native-gates-rc16.cjs",
+      "name": "delay",
+      "identifierOccurrences": 1,
+      "classification": "TRUE_NONSECURITY_UNUSED_BINDING"
+    },
+    {
+      "file": "scripts/release/source-native-gates-rc16.cjs",
+      "name": "verifyPublicationReview",
+      "identifierOccurrences": 1,
+      "classification": "TRUE_NONSECURITY_UNUSED_BINDING"
+    },
+    {
+      "file": "scripts/release/source-native-gates-rc16.cjs",
+      "name": "assertPinnedAlphaCheckout",
+      "identifierOccurrences": 1,
+      "classification": "TRUE_NONSECURITY_UNUSED_BINDING"
+    },
+    {
+      "file": "scripts/release/source-scanner-gates-rc16.cjs",
+      "name": "delay",
+      "identifierOccurrences": 1,
+      "classification": "TRUE_NONSECURITY_UNUSED_BINDING"
+    },
+    {
+      "file": "scripts/release/source-scanner-gates-rc16.cjs",
+      "name": "verifyPublicationReview",
+      "identifierOccurrences": 1,
+      "classification": "TRUE_NONSECURITY_UNUSED_BINDING"
+    },
+    {
+      "file": "scripts/release/source-scanner-gates-rc16.cjs",
+      "name": "assertPinnedAlphaCheckout",
+      "identifierOccurrences": 1,
+      "classification": "TRUE_NONSECURITY_UNUSED_BINDING"
+    }
+  ]
+}

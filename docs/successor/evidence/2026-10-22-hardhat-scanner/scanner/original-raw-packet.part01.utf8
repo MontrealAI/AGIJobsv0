@@ -1,0 +1,1297 @@
+{
+  "schema": "local/jobs-codeql-current-raw-review-packet/v1",
+  "repository": "MontrealAI/AGIJobsv0",
+  "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+  "executedSource": "afa1d740b68f34a8823f7c331cf8c12fc317dbb2",
+  "tree": "cb29f676e1e6d43f0d19ed72b34c248bca9a3af1",
+  "run": 39694681348,
+  "artifactId": 12390791531,
+  "archiveSha256": "85ac690f505c36b8fed8a0030226b41da125c748e378cc00cc97658f6dc661b7",
+  "rawSarifSha256": "d4eaceee885ed5dfba4db9ff01bc6b10caf7742c69002d9d836a30409a863b4c",
+  "recordCount": 19,
+  "completeToolMetadataSha256": "df928d57cbdb52f60ca2715fbdf7826cacb6c6d85b1b0ca8f5abb4d41945041c",
+  "sourceLocationCustody": [
+    {
+      "path": "agent-gateway/apiHelpers.ts",
+      "sha256": "7d6d7b765c5c6dd3a30ef8cd3df4643e6d64da7aaa9099dbc84723792ed0aafe",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "agent-gateway/routes.ts",
+      "sha256": "c920b58d89d30847bad909a3d390ff33a1cf9893fee2f558db8dc5291646bbd5",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "apps/onebox-static/app.mjs",
+      "sha256": "25a7f48dbeef5400a75d13e335d24d65de9c990b8d1fc00d6cca61ff86e09121",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+      "sha256": "582bfd92eb01ca2c1a5ee3ab65371f0d45a936cba0ecbe08076a838dc09a4658",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+      "sha256": "75b111f5732423063ef50fa9bf3f33bc035f19060ddd7270c80d35e9091c4eff",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+      "sha256": "cac318319051de4dc1fdbe2d8a148416b3ceffe206d7fc64f111f2fe6f099c8a",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "packages/successor-core/src/frontier-mission.mjs",
+      "sha256": "b32457b69332641865115a43949ab5a67ac5340edf92703c67ecd141e89409c1",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "scripts/release/publish-source-release-rc16.cjs",
+      "sha256": "9fa3d04c2490ddb713fe8aef5dcd2ffabb4e61de73903b2bb05ac9b7478940e7",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "sha256": "4fc84995239318a797af13ffad915bf0a1197d31670c369b8d517ee6437479a7",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "scripts/release/source-scanner-gates-rc16.cjs",
+      "sha256": "2890b3ee716f9cb54e1d004819c9d9a0b379325861ec27ec86ba78a1afd21c3d",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "website/assets/frontier-mission.js",
+      "sha256": "8f9202b8e65d2048311c4f2c09961fad2dc2b35d89a08b13ef2effbacff611bb",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    }
+  ],
+  "records": [
+    {
+      "index": 0,
+      "ruleId": "js/biased-cryptographic-random",
+      "completeCanonicalResultSha256": "e240ef84fcadcd4f9c032fb22fdbd3efbcd950213be49bd146ce10a06a9ffcd7",
+      "completeRuleDescriptorSha256": "f1ffac2bc24f99e823497c4937dfc49b6dc9cd4470cde90d73ee96c0cf9ae7be",
+      "toolComponent": "codeql/javascript-queries",
+      "sourcePaths": [
+        "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs"
+      ],
+      "assessment": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW",
+      "rawResult": {
+        "ruleId": "js/biased-cryptographic-random",
+        "rule": {
+          "id": "js/biased-cryptographic-random",
+          "index": 25,
+          "toolComponent": {
+            "index": 1
+          }
+        },
+        "message": {
+          "text": "Using modulo on a [cryptographically secure random number](1) produces biased results."
+        },
+        "locations": [
+          {
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+                "uriBaseId": "%SRCROOT%",
+                "index": 0
+              },
+              "region": {
+                "startLine": 192,
+                "startColumn": 74,
+                "endColumn": 82
+              }
+            }
+          }
+        ],
+        "partialFingerprints": {
+          "primaryLocationLineHash": "702f97ca62e7f243:1",
+          "primaryLocationStartColumnFingerprint": "69"
+        },
+        "relatedLocations": [
+          {
+            "id": 1,
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+                "uriBaseId": "%SRCROOT%",
+                "index": 0
+              },
+              "region": {
+                "startLine": 246,
+                "startColumn": 44,
+                "endColumn": 86
+              }
+            },
+            "message": {
+              "text": "cryptographically secure random number"
+            }
+          }
+        ]
+      },
+      "ruleDescriptor": {
+        "id": "js/biased-cryptographic-random",
+        "name": "js/biased-cryptographic-random",
+        "shortDescription": {
+          "text": "Creating biased random numbers from a cryptographically secure source"
+        },
+        "fullDescription": {
+          "text": "Some mathematical operations on random numbers can cause bias in the results and compromise security."
+        },
+        "defaultConfiguration": {
+          "enabled": true,
+          "level": "warning"
+        },
+        "help": {
+          "text": "# Creating biased random numbers from a cryptographically secure source\nGenerating secure random numbers can be an important part of creating a secure software system. This can be done using APIs that create cryptographically secure random numbers.\n\nHowever, using some mathematical operations on these cryptographically secure random numbers can create biased results, where some outcomes are more likely than others. Such biased results can make it easier for an attacker to guess the random numbers, and thereby break the security of the software system.\n\n\n## Recommendation\nBe very careful not to introduce bias when performing mathematical operations on cryptographically secure random numbers.\n\nIf possible, avoid performing mathematical operations on cryptographically secure random numbers at all, and use a preexisting library instead.\n\n\n## Example\nThe example below uses the modulo operator to create an array of 10 random digits using random bytes as the source for randomness.\n\n\n```javascript\nconst crypto = require('crypto');\n\nconst digits = [];\nfor (let i = 0; i < 10; i++) {\n    digits.push(crypto.randomBytes(1)[0] % 10); // NOT OK\n}\n```\nThe random byte is a uniformly random value between 0 and 255, and thus the result from using the modulo operator is slightly more likely to be between 0 and 5 than between 6 and 9.\n\nThe issue has been fixed in the code below by using a library that correctly generates cryptographically secure random values.\n\n\n```javascript\nconst cryptoRandomString = require('crypto-random-string');\n\nconst digits = cryptoRandomString({length: 10, type: 'numeric'});\n```\nAlternatively, the issue can be fixed by fixing the math in the original code. In the code below the random byte is discarded if the value is greater than or equal to 250. Thus the modulo operator is used on a uniformly random number between 0 and 249, which results in a uniformly random digit between 0 and 9.\n\n\n```javascript\nconst crypto = require('crypto');\n\nconst digits = [];\nwhile (digits.length < 10) {\n    const byte = crypto.randomBytes(1)[0];\n    if (byte >= 250) {\n        continue;\n    }\n    digits.push(byte % 10); // OK\n}\n```\n\n## References\n* Stack Overflow: [Understanding “randomness”](https://stackoverflow.com/questions/3956478/understanding-randomness).\n* OWASP: [Insecure Randomness](https://owasp.org/www-community/vulnerabilities/Insecure_Randomness).\n* OWASP: [Rule - Use strong approved cryptographic algorithms](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#rule---use-strong-approved-authenticated-encryption).\n* Common Weakness Enumeration: [CWE-327](https://cwe.mitre.org/data/definitions/327.html).\n",
+          "markdown": "# Creating biased random numbers from a cryptographically secure source\nGenerating secure random numbers can be an important part of creating a secure software system. This can be done using APIs that create cryptographically secure random numbers.\n\nHowever, using some mathematical operations on these cryptographically secure random numbers can create biased results, where some outcomes are more likely than others. Such biased results can make it easier for an attacker to guess the random numbers, and thereby break the security of the software system.\n\n\n## Recommendation\nBe very careful not to introduce bias when performing mathematical operations on cryptographically secure random numbers.\n\nIf possible, avoid performing mathematical operations on cryptographically secure random numbers at all, and use a preexisting library instead.\n\n\n## Example\nThe example below uses the modulo operator to create an array of 10 random digits using random bytes as the source for randomness.\n\n\n```javascript\nconst crypto = require('crypto');\n\nconst digits = [];\nfor (let i = 0; i < 10; i++) {\n    digits.push(crypto.randomBytes(1)[0] % 10); // NOT OK\n}\n```\nThe random byte is a uniformly random value between 0 and 255, and thus the result from using the modulo operator is slightly more likely to be between 0 and 5 than between 6 and 9.\n\nThe issue has been fixed in the code below by using a library that correctly generates cryptographically secure random values.\n\n\n```javascript\nconst cryptoRandomString = require('crypto-random-string');\n\nconst digits = cryptoRandomString({length: 10, type: 'numeric'});\n```\nAlternatively, the issue can be fixed by fixing the math in the original code. In the code below the random byte is discarded if the value is greater than or equal to 250. Thus the modulo operator is used on a uniformly random number between 0 and 249, which results in a uniformly random digit between 0 and 9.\n\n\n```javascript\nconst crypto = require('crypto');\n\nconst digits = [];\nwhile (digits.length < 10) {\n    const byte = crypto.randomBytes(1)[0];\n    if (byte >= 250) {\n        continue;\n    }\n    digits.push(byte % 10); // OK\n}\n```\n\n## References\n* Stack Overflow: [Understanding “randomness”](https://stackoverflow.com/questions/3956478/understanding-randomness).\n* OWASP: [Insecure Randomness](https://owasp.org/www-community/vulnerabilities/Insecure_Randomness).\n* OWASP: [Rule - Use strong approved cryptographic algorithms](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#rule---use-strong-approved-authenticated-encryption).\n* Common Weakness Enumeration: [CWE-327](https://cwe.mitre.org/data/definitions/327.html).\n"
+        },
+        "properties": {
+          "tags": [
+            "security",
+            "external/cwe/cwe-327"
+          ],
+          "description": "Some mathematical operations on random numbers can cause bias in\n              the results and compromise security.",
+          "id": "js/biased-cryptographic-random",
+          "kind": "problem",
+          "name": "Creating biased random numbers from a cryptographically secure source",
+          "precision": "high",
+          "problem.severity": "warning",
+          "security-severity": "7.5"
+        }
+      }
+    },
+    {
+      "index": 1,
+      "ruleId": "js/biased-cryptographic-random",
+      "completeCanonicalResultSha256": "0033969585bc3d30d1c7709f3dbfbaf07fdd890a12e3bcb176d6d70166991f7c",
+      "completeRuleDescriptorSha256": "f1ffac2bc24f99e823497c4937dfc49b6dc9cd4470cde90d73ee96c0cf9ae7be",
+      "toolComponent": "codeql/javascript-queries",
+      "sourcePaths": [
+        "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs"
+      ],
+      "assessment": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW",
+      "rawResult": {
+        "ruleId": "js/biased-cryptographic-random",
+        "rule": {
+          "id": "js/biased-cryptographic-random",
+          "index": 25,
+          "toolComponent": {
+            "index": 1
+          }
+        },
+        "message": {
+          "text": "Using modulo on a [cryptographically secure random number](1) produces biased results."
+        },
+        "locations": [
+          {
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+                "uriBaseId": "%SRCROOT%",
+                "index": 0
+              },
+              "region": {
+                "startLine": 193,
+                "startColumn": 77,
+                "endColumn": 85
+              }
+            }
+          }
+        ],
+        "partialFingerprints": {
+          "primaryLocationLineHash": "87105f6033b53b4d:1",
+          "primaryLocationStartColumnFingerprint": "72"
+        },
+        "relatedLocations": [
+          {
+            "id": 1,
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+                "uriBaseId": "%SRCROOT%",
+                "index": 0
+              },
+              "region": {
+                "startLine": 246,
+                "startColumn": 44,
+                "endColumn": 86
+              }
+            },
+            "message": {
+              "text": "cryptographically secure random number"
+            }
+          }
+        ]
+      },
+      "ruleDescriptor": {
+        "id": "js/biased-cryptographic-random",
+        "name": "js/biased-cryptographic-random",
+        "shortDescription": {
+          "text": "Creating biased random numbers from a cryptographically secure source"
+        },
+        "fullDescription": {
+          "text": "Some mathematical operations on random numbers can cause bias in the results and compromise security."
+        },
+        "defaultConfiguration": {
+          "enabled": true,
+          "level": "warning"
+        },
+        "help": {
+          "text": "# Creating biased random numbers from a cryptographically secure source\nGenerating secure random numbers can be an important part of creating a secure software system. This can be done using APIs that create cryptographically secure random numbers.\n\nHowever, using some mathematical operations on these cryptographically secure random numbers can create biased results, where some outcomes are more likely than others. Such biased results can make it easier for an attacker to guess the random numbers, and thereby break the security of the software system.\n\n\n## Recommendation\nBe very careful not to introduce bias when performing mathematical operations on cryptographically secure random numbers.\n\nIf possible, avoid performing mathematical operations on cryptographically secure random numbers at all, and use a preexisting library instead.\n\n\n## Example\nThe example below uses the modulo operator to create an array of 10 random digits using random bytes as the source for randomness.\n\n\n```javascript\nconst crypto = require('crypto');\n\nconst digits = [];\nfor (let i = 0; i < 10; i++) {\n    digits.push(crypto.randomBytes(1)[0] % 10); // NOT OK\n}\n```\nThe random byte is a uniformly random value between 0 and 255, and thus the result from using the modulo operator is slightly more likely to be between 0 and 5 than between 6 and 9.\n\nThe issue has been fixed in the code below by using a library that correctly generates cryptographically secure random values.\n\n\n```javascript\nconst cryptoRandomString = require('crypto-random-string');\n\nconst digits = cryptoRandomString({length: 10, type: 'numeric'});\n```\nAlternatively, the issue can be fixed by fixing the math in the original code. In the code below the random byte is discarded if the value is greater than or equal to 250. Thus the modulo operator is used on a uniformly random number between 0 and 249, which results in a uniformly random digit between 0 and 9.\n\n\n```javascript\nconst crypto = require('crypto');\n\nconst digits = [];\nwhile (digits.length < 10) {\n    const byte = crypto.randomBytes(1)[0];\n    if (byte >= 250) {\n        continue;\n    }\n    digits.push(byte % 10); // OK\n}\n```\n\n## References\n* Stack Overflow: [Understanding “randomness”](https://stackoverflow.com/questions/3956478/understanding-randomness).\n* OWASP: [Insecure Randomness](https://owasp.org/www-community/vulnerabilities/Insecure_Randomness).\n* OWASP: [Rule - Use strong approved cryptographic algorithms](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#rule---use-strong-approved-authenticated-encryption).\n* Common Weakness Enumeration: [CWE-327](https://cwe.mitre.org/data/definitions/327.html).\n",
+          "markdown": "# Creating biased random numbers from a cryptographically secure source\nGenerating secure random numbers can be an important part of creating a secure software system. This can be done using APIs that create cryptographically secure random numbers.\n\nHowever, using some mathematical operations on these cryptographically secure random numbers can create biased results, where some outcomes are more likely than others. Such biased results can make it easier for an attacker to guess the random numbers, and thereby break the security of the software system.\n\n\n## Recommendation\nBe very careful not to introduce bias when performing mathematical operations on cryptographically secure random numbers.\n\nIf possible, avoid performing mathematical operations on cryptographically secure random numbers at all, and use a preexisting library instead.\n\n\n## Example\nThe example below uses the modulo operator to create an array of 10 random digits using random bytes as the source for randomness.\n\n\n```javascript\nconst crypto = require('crypto');\n\nconst digits = [];\nfor (let i = 0; i < 10; i++) {\n    digits.push(crypto.randomBytes(1)[0] % 10); // NOT OK\n}\n```\nThe random byte is a uniformly random value between 0 and 255, and thus the result from using the modulo operator is slightly more likely to be between 0 and 5 than between 6 and 9.\n\nThe issue has been fixed in the code below by using a library that correctly generates cryptographically secure random values.\n\n\n```javascript\nconst cryptoRandomString = require('crypto-random-string');\n\nconst digits = cryptoRandomString({length: 10, type: 'numeric'});\n```\nAlternatively, the issue can be fixed by fixing the math in the original code. In the code below the random byte is discarded if the value is greater than or equal to 250. Thus the modulo operator is used on a uniformly random number between 0 and 249, which results in a uniformly random digit between 0 and 9.\n\n\n```javascript\nconst crypto = require('crypto');\n\nconst digits = [];\nwhile (digits.length < 10) {\n    const byte = crypto.randomBytes(1)[0];\n    if (byte >= 250) {\n        continue;\n    }\n    digits.push(byte % 10); // OK\n}\n```\n\n## References\n* Stack Overflow: [Understanding “randomness”](https://stackoverflow.com/questions/3956478/understanding-randomness).\n* OWASP: [Insecure Randomness](https://owasp.org/www-community/vulnerabilities/Insecure_Randomness).\n* OWASP: [Rule - Use strong approved cryptographic algorithms](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#rule---use-strong-approved-authenticated-encryption).\n* Common Weakness Enumeration: [CWE-327](https://cwe.mitre.org/data/definitions/327.html).\n"
+        },
+        "properties": {
+          "tags": [
+            "security",
+            "external/cwe/cwe-327"
+          ],
+          "description": "Some mathematical operations on random numbers can cause bias in\n              the results and compromise security.",
+          "id": "js/biased-cryptographic-random",
+          "kind": "problem",
+          "name": "Creating biased random numbers from a cryptographically secure source",
+          "precision": "high",
+          "problem.severity": "warning",
+          "security-severity": "7.5"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "ruleId": "js/user-controlled-bypass",
+      "completeCanonicalResultSha256": "5b0f7c94dbe88169d83a5434dd9b22b4575e58004a6e62b4b98c0ef93f9e4303",
+      "completeRuleDescriptorSha256": "419035758102ffd1040d1d3e82d59c044405b6c0e802c80b10650b533f915707",
+      "toolComponent": "codeql/javascript-queries",
+      "sourcePaths": [
+        "agent-gateway/apiHelpers.ts",
+        "agent-gateway/routes.ts"
+      ],
+      "assessment": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW",
+      "rawResult": {
+        "ruleId": "js/user-controlled-bypass",
+        "rule": {
+          "id": "js/user-controlled-bypass",
+          "index": 88,
+          "toolComponent": {
+            "index": 1
+          }
+        },
+        "message": {
+          "text": "This condition guards a sensitive [action](1), but a [user-provided value](2) controls it."
+        },
+        "locations": [
+          {
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/apiHelpers.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 1
+              },
+              "region": {
+                "startLine": 174,
+                "startColumn": 10,
+                "endColumn": 15
+              }
+            }
+          }
+        ],
+        "partialFingerprints": {
+          "primaryLocationLineHash": "c98dc9a402e42d42:1",
+          "primaryLocationStartColumnFingerprint": "5"
+        },
+        "codeFlows": [
+          {
+            "threadFlows": [
+              {
+                "locations": [
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 1643,
+                          "startColumn": 19,
+                          "endColumn": 27
+                        }
+                      },
+                      "message": {
+                        "text": "req.body"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 1643,
+                          "startColumn": 11,
+                          "endColumn": 15
+                        }
+                      },
+                      "message": {
+                        "text": "body"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 1683,
+                          "startColumn": 40,
+                          "endColumn": 44
+                        }
+                      },
+                      "message": {
+                        "text": "body"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 1683,
+                          "startColumn": 40,
+                          "endColumn": 57
+                        }
+                      },
+                      "message": {
+                        "text": "body.contributors"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 167,
+                          "startColumn": 3,
+                          "endColumn": 6
+                        }
+                      },
+                      "message": {
+                        "text": "raw"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 173,
+                          "startColumn": 23,
+                          "endColumn": 26
+                        }
+                      },
+                      "message": {
+                        "text": "raw"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 173,
+                          "startColumn": 14,
+                          "endColumn": 19
+                        }
+                      },
+                      "message": {
+                        "text": "entry"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 174,
+                          "startColumn": 10,
+                          "endColumn": 15
+                        }
+                      },
+                      "message": {
+                        "text": "entry"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "relatedLocations": [
+          {
+            "id": 1,
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/apiHelpers.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 1
+              },
+              "region": {
+                "startLine": 211,
+                "startColumn": 29,
+                "endLine": 212,
+                "endColumn": 49
+              }
+            },
+            "message": {
+              "text": "action"
+            }
+          },
+          {
+            "id": 2,
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/routes.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 2
+              },
+              "region": {
+                "startLine": 1643,
+                "startColumn": 19,
+                "endColumn": 27
+              }
+            },
+            "message": {
+              "text": "user-provided value"
+            }
+          },
+          {
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/routes.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 2
+              },
+              "region": {
+                "startLine": 1643,
+                "startColumn": 19,
+                "endColumn": 27
+              }
+            }
+          }
+        ]
+      },
+      "ruleDescriptor": {
+        "id": "js/user-controlled-bypass",
+        "name": "js/user-controlled-bypass",
+        "shortDescription": {
+          "text": "User-controlled bypass of security check"
+        },
+        "fullDescription": {
+          "text": "Conditions that the user controls are not suited for making security-related decisions."
+        },
+        "defaultConfiguration": {
+          "enabled": true,
+          "level": "error"
+        },
+        "help": {
+          "text": "# User-controlled bypass of security check\nUsing user-controlled data in a permissions check may allow a user to gain unauthorized access to protected functionality or data.\n\n\n## Recommendation\nWhen checking whether a user is authorized for a particular activity, do not use data that is entirely controlled by that user in the permissions check. If necessary, always validate the input, ideally against a fixed list of expected values.\n\nSimilarly, do not decide which permission to check for, based on user data. In particular, avoid using computation to decide which permissions to check for. Use fixed permissions for particular actions, rather than generating the permission to check for.\n\n\n## Example\nIn this example, we have a server that shows private information for a user, based on the request parameter `userId`. For privacy reasons, users may only view their own private information, so the server checks that the request parameter `userId` matches a cookie value for the user who is logged in.\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.cookies.loggedInUserId !== req.params.userId) {\n        // BAD: login decision made based on user controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\nThis security check is, however, insufficient since an attacker can craft their cookie values to match those of any user. To prevent this, the server can cryptographically sign the security critical cookie values:\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.signedCookies.loggedInUserId !== req.params.userId) {\n        // GOOD: login decision made based on server controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\n\n## References\n* Common Weakness Enumeration: [CWE-807](https://cwe.mitre.org/data/definitions/807.html).\n* Common Weakness Enumeration: [CWE-290](https://cwe.mitre.org/data/definitions/290.html).\n",
+          "markdown": "# User-controlled bypass of security check\nUsing user-controlled data in a permissions check may allow a user to gain unauthorized access to protected functionality or data.\n\n\n## Recommendation\nWhen checking whether a user is authorized for a particular activity, do not use data that is entirely controlled by that user in the permissions check. If necessary, always validate the input, ideally against a fixed list of expected values.\n\nSimilarly, do not decide which permission to check for, based on user data. In particular, avoid using computation to decide which permissions to check for. Use fixed permissions for particular actions, rather than generating the permission to check for.\n\n\n## Example\nIn this example, we have a server that shows private information for a user, based on the request parameter `userId`. For privacy reasons, users may only view their own private information, so the server checks that the request parameter `userId` matches a cookie value for the user who is logged in.\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.cookies.loggedInUserId !== req.params.userId) {\n        // BAD: login decision made based on user controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\nThis security check is, however, insufficient since an attacker can craft their cookie values to match those of any user. To prevent this, the server can cryptographically sign the security critical cookie values:\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.signedCookies.loggedInUserId !== req.params.userId) {\n        // GOOD: login decision made based on server controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\n\n## References\n* Common Weakness Enumeration: [CWE-807](https://cwe.mitre.org/data/definitions/807.html).\n* Common Weakness Enumeration: [CWE-290](https://cwe.mitre.org/data/definitions/290.html).\n"
+        },
+        "properties": {
+          "tags": [
+            "security",
+            "external/cwe/cwe-807",
+            "external/cwe/cwe-290"
+          ],
+          "description": "Conditions that the user controls are not suited for making security-related decisions.",
+          "id": "js/user-controlled-bypass",
+          "kind": "path-problem",
+          "name": "User-controlled bypass of security check",
+          "precision": "medium",
+          "problem.severity": "error",
+          "security-severity": "7.8"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "ruleId": "js/user-controlled-bypass",
+      "completeCanonicalResultSha256": "44f32a4509769629b95dd9acd72dda0e636a9dec61bc96c18d32fe8e156106b5",
+      "completeRuleDescriptorSha256": "419035758102ffd1040d1d3e82d59c044405b6c0e802c80b10650b533f915707",
+      "toolComponent": "codeql/javascript-queries",
+      "sourcePaths": [
+        "agent-gateway/apiHelpers.ts",
+        "agent-gateway/routes.ts"
+      ],
+      "assessment": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW",
+      "rawResult": {
+        "ruleId": "js/user-controlled-bypass",
+        "rule": {
+          "id": "js/user-controlled-bypass",
+          "index": 88,
+          "toolComponent": {
+            "index": 1
+          }
+        },
+        "message": {
+          "text": "This condition guards a sensitive [action](1), but a [user-provided value](2) controls it."
+        },
+        "locations": [
+          {
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/apiHelpers.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 1
+              },
+              "region": {
+                "startLine": 207,
+                "startColumn": 42,
+                "endColumn": 69
+              }
+            }
+          }
+        ],
+        "partialFingerprints": {
+          "primaryLocationLineHash": "33ca987846598110:1",
+          "primaryLocationStartColumnFingerprint": "37"
+        },
+        "codeFlows": [
+          {
+            "threadFlows": [
+              {
+                "locations": [
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 1643,
+                          "startColumn": 19,
+                          "endColumn": 27
+                        }
+                      },
+                      "message": {
+                        "text": "req.body"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 1643,
+                          "startColumn": 11,
+                          "endColumn": 15
+                        }
+                      },
+                      "message": {
+                        "text": "body"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 1683,
+                          "startColumn": 40,
+                          "endColumn": 44
+                        }
+                      },
+                      "message": {
+                        "text": "body"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 1683,
+                          "startColumn": 40,
+                          "endColumn": 57
+                        }
+                      },
+                      "message": {
+                        "text": "body.contributors"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 167,
+                          "startColumn": 3,
+                          "endColumn": 6
+                        }
+                      },
+                      "message": {
+                        "text": "raw"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 173,
+                          "startColumn": 23,
+                          "endColumn": 26
+                        }
+                      },
+                      "message": {
+                        "text": "raw"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 173,
+                          "startColumn": 14,
+                          "endColumn": 19
+                        }
+                      },
+                      "message": {
+                        "text": "entry"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 205,
+                          "startColumn": 24,
+                          "endColumn": 29
+                        }
+                      },
+                      "message": {
+                        "text": "entry"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 205,
+                          "startColumn": 11,
+                          "endColumn": 20
+                        }
+                      },
+                      "message": {
+                        "text": "signature"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 207,
+                          "startColumn": 42,
+                          "endColumn": 51
+                        }
+                      },
+                      "message": {
+                        "text": "signature"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 207,
+                          "startColumn": 42,
+                          "endColumn": 58
+                        }
+                      },
+                      "message": {
+                        "text": "signature.trim()"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 207,
+                          "startColumn": 42,
+                          "endColumn": 65
+                        }
+                      },
+                      "message": {
+                        "text": "signatu ... .length"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 207,
+                          "startColumn": 42,
+                          "endColumn": 69
+                        }
+                      },
+                      "message": {
+                        "text": "signatu ... gth > 0"
+                      }
+                    },
+                    "taxa": [
+                      {
+                        "id": "Config",
+                        "properties": {
+                          "CodeQL/DataflowRole": "step"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "relatedLocations": [
+          {
+            "id": 1,
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/apiHelpers.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 1
+              },
+              "region": {
+                "startLine": 211,
+                "startColumn": 29,
+                "endLine": 212,
+                "endColumn": 49
+              }
+            },
+            "message": {
+              "text": "action"
+            }
+          },
+          {
+            "id": 2,
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/routes.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 2
+              },
+              "region": {
+                "startLine": 1643,
+                "startColumn": 19,
+                "endColumn": 27
+              }
+            },
+            "message": {
+              "text": "user-provided value"
+            }
+          },
+          {
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/routes.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 2
+              },
+              "region": {
+                "startLine": 1643,
+                "startColumn": 19,
+                "endColumn": 27
+              }
+            }
+          }
+        ]
+      },
+      "ruleDescriptor": {
+        "id": "js/user-controlled-bypass",
+        "name": "js/user-controlled-bypass",
+        "shortDescription": {
+          "text": "User-controlled bypass of security check"
+        },
+        "fullDescription": {
+          "text": "Conditions that the user controls are not suited for making security-related decisions."
+        },
+        "defaultConfiguration": {
+          "enabled": true,
+          "level": "error"
+        },
+        "help": {
+          "text": "# User-controlled bypass of security check\nUsing user-controlled data in a permissions check may allow a user to gain unauthorized access to protected functionality or data.\n\n\n## Recommendation\nWhen checking whether a user is authorized for a particular activity, do not use data that is entirely controlled by that user in the permissions check. If necessary, always validate the input, ideally against a fixed list of expected values.\n\nSimilarly, do not decide which permission to check for, based on user data. In particular, avoid using computation to decide which permissions to check for. Use fixed permissions for particular actions, rather than generating the permission to check for.\n\n\n## Example\nIn this example, we have a server that shows private information for a user, based on the request parameter `userId`. For privacy reasons, users may only view their own private information, so the server checks that the request parameter `userId` matches a cookie value for the user who is logged in.\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.cookies.loggedInUserId !== req.params.userId) {\n        // BAD: login decision made based on user controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\nThis security check is, however, insufficient since an attacker can craft their cookie values to match those of any user. To prevent this, the server can cryptographically sign the security critical cookie values:\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.signedCookies.loggedInUserId !== req.params.userId) {\n        // GOOD: login decision made based on server controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\n\n## References\n* Common Weakness Enumeration: [CWE-807](https://cwe.mitre.org/data/definitions/807.html).\n* Common Weakness Enumeration: [CWE-290](https://cwe.mitre.org/data/definitions/290.html).\n",
+          "markdown": "# User-controlled bypass of security check\nUsing user-controlled data in a permissions check may allow a user to gain unauthorized access to protected functionality or data.\n\n\n## Recommendation\nWhen checking whether a user is authorized for a particular activity, do not use data that is entirely controlled by that user in the permissions check. If necessary, always validate the input, ideally against a fixed list of expected values.\n\nSimilarly, do not decide which permission to check for, based on user data. In particular, avoid using computation to decide which permissions to check for. Use fixed permissions for particular actions, rather than generating the permission to check for.\n\n\n## Example\nIn this example, we have a server that shows private information for a user, based on the request parameter `userId`. For privacy reasons, users may only view their own private information, so the server checks that the request parameter `userId` matches a cookie value for the user who is logged in.\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.cookies.loggedInUserId !== req.params.userId) {\n        // BAD: login decision made based on user controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\nThis security check is, however, insufficient since an attacker can craft their cookie values to match those of any user. To prevent this, the server can cryptographically sign the security critical cookie values:\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.signedCookies.loggedInUserId !== req.params.userId) {\n        // GOOD: login decision made based on server controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\n\n## References\n* Common Weakness Enumeration: [CWE-807](https://cwe.mitre.org/data/definitions/807.html).\n* Common Weakness Enumeration: [CWE-290](https://cwe.mitre.org/data/definitions/290.html).\n"
+        },
+        "properties": {
+          "tags": [
+            "security",
+            "external/cwe/cwe-807",
+            "external/cwe/cwe-290"
+          ],
+          "description": "Conditions that the user controls are not suited for making security-related decisions.",
+          "id": "js/user-controlled-bypass",
+          "kind": "path-problem",
+          "name": "User-controlled bypass of security check",
+          "precision": "medium",
+          "problem.severity": "error",
+          "security-severity": "7.8"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "ruleId": "js/user-controlled-bypass",
+      "completeCanonicalResultSha256": "c01a91ca796617434a6a2921d1f1100ef22dec2a435bcb4466aaed486ed9b807",
+      "completeRuleDescriptorSha256": "419035758102ffd1040d1d3e82d59c044405b6c0e802c80b10650b533f915707",
+      "toolComponent": "codeql/javascript-queries",
+      "sourcePaths": [
+        "agent-gateway/apiHelpers.ts",
+        "agent-gateway/routes.ts"
+      ],
+      "assessment": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW",
+      "rawResult": {
+        "ruleId": "js/user-controlled-bypass",
+        "rule": {
+          "id": "js/user-controlled-bypass",
+          "index": 88,
+          "toolComponent": {
+            "index": 1
+          }
+        },
+        "message": {
+          "text": "This condition guards a sensitive [action](1), but a [user-provided value](2) controls it."
+        },
+        "locations": [
+          {
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/apiHelpers.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 1
+              },
+              "region": {
+                "startLine": 208,
+                "startColumn": 11,
+                "endColumn": 32
+              }
+            }
+          }
+        ],
+        "partialFingerprints": {
+          "primaryLocationLineHash": "baa264a7c7fb7dc0:1",
+          "primaryLocationStartColumnFingerprint": "4"
+        },
+        "codeFlows": [
+          {
+            "threadFlows": [
+              {
+                "locations": [
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 1643,
+                          "startColumn": 19,
+                          "endColumn": 27
+                        }
+                      },
+                      "message": {
+                        "text": "req.body"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 1643,
+                          "startColumn": 11,
+                          "endColumn": 15
+                        }
+                      },
+                      "message": {
+                        "text": "body"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 1683,
+                          "startColumn": 40,
+                          "endColumn": 44
+                        }
+                      },
+                      "message": {
+                        "text": "body"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 1683,
+                          "startColumn": 40,
+                          "endColumn": 57
+                        }
+                      },
+                      "message": {
+                        "text": "body.contributors"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 167,
+                          "startColumn": 3,
+                          "endColumn": 6
+                        }
+                      },
+                      "message": {
+                        "text": "raw"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 173,
+                          "startColumn": 23,
+                          "endColumn": 26
+                        }
+                      },
+                      "message": {
+                        "text": "raw"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 173,
+                          "startColumn": 14,
+                          "endColumn": 19
+                        }
+                      },
+                      "message": {
+                        "text": "entry"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 204,
+                          "startColumn": 22,
+                          "endColumn": 27
+                        }
+                      },
+                      "message": {
+                        "text": "entry"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 204,
+                          "startColumn": 11,
+                          "endColumn": 18
+                        }
+                      },
+                      "message": {
+                        "text": "payload"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 208,
+                          "startColumn": 11,
+                          "endColumn": 18
+                        }
+                      },
+                      "message": {
+                        "text": "payload"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/apiHelpers.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 1
+                        },
+                        "region": {
+                          "startLine": 208,
+                          "startColumn": 11,
+                          "endColumn": 32
+                        }
+                      },
+                      "message": {
+                        "text": "payload ... defined"
+                      }
+                    },
+                    "taxa": [
+                      {
+                        "id": "Config",
+                        "properties": {
+                          "CodeQL/DataflowRole": "step"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "relatedLocations": [
+          {
+            "id": 1,
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/apiHelpers.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 1
+              },
+              "region": {
+                "startLine": 211,
+                "startColumn": 29,
+                "endLine": 212,
+                "endColumn": 49
+              }
+            },
+            "message": {
+              "text": "action"
+            }
+          },
+          {
+            "id": 2,
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/routes.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 2
+              },
+              "region": {
+                "startLine": 1643,
+                "startColumn": 19,
+                "endColumn": 27
+              }
+            },
+            "message": {
+              "text": "user-provided value"
+            }
+          },
+          {
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/routes.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 2
+              },
+              "region": {
+                "startLine": 1643,
+                "startColumn": 19,
+                "endColumn": 27
+              }
+            }
+          }
+        ]
+      },
+      "ruleDescriptor": {
+        "id": "js/user-controlled-bypass",
+        "name": "js/user-controlled-bypass",
+        "shortDescription": {
+          "text": "User-controlled bypass of security check"
+        },
+        "fullDescription": {
+          "text": "Conditions that the user controls are not suited for making security-related decisions."
+        },
+        "defaultConfiguration": {
+          "enabled": true,
+          "level": "error"
+        },
+        "help": {
+          "text": "# User-controlled bypass of security check\nUsing user-controlled data in a permissions check may allow a user to gain unauthorized access to protected functionality or data.\n\n\n## Recommendation\nWhen checking whether a user is authorized for a particular activity, do not use data that is entirely controlled by that user in the permissions check. If necessary, always validate the input, ideally against a fixed list of expected values.\n\nSimilarly, do not decide which permission to check for, based on user data. In particular, avoid using computation to decide which permissions to check for. Use fixed permissions for particular actions, rather than generating the permission to check for.\n\n\n## Example\nIn this example, we have a server that shows private information for a user, based on the request parameter `userId`. For privacy reasons, users may only view their own private information, so the server checks that the request parameter `userId` matches a cookie value for the user who is logged in.\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.cookies.loggedInUserId !== req.params.userId) {\n        // BAD: login decision made based on user controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\nThis security check is, however, insufficient since an attacker can craft th

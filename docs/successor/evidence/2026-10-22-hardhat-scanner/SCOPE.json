@@ -1,0 +1,43 @@
+{
+  "schema": "successor/jobs-bounded-evidence/v1",
+  "kind": "EVIDENCE_ONLY_NOT_A_SOURCE_CANDIDATE",
+  "sourceImplementation": {
+    "pr": 4012,
+    "head": "5b85af62078d415c9ced2dd7aa959a0783c19d27",
+    "tree": "a2aa0593cdc7b4800ddd81638357665c9e941195",
+    "parent": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+    "reviewedLocalHead": "72917c80b36bf1e938d693a1d36bd07972414e1d",
+    "reviewedSourceTreeIdentical": true
+  },
+  "scannerEvidenceOnly": {
+    "publicHead": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+    "actualExecutedSource": "afa1d740b68f34a8823f7c331cf8c12fc317dbb2",
+    "tree": "cb29f676e1e6d43f0d19ed72b34c248bca9a3af1",
+    "run": 39694681348,
+    "artifactId": 12390791531,
+    "notTransferredToNew5bSource": true,
+    "independentAssessment": "SAME_SESSION_AI_TECHNICAL_REVIEW_NOT_HUMAN_OR_ORGANIZATION_APPROVAL",
+    "proposedRecords": "UNACCEPTED_NOT_INSTALLED",
+    "trueUnclearedQualityWarnings": 8
+  },
+  "retainedOriginalArtifactSnapshot": {
+    "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+    "artifacts": 47,
+    "bytes": 133906009,
+    "allHostedDigestsAndArchiveCRCsVerified": true,
+    "stillRunningProducersPreserved": true
+  },
+  "acceptedFindingRecordsChanged": false,
+  "oldProfilesChanged": false,
+  "mainBranchChanged": false,
+  "publicationApproved": false,
+  "executionApproved": false,
+  "holds": [
+    "Fresh current4012 configured review and hosted checks",
+    "Original852 rc16 ten failures remain",
+    "Eight true unused-binding quality findings remain uncleared",
+    "No installed acceptance of the nineteen proposed current scanner dispositions",
+    "Owner4007/4008 integration and exact-main final-source qualification",
+    "New source scanner/native qualification and independently reviewed eventual Discovery release profile"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "run": 39694681444,
+  "job": 119549078853,
+  "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+  "executedSource": "afa1d740b68f34a8823f7c331cf8c12fc317dbb2",
+  "tree": "cb29f676e1e6d43f0d19ed72b34c248bca9a3af1",
+  "fullDecodedUtf8Bytes": 758825,
+  "fullDecodedUtf8Sha256": "229c439ec02f749724f357990cbd5a4351bb0b2f6c2f868480d87aee8eca263e",
+  "fullDecodedOriginalRetainedLocally": true,
+  "publicLogUrl": "https://github.com/MontrealAI/AGIJobsv0/actions/runs/39694681444/job/119549078853",
+  "excerpt": "original852-Tests-isolation-failure-excerpt.log",
+  "encodingMeaning": "Decoded log encoded as UTF-8; not a claim about original compressed log-container bytes."
+}

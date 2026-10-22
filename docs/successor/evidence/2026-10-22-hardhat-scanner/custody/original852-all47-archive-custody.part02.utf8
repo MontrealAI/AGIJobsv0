@@ -1,0 +1,2382 @@
+  "crc32": "335b7214"
+        },
+        {
+          "path": "test/v2/platformRegistryInspector.test.ts",
+          "bytes": 3461,
+          "crc32": "2285c4b4"
+        },
+        {
+          "path": "test/v2/platformRegistryPlan.test.ts",
+          "bytes": 5525,
+          "crc32": "14397624"
+        },
+        {
+          "path": "test/v2/regression.integration.test.ts",
+          "bytes": 12573,
+          "crc32": "edbf9eeb"
+        },
+        {
+          "path": "test/v2/security/stakeManagerGovernance.test.ts",
+          "bytes": 2785,
+          "crc32": "1b99fcdb"
+        },
+        {
+          "path": "test/v2/solvingAlphaGovernance.integration.test.ts",
+          "bytes": 15144,
+          "crc32": "02f09a1d"
+        },
+        {
+          "path": "test/v2/sovereign-mesh.t.ts",
+          "bytes": 57,
+          "crc32": "7ae14a84"
+        },
+        {
+          "path": "test/v2/validatorParticipation.integration.test.ts",
+          "bytes": 10945,
+          "crc32": "54b4bf8e"
+        },
+        {
+          "path": "reports/mainnet-fork-test.log",
+          "bytes": 24088,
+          "crc32": "a7b997e6"
+        }
+      ]
+    },
+    {
+      "artifactId": 12390491701,
+      "runId": 39694681554,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "asi-takeoff-receipts",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12390491701.zip",
+      "bytes": 949997,
+      "sha256": "8acaadf9805ac40ed522928cddb5bd3b326975df8fca9f3ee13e33872dbbdebc",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": "asi-takeoff/dry-run.json",
+          "bytes": 8539,
+          "crc32": "e5b0df27"
+        },
+        {
+          "path": "asi-takeoff/governance-kit.json",
+          "bytes": 8356,
+          "crc32": "3ccb96b8"
+        },
+        {
+          "path": "asi-takeoff/governance-kit.md",
+          "bytes": 3413,
+          "crc32": "b786dd60"
+        },
+        {
+          "path": "asi-takeoff/logs/compile.log",
+          "bytes": 5346,
+          "crc32": "bd8b8ae6"
+        },
+        {
+          "path": "asi-takeoff/logs/constants.log",
+          "bytes": 350,
+          "crc32": "c285129d"
+        },
+        {
+          "path": "asi-takeoff/logs/dry-run.log",
+          "bytes": 8740,
+          "crc32": "000fbbc9"
+        },
+        {
+          "path": "asi-takeoff/logs/mission-control.log",
+          "bytes": 90,
+          "crc32": "d022db90"
+        },
+        {
+          "path": "asi-takeoff/logs/thermodynamics.log",
+          "bytes": 8385,
+          "crc32": "02fe9478"
+        },
+        {
+          "path": "asi-takeoff/logs/verify-control.log",
+          "bytes": 4851,
+          "crc32": "5e248c11"
+        },
+        {
+          "path": "asi-takeoff/mission-bundle/asi-takeoff.checksums.txt",
+          "bytes": 338,
+          "crc32": "5b273023"
+        },
+        {
+          "path": "asi-takeoff/mission-bundle/asi-takeoff.json",
+          "bytes": 5088,
+          "crc32": "102bd838"
+        },
+        {
+          "path": "asi-takeoff/mission-bundle/asi-takeoff.manifest.json",
+          "bytes": 2697,
+          "crc32": "736f3bd5"
+        },
+        {
+          "path": "asi-takeoff/mission-bundle/asi-takeoff.md",
+          "bytes": 4960,
+          "crc32": "7c017884"
+        },
+        {
+          "path": "asi-takeoff/mission-bundle/asi-takeoff.txt",
+          "bytes": 3725,
+          "crc32": "5c677caf"
+        },
+        {
+          "path": "asi-takeoff/mission-control.md",
+          "bytes": 4961,
+          "crc32": "16f1e1f0"
+        },
+        {
+          "path": "asi-takeoff/run-status.json",
+          "bytes": 142,
+          "crc32": "68c84372"
+        },
+        {
+          "path": "asi-takeoff/summary.json",
+          "bytes": 9662,
+          "crc32": "30dca732"
+        },
+        {
+          "path": "asi-takeoff/summary.md",
+          "bytes": 2382,
+          "crc32": "c48efe82"
+        },
+        {
+          "path": "asi-takeoff/thermodynamics.json",
+          "bytes": 8077,
+          "crc32": "bfbe5bb6"
+        },
+        {
+          "path": "localhost/asi-takeoff/asi-takeoff-report.md",
+          "bytes": 14073,
+          "crc32": "edae00d0"
+        },
+        {
+          "path": "localhost/asi-takeoff/governance-kit.json",
+          "bytes": 5014,
+          "crc32": "39317816"
+        },
+        {
+          "path": "localhost/asi-takeoff/governance-kit.md",
+          "bytes": 2814,
+          "crc32": "457945fc"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/deploy.json",
+          "bytes": 137931,
+          "crc32": "cc4778b8"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/deploy.json.journal.jsonl",
+          "bytes": 7264230,
+          "crc32": "deb6b226"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/governance.json",
+          "bytes": 11476,
+          "crc32": "16ec5492"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/jobs/agriculture-output-surge-plan/finalize.json",
+          "bytes": 961,
+          "crc32": "427512e0"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/jobs/agriculture-output-surge-plan/post.json",
+          "bytes": 540,
+          "crc32": "ceb9cd5d"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/jobs/agriculture-output-surge-plan/submit.json",
+          "bytes": 433,
+          "crc32": "a2822908"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/jobs/agriculture-output-surge-plan/validate.json",
+          "bytes": 1508,
+          "crc32": "eccceeea"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/jobs/healthcare-resilience-optimization/finalize.json",
+          "bytes": 1018,
+          "crc32": "e3e17883"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/jobs/healthcare-resilience-optimization/post.json",
+          "bytes": 527,
+          "crc32": "6ff277d5"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/jobs/healthcare-resilience-optimization/submit.json",
+          "bytes": 420,
+          "crc32": "5a3d1f14"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/jobs/healthcare-resilience-optimization/validate.json",
+          "bytes": 1508,
+          "crc32": "085f644d"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/jobs/infrastructure-hyperloop-deployment/finalize.json",
+          "bytes": 972,
+          "crc32": "f8ebb9bc"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/jobs/infrastructure-hyperloop-deployment/post.json",
+          "bytes": 552,
+          "crc32": "dd27bbdf"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/jobs/infrastructure-hyperloop-deployment/submit.json",
+          "bytes": 445,
+          "crc32": "49c4a48e"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/jobs/infrastructure-hyperloop-deployment/validate.json",
+          "bytes": 1508,
+          "crc32": "16e6d986"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/local-authority.json",
+          "bytes": 66743,
+          "crc32": "7fa367e5"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/mission.json",
+          "bytes": 3163,
+          "crc32": "f201c458"
+        },
+        {
+          "path": "localhost/asi-takeoff/receipts/stake.json",
+          "bytes": 865,
+          "crc32": "df97bd65"
+        }
+      ]
+    },
+    {
+      "artifactId": 12390607857,
+      "runId": 39694681343,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "demo-observatory-preview",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12390607857.zip",
+      "bytes": 22188413,
+      "sha256": "a230f17e8815c81fbd6f133d22b63b1d7f3b62d23e5deefcef699049b5225a04",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": "assets/abnfDiagram-VCTEODGH-BR2TCCUQ.js",
+          "bytes": 2514,
+          "crc32": "fa3f57fd"
+        },
+        {
+          "path": "404.html",
+          "bytes": 3424,
+          "crc32": "08489967"
+        },
+        {
+          "path": "assets/abnfDiagram-VCTEODGH-BR2TCCUQ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/alpha-computer-LICENSE.txt",
+          "bytes": 11357,
+          "crc32": "7b5d04bc"
+        },
+        {
+          "path": "assets/alpha-computer-source.json",
+          "bytes": 3389,
+          "crc32": "32cc502a"
+        },
+        {
+          "path": "assets/architecture-7GRP2DOG-CJMN24KF.js",
+          "bytes": 312,
+          "crc32": "fb078d67"
+        },
+        {
+          "path": "assets/architecture-7GRP2DOG-CJMN24KF.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/architectureDiagram-5GKGNRK7-7TZPWI5H.js",
+          "bytes": 153194,
+          "crc32": "18279cb4"
+        },
+        {
+          "path": "assets/architectureDiagram-5GKGNRK7-7TZPWI5H.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/blockDiagram-I7D4REHJ-GI54NFL5.js",
+          "bytes": 40716,
+          "crc32": "aa5ce14a"
+        },
+        {
+          "path": "assets/blockDiagram-I7D4REHJ-GI54NFL5.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/c4Diagram-7LVT6UL2-SMOSDN2N.js",
+          "bytes": 66334,
+          "crc32": "cfe6ed07"
+        },
+        {
+          "path": "assets/c4Diagram-7LVT6UL2-SMOSDN2N.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-2HVMM76G.js",
+          "bytes": 2159,
+          "crc32": "28e3b80a"
+        },
+        {
+          "path": "assets/chunk-2HVMM76G.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-2JHFJLGW.js.LEGAL.txt",
+          "bytes": 760,
+          "crc32": "56c475d1"
+        },
+        {
+          "path": "assets/chunk-2JHFJLGW.js",
+          "bytes": 444249,
+          "crc32": "d5de4639"
+        },
+        {
+          "path": "assets/chunk-3SPEUDY3.js",
+          "bytes": 974,
+          "crc32": "c7c369c9"
+        },
+        {
+          "path": "assets/chunk-3SPEUDY3.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-3VAVWQ7H.js",
+          "bytes": 106202,
+          "crc32": "52c1977c"
+        },
+        {
+          "path": "assets/chunk-3VAVWQ7H.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-3ZMVXPKN.js",
+          "bytes": 47228,
+          "crc32": "e55e2f4c"
+        },
+        {
+          "path": "assets/chunk-3ZMVXPKN.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-4MJ343UZ.js",
+          "bytes": 44743,
+          "crc32": "4c839a4a"
+        },
+        {
+          "path": "assets/chunk-4MJ343UZ.js.LEGAL.txt",
+          "bytes": 497,
+          "crc32": "63eded37"
+        },
+        {
+          "path": "assets/chunk-5ST24TQ3.js",
+          "bytes": 635,
+          "crc32": "00c638fc"
+        },
+        {
+          "path": "assets/chunk-5ST24TQ3.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-6HFLOGUK.js",
+          "bytes": 1590,
+          "crc32": "f0bfceeb"
+        },
+        {
+          "path": "assets/chunk-6HFLOGUK.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-7A54VPGT.js",
+          "bytes": 19156,
+          "crc32": "fa0f31b0"
+        },
+        {
+          "path": "assets/chunk-7A54VPGT.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-BPJ3BNOJ.js",
+          "bytes": 329,
+          "crc32": "e803b6e1"
+        },
+        {
+          "path": "assets/chunk-BPJ3BNOJ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-BRAIZ3AB.js",
+          "bytes": 26873,
+          "crc32": "6065242d"
+        },
+        {
+          "path": "assets/chunk-BRAIZ3AB.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-CBRRWYII.js",
+          "bytes": 4110,
+          "crc32": "70df6b21"
+        },
+        {
+          "path": "assets/chunk-CBRRWYII.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-CH7B3L4E.js",
+          "bytes": 1965,
+          "crc32": "77cc62fc"
+        },
+        {
+          "path": "assets/chunk-CLLTHVIN.js",
+          "bytes": 594,
+          "crc32": "c672219c"
+        },
+        {
+          "path": "assets/chunk-CH7B3L4E.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-CLLTHVIN.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-CN45RHQD.js",
+          "bytes": 62383,
+          "crc32": "c1ea5589"
+        },
+        {
+          "path": "assets/chunk-CN45RHQD.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-CX5KJBR4.js",
+          "bytes": 500,
+          "crc32": "f6ac1be5"
+        },
+        {
+          "path": "assets/chunk-CX5KJBR4.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-ETNP63XO.js",
+          "bytes": 27500,
+          "crc32": "6c83af10"
+        },
+        {
+          "path": "assets/chunk-ETNP63XO.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-FASZYLZD.js",
+          "bytes": 479,
+          "crc32": "822d3e90"
+        },
+        {
+          "path": "assets/chunk-FASZYLZD.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-FGJFKTRB.js",
+          "bytes": 49569,
+          "crc32": "1d483345"
+        },
+        {
+          "path": "assets/chunk-FGJFKTRB.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-FQY7OQ6F.js",
+          "bytes": 2110,
+          "crc32": "cd332bd5"
+        },
+        {
+          "path": "assets/chunk-FQY7OQ6F.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-GIEONHLC.js",
+          "bytes": 114767,
+          "crc32": "7ed6aa03"
+        },
+        {
+          "path": "assets/chunk-GIEONHLC.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-GKODUQIH.js",
+          "bytes": 1724,
+          "crc32": "130d3096"
+        },
+        {
+          "path": "assets/chunk-GKODUQIH.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-GXNGEFD3.js",
+          "bytes": 1195,
+          "crc32": "b1062563"
+        },
+        {
+          "path": "assets/chunk-GXNGEFD3.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-HBYIERGO.js",
+          "bytes": 1066,
+          "crc32": "79544d7d"
+        },
+        {
+          "path": "assets/chunk-HBYIERGO.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-IK2NIXCQ.js",
+          "bytes": 596,
+          "crc32": "4007c0de"
+        },
+        {
+          "path": "assets/chunk-IK2NIXCQ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-KPMDN32K.js",
+          "bytes": 2752,
+          "crc32": "e8073990"
+        },
+        {
+          "path": "assets/chunk-KPMDN32K.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-LP36EHIZ.js",
+          "bytes": 725,
+          "crc32": "eae47842"
+        },
+        {
+          "path": "assets/chunk-LP36EHIZ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-LYMIS7GJ.js",
+          "bytes": 25942,
+          "crc32": "e0bf8660"
+        },
+        {
+          "path": "assets/chunk-LYMIS7GJ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-MGY42AJX.js",
+          "bytes": 10398,
+          "crc32": "9e69e20f"
+        },
+        {
+          "path": "assets/chunk-MGY42AJX.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-MRO7CARR.js",
+          "bytes": 290,
+          "crc32": "f6c52273"
+        },
+        {
+          "path": "assets/chunk-MSKT7A3L.js",
+          "bytes": 240634,
+          "crc32": "2428a1e8"
+        },
+        {
+          "path": "assets/chunk-MSKT7A3L.js.LEGAL.txt",
+          "bytes": 417,
+          "crc32": "ba29e17b"
+        },
+        {
+          "path": "assets/chunk-MRO7CARR.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-MURBUXX7.js",
+          "bytes": 1178,
+          "crc32": "795b1b11"
+        },
+        {
+          "path": "assets/chunk-MURBUXX7.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-O7LRPRXM.js",
+          "bytes": 52840,
+          "crc32": "12593517"
+        },
+        {
+          "path": "assets/chunk-O7LRPRXM.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-ODJZ2KSR.js",
+          "bytes": 588,
+          "crc32": "45970c64"
+        },
+        {
+          "path": "assets/chunk-ODJZ2KSR.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-ODWAU6IT.js",
+          "bytes": 16009,
+          "crc32": "057ff341"
+        },
+        {
+          "path": "assets/chunk-ODWAU6IT.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-OM5Y7ICF.js",
+          "bytes": 6380,
+          "crc32": "f9018420"
+        },
+        {
+          "path": "assets/chunk-OM5Y7ICF.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-QO36BCAT.js",
+          "bytes": 38802,
+          "crc32": "fcaadd0a"
+        },
+        {
+          "path": "assets/chunk-QO36BCAT.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-R6EV6E3K.js",
+          "bytes": 669777,
+          "crc32": "11e13e34"
+        },
+        {
+          "path": "assets/chunk-R6EV6E3K.js.LEGAL.txt",
+          "bytes": 603,
+          "crc32": "94051512"
+        },
+        {
+          "path": "assets/chunk-RYVRGJ26.js",
+          "bytes": 414,
+          "crc32": "0e83bd48"
+        },
+        {
+          "path": "assets/chunk-RYVRGJ26.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-S77EPM6R.js",
+          "bytes": 602,
+          "crc32": "9a5836bc"
+        },
+        {
+          "path": "assets/chunk-S77EPM6R.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-T7BNXEHB.js",
+          "bytes": 740,
+          "crc32": "ac3d56c5"
+        },
+        {
+          "path": "assets/chunk-T7BNXEHB.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-TEHLTDAY.js",
+          "bytes": 1818,
+          "crc32": "8fdedfd2"
+        },
+        {
+          "path": "assets/chunk-TUZPKWYC.js",
+          "bytes": 363,
+          "crc32": "30f8e9e3"
+        },
+        {
+          "path": "assets/chunk-TEHLTDAY.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-TUZPKWYC.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-WIQECBEN.js",
+          "bytes": 656,
+          "crc32": "1f3912a9"
+        },
+        {
+          "path": "assets/chunk-WIQECBEN.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-X5Y3PU7F.js",
+          "bytes": 37114,
+          "crc32": "06dad49d"
+        },
+        {
+          "path": "assets/chunk-X5Y3PU7F.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-XOYDE35F.js",
+          "bytes": 601,
+          "crc32": "600cdb6f"
+        },
+        {
+          "path": "assets/chunk-XOYDE35F.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-Y6ZKTASU.js",
+          "bytes": 1043,
+          "crc32": "5e0856a9"
+        },
+        {
+          "path": "assets/chunk-Y6ZKTASU.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-YQJLILHM.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-YUSD244X.js",
+          "bytes": 12504,
+          "crc32": "1becf7fa"
+        },
+        {
+          "path": "assets/chunk-YUSD244X.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/chunk-YQJLILHM.js",
+          "bytes": 1265,
+          "crc32": "352d94cc"
+        },
+        {
+          "path": "assets/chunk-ZDCAEWDZ.js",
+          "bytes": 10024,
+          "crc32": "edd44cfb"
+        },
+        {
+          "path": "assets/chunk-ZDCAEWDZ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/classDiagram-ZZMXUADV-DFQJPJJC.js",
+          "bytes": 1152,
+          "crc32": "6eed4c9d"
+        },
+        {
+          "path": "assets/classDiagram-ZZMXUADV-DFQJPJJC.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/classDiagram-v2-VYDZK3BY-4BDO5ATE.js",
+          "bytes": 1155,
+          "crc32": "4efa0c0c"
+        },
+        {
+          "path": "assets/classDiagram-v2-VYDZK3BY-4BDO5ATE.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/computer-mission.css",
+          "bytes": 15742,
+          "crc32": "8a0cca3f"
+        },
+        {
+          "path": "assets/computer-mission.js",
+          "bytes": 230229,
+          "crc32": "5ff8b6f0"
+        },
+        {
+          "path": "assets/computer-mission.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/cose-bilkent-JH36ORCC-UMPIR62X.js",
+          "bytes": 82532,
+          "crc32": "15dc70fe"
+        },
+        {
+          "path": "assets/cose-bilkent-JH36ORCC-UMPIR62X.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/cynefin-OW5HDTMX-LMIEBPTF.js",
+          "bytes": 297,
+          "crc32": "d793ada4"
+        },
+        {
+          "path": "assets/cynefin-OW5HDTMX-LMIEBPTF.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/cynefinDiagram-5FMLGOSQ-DSFVHFPQ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/cynefinDiagram-5FMLGOSQ-DSFVHFPQ.js",
+          "bytes": 10859,
+          "crc32": "4b1a2493"
+        },
+        {
+          "path": "assets/dagre-GXQ25YYZ-7RXZNWVH.js",
+          "bytes": 11401,
+          "crc32": "35a1bed6"
+        },
+        {
+          "path": "assets/dagre-GXQ25YYZ-7RXZNWVH.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/diagram-S7CK7UJ4-P2ED5RZZ.js",
+          "bytes": 9033,
+          "crc32": "50c6e6a1"
+        },
+        {
+          "path": "assets/diagram-S7CK7UJ4-P2ED5RZZ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/diagram-UQ7AKVKN-XABXID7A.js",
+          "bytes": 6877,
+          "crc32": "fbfe5766"
+        },
+        {
+          "path": "assets/diagram-UQ7AKVKN-XABXID7A.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/diagram-VSXAHHWV-23Z2PIAJ.js",
+          "bytes": 11471,
+          "crc32": "2b9d2aa7"
+        },
+        {
+          "path": "assets/diagram-VSXAHHWV-23Z2PIAJ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/diagram-VX7I27RA-YNGNSAET.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/diagram-VX7I27RA-YNGNSAET.js",
+          "bytes": 11891,
+          "crc32": "89faf7f1"
+        },
+        {
+          "path": "assets/diagram-Z3DM3KII-SW6GEKHM.js",
+          "bytes": 4975,
+          "crc32": "85cc6d01"
+        },
+        {
+          "path": "assets/diagram-Z3DM3KII-SW6GEKHM.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/diagrams-O7WOGNWQ.js",
+          "bytes": 35483,
+          "crc32": "3c6c9606"
+        },
+        {
+          "path": "assets/diagrams-O7WOGNWQ.js.LEGAL.txt",
+          "bytes": 172,
+          "crc32": "3637fcfd"
+        },
+        {
+          "path": "assets/ebnfDiagram-PWID7BFC-N7NHNLWY.js",
+          "bytes": 2728,
+          "crc32": "f1dd431b"
+        },
+        {
+          "path": "assets/ebnfDiagram-PWID7BFC-N7NHNLWY.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/erDiagram-RLTQ6QDP-ESXBZLXJ.js",
+          "bytes": 31489,
+          "crc32": "1e1553ec"
+        },
+        {
+          "path": "assets/erDiagram-RLTQ6QDP-ESXBZLXJ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/eventmodeling-NTZA5JFV-USH65YJQ.js",
+          "bytes": 315,
+          "crc32": "af959585"
+        },
+        {
+          "path": "assets/eventmodeling-NTZA5JFV-USH65YJQ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/favicon.svg",
+          "bytes": 187,
+          "crc32": "09a80d5e"
+        },
+        {
+          "path": "assets/flowDiagram-HODETNUW-JUR6MYHC.js",
+          "bytes": 1047,
+          "crc32": "097aac23"
+        },
+        {
+          "path": "assets/frontier-mission.css",
+          "bytes": 13933,
+          "crc32": "21593970"
+        },
+        {
+          "path": "assets/frontier-mission.js",
+          "bytes": 72601,
+          "crc32": "10575f39"
+        },
+        {
+          "path": "assets/frontier-mission.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/flowDiagram-HODETNUW-JUR6MYHC.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/ganttDiagram-EL5Y4UJY-7ERWN5ZL.js",
+          "bytes": 50757,
+          "crc32": "6f7ba9c4"
+        },
+        {
+          "path": "assets/ganttDiagram-EL5Y4UJY-7ERWN5ZL.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/gitGraph-4MIJSDKK-X26NZJUI.js",
+          "bytes": 300,
+          "crc32": "fe4fb59d"
+        },
+        {
+          "path": "assets/gitGraph-4MIJSDKK-X26NZJUI.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/gitGraphDiagram-WWUBYQGX-UUDL5AUR.js",
+          "bytes": 30151,
+          "crc32": "714bed24"
+        },
+        {
+          "path": "assets/gitGraphDiagram-WWUBYQGX-UUDL5AUR.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/info-A6RAGUB7-SJ3BPSHY.js",
+          "bytes": 288,
+          "crc32": "cfbcce11"
+        },
+        {
+          "path": "assets/infoDiagram-27XIBGKW-35ZFRHK3.js",
+          "bytes": 1289,
+          "crc32": "071b2fa5"
+        },
+        {
+          "path": "assets/info-A6RAGUB7-SJ3BPSHY.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/infoDiagram-27XIBGKW-35ZFRHK3.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/ishikawaDiagram-5VMMS53U-6HUDBHR3.js",
+          "bytes": 17884,
+          "crc32": "aee6af82"
+        },
+        {
+          "path": "assets/ishikawaDiagram-5VMMS53U-6HUDBHR3.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/journeyDiagram-3NMN7TZE-IR7XX2LR.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/journeyDiagram-3NMN7TZE-IR7XX2LR.js",
+          "bytes": 23867,
+          "crc32": "f9bb4c28"
+        },
+        {
+          "path": "assets/kanban-definition-UXKFOSKX-DG2GVWRB.js",
+          "bytes": 21179,
+          "crc32": "16829d96"
+        },
+        {
+          "path": "assets/kanban-definition-UXKFOSKX-DG2GVWRB.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/katex-OMTBYEVR.js",
+          "bytes": 268454,
+          "crc32": "cb3215bb"
+        },
+        {
+          "path": "assets/katex-OMTBYEVR.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/mindmap-definition-YA3MSWOX-LGBX5DLC.js",
+          "bytes": 24291,
+          "crc32": "9fcc944e"
+        },
+        {
+          "path": "assets/mindmap-definition-YA3MSWOX-LGBX5DLC.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/packet-AYTQ26CC-AISZTJOR.js",
+          "bytes": 289,
+          "crc32": "ead93ce0"
+        },
+        {
+          "path": "assets/packet-AYTQ26CC-AISZTJOR.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/pegDiagram-XKGWAZYB-JOCASQ3B.js",
+          "bytes": 2671,
+          "crc32": "bd37283f"
+        },
+        {
+          "path": "assets/pegDiagram-XKGWAZYB-JOCASQ3B.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/pie-WAS4IAKB-RDWKNCJZ.js",
+          "bytes": 285,
+          "crc32": "909d2a67"
+        },
+        {
+          "path": "assets/pie-WAS4IAKB-RDWKNCJZ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/pieDiagram-E7YTZNPT-3W3D3BHN.js",
+          "bytes": 5888,
+          "crc32": "71018bbb"
+        },
+        {
+          "path": "assets/pieDiagram-E7YTZNPT-3W3D3BHN.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/quadrantDiagram-AXDQQJYC-VTVM4GS3.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/quadrantDiagram-AXDQQJYC-VTVM4GS3.js",
+          "bytes": 34241,
+          "crc32": "7dc59546"
+        },
+        {
+          "path": "assets/radar-RG4KPBEZ-NRWURLCA.js",
+          "bytes": 286,
+          "crc32": "7cd331fa"
+        },
+        {
+          "path": "assets/radar-RG4KPBEZ-NRWURLCA.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/railroad-74A4TZTK-52JFP2XY.js",
+          "bytes": 300,
+          "crc32": "7be812e1"
+        },
+        {
+          "path": "assets/railroad-74A4TZTK-52JFP2XY.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/railroad-abnf-HS5TGJTU-FK4QAUGV.js",
+          "bytes": 313,
+          "crc32": "da8ea4a6"
+        },
+        {
+          "path": "assets/railroad-abnf-HS5TGJTU-FK4QAUGV.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/railroad-ebnf-LZEXJU2U-GOBPFRWD.js",
+          "bytes": 313,
+          "crc32": "f79456eb"
+        },
+        {
+          "path": "assets/railroad-ebnf-LZEXJU2U-GOBPFRWD.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/railroad-peg-WCYAUIDC-2WW2MOZD.js",
+          "bytes": 310,
+          "crc32": "15d2ffbb"
+        },
+        {
+          "path": "assets/railroad-peg-WCYAUIDC-2WW2MOZD.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/railroadDiagram-O6MQD6OU-4CJN7F4E.js",
+          "bytes": 2329,
+          "crc32": "e297b2fc"
+        },
+        {
+          "path": "assets/railroadDiagram-O6MQD6OU-4CJN7F4E.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/requirementDiagram-BXWQKSXE-QIPOTTWL.js",
+          "bytes": 31770,
+          "crc32": "e8f4a8f3"
+        },
+        {
+          "path": "assets/requirementDiagram-BXWQKSXE-QIPOTTWL.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/sankeyDiagram-P5KCCOFB-SIPVFB4B.js",
+          "bytes": 23591,
+          "crc32": "6f27fe57"
+        },
+        {
+          "path": "assets/sankeyDiagram-P5KCCOFB-SIPVFB4B.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/sequenceDiagram-WJ2MYXX4-XHZ7BMXN.js",
+          "bytes": 117380,
+          "crc32": "566b03b6"
+        },
+        {
+          "path": "assets/sequenceDiagram-WJ2MYXX4-XHZ7BMXN.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/site.css",
+          "bytes": 82136,
+          "crc32": "b1470860"
+        },
+        {
+          "path": "assets/site.js",
+          "bytes": 32800,
+          "crc32": "357d8d09"
+        },
+        {
+          "path": "assets/site.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/sizeCapture-INFHLROL-W73MGIM2.js",
+          "bytes": 1044,
+          "crc32": "5861175a"
+        },
+        {
+          "path": "assets/sizeCapture-INFHLROL-W73MGIM2.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/source-mission.css",
+          "bytes": 20260,
+          "crc32": "b722df3a"
+        },
+        {
+          "path": "assets/source-mission.js",
+          "bytes": 61755,
+          "crc32": "e8ab01cd"
+        },
+        {
+          "path": "assets/source-mission.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/start.css",
+          "bytes": 17296,
+          "crc32": "6e079cb2"
+        },
+        {
+          "path": "assets/start.js",
+          "bytes": 8338,
+          "crc32": "19201928"
+        },
+        {
+          "path": "assets/start.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/stateDiagram-D77RDMKH-GGNZR6UQ.js",
+          "bytes": 11167,
+          "crc32": "5ec55d91"
+        },
+        {
+          "path": "assets/stateDiagram-D77RDMKH-GGNZR6UQ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/stateDiagram-v2-MP3YSRHH-6FSWZ7KI.js",
+          "bytes": 1114,
+          "crc32": "ba4a4467"
+        },
+        {
+          "path": "assets/stateDiagram-v2-MP3YSRHH-6FSWZ7KI.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/successor.css",
+          "bytes": 10225,
+          "crc32": "dd67d9be"
+        },
+        {
+          "path": "assets/successor.js",
+          "bytes": 79478,
+          "crc32": "b6248204"
+        },
+        {
+          "path": "assets/successor.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/swimlanes-42K2YHIH-HNYAQ3FK.js",
+          "bytes": 113894,
+          "crc32": "0e2f9534"
+        },
+        {
+          "path": "assets/swimlanesDiagram-VR7AAH4N-ALRMB42W.js",
+          "bytes": 1249,
+          "crc32": "668a2da9"
+        },
+        {
+          "path": "assets/swimlanes-42K2YHIH-HNYAQ3FK.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/swimlanesDiagram-VR7AAH4N-ALRMB42W.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/timeline-definition-24CTP7MA-TGSZ55O6.js",
+          "bytes": 31217,
+          "crc32": "9eecb19f"
+        },
+        {
+          "path": "assets/treeView-Q6P3EWNA-TRX5DHRX.js",
+          "bytes": 300,
+          "crc32": "3576d08c"
+        },
+        {
+          "path": "assets/timeline-definition-24CTP7MA-TGSZ55O6.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/treeView-Q6P3EWNA-TRX5DHRX.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/treemap-WGGIJYW6-GGSDBUCK.js",
+          "bytes": 297,
+          "crc32": "be2c8bd9"
+        },
+        {
+          "path": "assets/treemap-WGGIJYW6-GGSDBUCK.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/vennDiagram-4TSXK5OY-TXSIZ2EI.js",
+          "bytes": 41998,
+          "crc32": "b8ad903b"
+        },
+        {
+          "path": "assets/vennDiagram-4TSXK5OY-TXSIZ2EI.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/wardley-WFR3VGLG-NZ67B7B4.js",
+          "bytes": 297,
+          "crc32": "46b18279"
+        },
+        {
+          "path": "assets/wardley-WFR3VGLG-NZ67B7B4.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/wardleyDiagram-VM6X3IG4-O6BPGLFK.js",
+          "bytes": 26146,
+          "crc32": "dd6c3226"
+        },
+        {
+          "path": "assets/wardleyDiagram-VM6X3IG4-O6BPGLFK.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/welcome-example.css",
+          "bytes": 8020,
+          "crc32": "8998570d"
+        },
+        {
+          "path": "assets/welcome-example.js",
+          "bytes": 2313,
+          "crc32": "585d13c0"
+        },
+        {
+          "path": "assets/welcome-example.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/xychartDiagram-S5SC5T6Z-ARRFC65M.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "assets/xychartDiagram-S5SC5T6Z-ARRFC65M.js",
+          "bytes": 43600,
+          "crc32": "b0a62de4"
+        },
+        {
+          "path": "catalog.json",
+          "bytes": 205205,
+          "crc32": "8f5a9e79"
+        },
+        {
+          "path": "demos/absolute-zero-reasoner-v0/index.html",
+          "bytes": 33416,
+          "crc32": "f65c7b82"
+        },
+        {
+          "path": "demos/agi-governance/index.html",
+          "bytes": 69187,
+          "crc32": "bbbd72f6"
+        },
+        {
+          "path": "demos/agi-jobs-platform-at-kardashev-ii-scale/index.html",
+          "bytes": 385722,
+          "crc32": "c6a9ae3b"
+        },
+        {
+          "path": "demos/agi-labor-market-grand-demo/index.html",
+          "bytes": 490773,
+          "crc32": "d5c4e17c"
+        },
+        {
+          "path": "demos/agi-alpha-node-v0/index.html",
+          "bytes": 27518,
+          "crc32": "12e36977"
+        },
+        {
+          "path": "demos/agijobs-day-one-utility-benchmark/index.html",
+          "bytes": 106768,
+          "crc32": "0d7f6ce9"
+        },
+        {
+          "path": "demos/alpha-agi-insight-mark/index.html",
+          "bytes": 164071,
+          "crc32": "0b883855"
+        },
+        {
+          "path": "demos/alpha-agi-mark/index.html",
+          "bytes": 153156,
+          "crc32": "380ad3fc"
+        },
+        {
+          "path": "demos/alpha-meta/index.html",
+          "bytes": 82529,
+          "crc32": "eedbe010"
+        },
+        {
+          "path": "demos/alphaevolve-v0/index.html",
+          "bytes": 18307,
+          "crc32": "bcb4d771"
+        },
+        {
+          "path": "demos/alphaevolve-v0-7b726b34/index.html",
+          "bytes": 27210,
+          "crc32": "c8ebf64d"
+        },
+        {
+          "path": "demos/asi-takeoff/index.html",
+          "bytes": 34605,
+          "crc32": "e7dca11c"
+        },
+        {
+          "path": "demos/astral-citadel/index.html",
+          "bytes": 45564,
+          "crc32": "3848c33a"
+        },
+        {
+          "path": "demos/asi-global/index.html",
+          "bytes": 39142,
+          "crc32": "f81aabc5"
+        },
+        {
+          "path": "demos/astral-omnidominion-operating-system/index.html",
+          "bytes": 20498,
+          "crc32": "0db6b415"
+        },
+        {
+          "path": "demos/astral-omnidominion-operating-system-command-theatre/index.html",
+          "bytes": 63856,
+          "crc32": "0d2955fd"
+        },
+        {
+          "path": "demos/astral-omnidominion-operating-system-99dd9ed8/index.html",
+          "bytes": 112568,
+          "crc32": "8ecc7df5"
+        },
+        {
+          "path": "demos/atlas-conductor/index.html",
+          "bytes": 31548,
+          "crc32": "456115a0"
+        },
+        {
+          "path": "demos/aurora/index.html",
+          "bytes": 90019,
+          "crc32": "14d324d1"
+        },
+        {
+          "path": "demos/cosmic-omni-sovereign-symphony/index.html",
+          "bytes": 23174,
+          "crc32": "127b88d3"
+        },
+        {
+          "path": "demos/celestial-sovereign-orbital-agi-os-grand-demonstration/index.html",
+          "bytes": 33998,
+          "crc32": "4cfe80d8"
+        },
+        {
+          "path": "demos/cosmic-omniversal-grand-symphony/index.html",
+          "bytes": 94316,
+          "crc32": "ddd908d2"
+        },
+        {
+          "path": "demos/culture-v0/index.html",
+          "bytes": 87777,
+          "crc32": "e73e493b"
+        },
+        {
+          "path": "demos/economic-power-v0/index.html",
+          "bytes": 463383,
+          "crc32": "fd502210"
+        },
+        {
+          "path": "demos/era-of-experience-v0/index.html",
+          "bytes": 38832,
+          "crc32": "9fdf1d92"
+        },
+        {
+          "path": "demos/huxley-godel-machine-v0/index.html",
+          "bytes": 25093,
+          "crc32": "2fdc0475"
+        },
+        {
+          "path": "demos/helios-omniversal-symphony/index.html",
+          "bytes": 32117,
+          "crc32": "d19b0a9c"
+        },
+        {
+          "path": "demos/huxley-godel-machine-v0-91081619/index.html",
+          "bytes": 52520,
+          "crc32": "15bef5a9"
+        },
+        {
+          "path": "demos/iconic-operating-system-demo/index.html",
+          "bytes": 38550,
+          "crc32": "bdddcead"
+        },
+        {
+          "path": "demos/imperatrix-celestia-operating-system/index.html",
+          "bytes": 94344,
+          "crc32": "1502c5d1"
+        },
+        {
+          "path": "demos/infinity-symphony/index.html",
+          "bytes": 29599,
+          "crc32": "1873a235"
+        },
+        {
+          "path": "demos/kardashev-ii-omega-grade-agi-business-3/index.html",
+          "bytes": 36766,
+          "crc32": "63ebb724"
+        },
+        {
+          "path": "demos/kardashev-ii-omega-grade-alpha-agi-business-3/index.html",
+          "bytes": 40749,
+          "crc32": "1892f0c7"
+        },
+        {
+          "path": "demos/kardashev-ii-omega-grade-alpha-agi-business-3-a04844ae/index.html",
+          "bytes": 23500,
+          "crc32": "7a812ec8"
+        },
+        {
+          "path": "demos/kardashev-ii-omega-grade-alpha-agi-business-3-demo/index.html",
+          "bytes": 40365,
+          "crc32": "a13030ac"
+        },
+        {
+          "path": "demos/kardashev-ii-omega-grade-alpha-agi-business-3-demo-omega/index.html",
+          "bytes": 39515,
+          "crc32": "52990d81"
+        },
+        {
+          "path": "demos/kardashev-ii-omega-grade-alpha-agi-business-3-demo-supreme/index.html",
+          "bytes": 39796,
+          "crc32": "de8bc554"
+        },
+        {
+          "path": "demos/kardashev-ii-omega-grade-alpha-agi-business-3-demo-ultra/index.html",
+          "bytes": 39546,
+          "crc32": "78fbd615"
+        },
+        {
+          "path": "demos/large-scale-omega-business-3/index.html",
+          "bytes": 41635,
+          "crc32": "f2153dd9"
+        },
+        {
+          "path": "demos/meta-agentic-alpha-agi/index.html",
+          "bytes": 95889,
+          "crc32": "e5c944ed"
+        },
+        {
+          "path": "demos/meta-agentic-alpha-agi-jobs-v0/index.html",
+          "bytes": 67939,
+          "crc32": "9dc23c92"
+        },
+        {
+          "path": "demos/meta-agentic-program-synthesis-v0/index.html",
+          "bytes": 119940,
+          "crc32": "04431412"
+        },
+        {
+          "path": "demos/muzero-style-v0/index.html",
+          "bytes": 27499,
+          "crc32": "fb2d3018"
+        },
+        {
+          "path": "demos/national-supply-chain-v0/index.html",
+          "bytes": 583469,
+          "crc32": "50632216"
+        },
+        {
+          "path": "demos/omni-concord-ascension-atlas/index.html",
+          "bytes": 36470,
+          "crc32": "a15b271b"
+        },
+        {
+          "path": "demos/omni-orchestrator-singularity/index.html",
+          "bytes": 22162,
+          "crc32": "061dc69e"
+        },
+        {
+          "path": "demos/omni-sovereign-ascension-operating-system/index.html",
+          "bytes": 94822,
+          "crc32": "28eaaf26"
+        },
+        {
+          "path": "demos/omnigenesis-global-sovereign-symphony/index.html",
+          "bytes": 48709,
+          "crc32": "4d31f93a"
+        },
+        {
+          "path": "demos/omniphoenix-ascendant-hyperstructure/index.html",
+          "bytes": 64467,
+          "crc32": "863c34f1"
+        },
+        {
+          "path": "demos/omnisovereign/index.html",
+          "bytes": 51648,
+          "crc32": "81b5ca05"
+        },
+        {
+          "path": "demos/one-box/index.html",
+          "bytes": 89601,
+          "crc32": "a809bb2f"
+        },
+        {
+          "path": "demos/open-endedness-v0/index.html",
+          "bytes": 19159,
+          "crc32": "a9dc9da1"
+        },
+        {
+          "path": "demos/open-endedness-v0-d6342f78/index.html",
+          "bytes": 43554,
+          "crc32": "e7096b81"
+        },
+        {
+          "path": "demos/phase-6-scaling-multi-domain-expansion/index.html",
+          "bytes": 124622,
+          "crc32": "82233f8a"
+        },
+        {
+          "path": "demos/planetary-orchestrator-fabric-v0/index.html",
+          "bytes": 52295,
+          "crc32": "1c55117f"
+        },
+        {
+          "path": "demos/polaris-concordat/index.html",
+          "bytes": 99404,
+          "crc32": "48a74db0"
+        },
+        {
+          "path": "demos/phase-8-universal-value-dominance/index.html",
+          "bytes": 105850,
+          "crc32": "707317f9"
+        },
+        {
+          "path": "demos/redenomination/index.html",
+          "bytes": 56251,
+          "crc32": "817b904c"
+        },
+        {
+          "path": "demos/solving-alpha-agi-governance/index.html",
+          "bytes": 33094,
+          "crc32": "08965ace"
+        },
+        {
+          "path": "demos/presentation/index.html",
+          "bytes": 50316,
+          "crc32": "29e05d24"
+        },
+        {
+          "path": "demos/sovereign-constellation/index.html",
+          "bytes": 31958,
+          "crc32": "9470b242"
+        },
+        {
+          "path": "demos/sovereign-mesh/index.html",
+          "bytes": 24223,
+          "crc32": "c2dbd823"
+        },
+        {
+          "path": "demos/superintelligent-empowerment/index.html",
+          "bytes": 44218,
+          "crc32": "26218740"
+        },
+        {
+          "path": "demos/tiny-recursive-model-v0/index.html",
+          "bytes": 33809,
+          "crc32": "d39b1480"
+        },
+        {
+          "path": "demos/trident-sovereign-agi-orchestrator/index.html",
+          "bytes": 32125,
+          "crc32": "fa5f1153"
+        },
+        {
+          "path": "demos/tests/index.html",
+          "bytes": 145144,
+          "crc32": "eb54f88b"
+        },
+        {
+          "path": "demos/trustless-economic-core-v0/index.html",
+          "bytes": 47445,
+          "crc32": "59813a5e"
+        },
+        {
+          "path": "demos/validator-constellation-v0/index.html",
+          "bytes": 18256,
+          "crc32": "81c74ee8"
+        },
+        {
+          "path": "demos/validator-constellation-v0-3ecab443/index.html",
+          "bytes": 58817,
+          "crc32": "08a35d42"
+        },
+        {
+          "path": "demos/zenith-sapience/index.html",
+          "bytes": 32225,
+          "crc32": "76aada38"
+        },
+        {
+          "path": "demos/zenith-sapience-initiative-celestial-archon-governance/index.html",
+          "bytes": 55961,
+          "crc32": "5df662f5"
+        },
+        {
+          "path": "demos/zenith-sapience-initiative-global-governance/index.html",
+          "bytes": 61188,
+          "crc32": "54d7fac2"
+        },
+        {
+          "path": "demos/zenith-sapience-initiative-omnidominion-governance/index.html",
+          "bytes": 64652,
+          "crc32": "603a7341"
+        },
+        {
+          "path": "demos/zenith-sapience-initiative-planetary-operating-system-governance/index.html",
+          "bytes": 64173,
+          "crc32": "d57c6160"
+        },
+        {
+          "path": "demos/zenith-sapience-initiative-omega-omni-operating-system/index.html",
+          "bytes": 57281,
+          "crc32": "f8f82bfe"
+        },
+        {
+          "path": "demos/zenith-sapience-initiative-supra-sovereign-hypernova-governance/index.html",
+          "bytes": 67839,
+          "crc32": "6d080c9d"
+        },
+        {
+          "path": "ecosystem/contracts.json",
+          "bytes": 15570,
+          "crc32": "75d3574c"
+        },
+        {
+          "path": "ecosystem/index.html",
+          "bytes": 30938,
+          "crc32": "2210a75e"
+        },
+        {
+          "path": "examples/0131e9e16b5cbbd2-scenario.json",
+          "bytes": 928,
+          "crc32": "7c6eb2b6"
+        },
+        {
+          "path": "examples/01b0b5d1305616e1-runDemo.ts",
+          "bytes": 208539,
+          "crc32": "790f7464"
+        },
+        {
+          "path": "examples/01bd9e214d8fd97e-README.md",
+          "bytes": 11573,
+          "crc32": "5d80366e"
+        },
+        {
+          "path": "examples/051c27f8a5032130-project-plan.hyperstructure.json",
+          "bytes": 5701,
+          "crc32": "ce115fce"
+        },
+        {
+          "path": "examples/0609f4eb64216f0b-RUNBOOK.md",
+          "bytes": 11637,
+          "crc32": "15dcda4f"
+        },
+        {
+          "path": "examples/0635f054ae5c297d-trm_demo_config.yaml",
+          "bytes": 1182,
+          "crc32": "c67eee9d"
+        },
+        {
+          "path": "examples/0643bc44f6d5a59d-RUNBOOK.md",
+          "bytes": 5194,
+          "crc32": "3f6f8ca6"
+        },
+        {
+          "path": "examples/06ea9984a4b09075-verification.json",
+          "bytes": 6978,
+          "crc32": "0d2883db"
+        },
+        {
+          "path": "examples/072b9fd4414ea8f7-run_demo.py",
+          "bytes": 23679,
+          "crc32": "bbefcd5f"
+        },
+        {
+          "path": "examples/095082e262f344fb-preview-model.mjs",
+          "bytes": 9112,
+          "crc32": "664fe005"
+        },
+        {
+          "path": "examples/0814e1fbcd003a5f-domains.phase6.json",
+          "bytes": 28442,
+          "crc32": "bc3d2ef9"
+        },
+        {
+          "path": "examples/11a461bae02f3f2a-orchestrator.py",
+          "bytes": 2618,
+          "crc32": "eba0aa15"
+        },
+        {
+          "path": "examples/0eb2254f82fb25ff-insight-scenarios.json",
+          "bytes": 1342,
+          "crc32": "dda9f869"
+        },
+        {
+          "path": "examples/1218c798a0e94fb5-summary.json",
+          "bytes": 105871,
+          "crc32": "7bc2523c"
+        },
+        {
+          "path": "examples/140251ed5d2aa0fb-runDemo.ts",
+          "bytes": 2922,
+          "crc32": "fa3c70f7"
+        },
+        {
+          "path": "examples/14840b7a60b6ec75-orchestrator.ts",
+          "bytes": 1447,
+          "crc32": "7f874adb"
+        },
+        {
+          "path": "examples/141197977edc869d-project-plan.json",
+          "bytes": 13470,
+          "crc32": "bb327142"
+        },
+        {
+          "path": "examples/14d3f35326f56d18-run_demo.py",
+          "bytes": 8224,
+          "crc32": "1367b7ba"
+        },
+        {
+          "path": "examples/152531ba897f696b-README.md",
+          "bytes": 5114,
+          "crc32": "fa8aa93a"
+        },
+        {
+          "path": "examples/15e49a88abdbb8a9-operator-playbook.md",
+          "bytes": 13279,
+          "crc32": "4c563d8c"
+        },
+        {
+          "path": "examples/163fcd013c282cc6-trident.simulation.json",
+          "bytes": 1514,
+          "crc32": "8ebd7ba2"
+        },
+        {
+          "path": "examples/16ca7bf7eb4b6340-README.md",
+          "bytes": 1422,
+          "crc32": "208b6f16"
+        },
+        {
+          "path": "examples/1752bcdc82fbcc58-arena.service.ts",
+          "bytes": 32140,
+          "crc32": "ec0e0a11"
+        },
+        {
+          "path": "examples/18e06203e3bff244-__init__.py",
+          "bytes": 70,
+          "crc32": "bde25bf1"
+        },
+        {
+          "path": "examples/1953f4b1b548bddb-asi-takeoff-local.sh",
+          "bytes": 3682,
+          "crc32": "6f5e7076"
+        },
+        {
+          "path": "examples/1aa9cca8a1d8b1d7-RUNBOOK.md",
+          "bytes": 6322,
+          "crc32": "1fa0e1d8"
+        },
+        {
+          "path": "examples/1e5b1478b39163f6-sample.json",
+          "bytes": 123199,
+          "crc32": "cc4f25f3"
+        },
+        {
+          "path": "examples/1ae1c4d6c1d2d80b-launch.sh",
+          "bytes": 1319,
+          "crc32": "f7a6378d"
+        },
+        {
+          "path": "examples/1962f1aafb2f085b-mission_v2.json",
+          "bytes": 2130,
+          "crc32": "ae6872a4"
+        },
+        {
+          "path": "examples/1ee2b3376d921587-README.md",
+          "bytes": 4664,
+          "crc32": "d353f8ca"
+        },
+        {
+          "path": "examples/1ffbdb09f030fdb0-README.md",
+          "bytes": 2910,
+          "crc32": "2fc2c065"
+        },
+        {
+          "path": "examples/223e64dd1b3e46d8-README.md",
+          "bytes": 5358,
+          "crc32": "8c9e8613"
+        },
+        {
+          "path": "examples/242f797242300a55-project-plan.json",
+          "bytes": 13529,
+          "crc32": "a4bd9f49"
+        },
+        {
+          "path": "examples/2aff7031ceeabb7c-__init__.py",
+          "bytes": 413,
+          "crc32": "1eee1f52"
+        },
+        {
+          "path": "examples/298d16ee7475bde4-mission_v2.json",
+          "bytes": 2868,
+          "crc32": "6d23a923"
+        },
+        {
+          "path": "examples/2d69bf2207b4376e-actors.json",
+          "bytes": 1123,
+          "crc32": "a316e858"
+        },
+        {
+          "path": "examples/2deeb3a30813d416-run.py",
+          "bytes": 8080,
+          "crc32": "1f54526c"
+        },
+        {
+          "path": "examples/2ee2e7664fc6ae0f-RUNBOOK.md",
+          "bytes": 11275,
+          "crc32": "159d55af"
+        },
+        {
+          "path": "examples/2f50ae8002683caf-engine.mjs",
+          "bytes": 7051,
+          "crc32": "1233a534"
+        },
+        {
+          "path": "examples/2f58f8eaaaa99ad0-run_demo.py",
+          "bytes": 8050,
+          "crc32": "0e9e57e2"
+        },
+        {
+          "path": "examples/2fc62677d2390497-commit.ts",
+          "bytes": 337,
+          "crc32": "da84971d"
+        },
+        {
+          "path": "examples/34058c1ec2922b44-README.md",
+          "bytes": 3067,
+          "crc32": "3419daca"
+        },
+        {
+          "path": "examples/357cd0aa4f6c0744-README.md",
+          "bytes": 3466,
+          "crc32": "664eccc3"
+        },
+        {
+          "path": "examples/358c2fa0fb57bc8c-project-plan.json",
+          "bytes": 13092,
+          "crc32": "c43fe1f1"
+        },
+        {
+          "path": "examples/3849b1f644aa1a00-flagship-demo.sh",
+          "bytes": 236,
+          "crc32": "4810ad4d"
+        },
+        {
+          "path": "examples/3884e2ff04fb2a58-seed-artifacts.json",
+          "bytes": 288,
+          "crc32": "8994def1"
+        },
+        {
+          "path": "examples/389a26726d61b627-baseline.json",
+          "bytes": 24998,
+          "crc32": "3d1577e9"
+        },
+        {
+          "path": "examples/38f0fc95f4ad8ede-simulator.py",
+          "bytes": 12011,
+          "crc32": "3d13e623"
+        },
+        {
+          "path": "examples/39a349259079feed-scenario.json",
+          "bytes": 616,
+          "crc32": "408db569"
+        },
+        {
+          "path": "examples/39b092c76cf086b4-README.md",
+          "bytes": 1419,
+          "crc32": "12f4e393"
+        },
+        {
+          "path": "examples/3e3a11fb99874a3e-run-phase6-demo.ts",
+          "bytes": 18910,
+          "crc32": "f0c6c0fd"
+        },
+        {
+          "path": "examples/3fb2efe3412d42be-README.md",
+          "bytes": 5359,
+          "crc32": "7fd9c4b7"
+        },
+        {
+          "path": "examples/3fde7beca79b07e2-hardhat.config.ts",
+          "bytes": 519,
+          "crc32": "aaa10877"
+        },
+        {
+          "path": "examples/42c7162e1cb2865a-simulation.py",
+          "bytes": 6911,
+          "crc32": "f45bfb26"
+        },
+        {
+          "path": "examples/4305560672a95619-example.json",
+          "bytes": 1682,
+          "crc32": "fd22f328"
+        },
+        {
+          "path": "examples/4398c2cf121bddf6-microset.yaml",
+          "bytes": 1143,
+          "crc32": "bb566d57"
+        },
+        {
+          "path": "examples/459fd27f24db6213-demo_runner.py",
+          "bytes": 18352,
+          "crc32": "8d60f5e6"
+        },
+        {
+          "path": "examples/4788a60673d8bdaf-aurora-report.ts",
+          "bytes": 13370,
+          "crc32": "7c103ef5"
+        },
+        {
+          "path": "examples/484c023e7a86127a-run_demo.py",
+          "bytes": 9418,
+          "crc32": "a6785bd4"
+        },
+        {
+          "path": "examples/4890172ed93573b6-README.md",
+          "bytes": 3380,
+          "crc32": "35d80002"
+        },
+        {
+          "path": "examples/4895bc9bd8cbdfff-README.md",
+          "bytes": 2781,
+          "crc32": "35c12d15"
+        },
+        {
+          "path": "examples/499226cd3ee6db77-run_demo.py",
+          "bytes": 1164,
+          "crc32": "47b336b6"
+        },
+        {
+          "path": "examples/4d8044cb9aecc4f8-runMission.ts",
+          "bytes": 1470,
+          "crc32": "488f2079"
+        },
+        {
+          "path": "examples/4fab67b63993422b-mission_v2.json",
+          "bytes": 2166,
+          "crc32": "91baf1e4"
+        },
+        {
+          "path": "examples/50394602dbeaf8ca-alphaevolve_runner.py",
+          "bytes": 5219,
+          "crc32": "34cf0b5f"
+        },
+        {
+          "path": "examples/5133029cf68240fb-RUNBOOK.md",
+          "bytes": 5662,
+          "crc32": "09038dc6"
+        },
+        {
+          "path": "examples/51e1afb1da68d888-alphaevolve.json",
+          "bytes": 1374,
+          "crc32": "de47dff9"
+        },
+        {
+          "path": "examples/518a2f6f063ef501-multinational-governance.json",
+          "bytes": 1493,
+          "crc32": "fb1e8708"
+        },
+        {
+          "path": "examples/51faffb9fff0fdff-mcts.py",
+          "bytes": 3805,
+          "crc32": "5dac9167"
+        },
+        {
+          "path": "examples/540cb5adbb4c5a08-council.example.json",
+          "bytes": 493,
+          "crc32": "5a3fa53b"
+        },
+        {
+          "path": "examples/549dcd3ae0873fe0-__init__.py",
+          "bytes": 425,
+          "crc32": "d6dc8e99"
+        },
+        {
+          "path": "examples/54b3fba38fb2d0c6-aurora.spec_v2.json",
+          "bytes": 508,
+          "crc32": "f17fdf21"
+        },
+        {
+          "path": "examples/5856c2881af0a75b-__init__.py",
+          "bytes": 988,
+          "crc32": "db107aff"
+        },
+        {
+          "path": "examples/5b9b702cd88cee75-orchestrate.sh",
+          "bytes": 2931,
+          "crc32": "6f0e6532"
+        },
+        {
+          "path": "examples/5bf36398326938eb-run.py",
+          "bytes": 8004,
+          "crc32": "6461130d"
+        },
+        {
+          "path": "examples/5ccbef8cf784e587-README.md",
+          "bytes": 5314,
+          "crc32": "dea65cf7"
+        },
+        {
+          "path": "examples/5d255ec71bab4480-run_demo.py",
+          "bytes": 4308,
+          "crc32": "d1eb7c92"
+        },
+        {
+          "path": "examples/6139bd9f3bdcbb52-RUNBOOK.md",
+          "bytes": 6384,
+          "crc32": "ad8c7e8d"
+        },
+        {
+          "path": "examples/5fa602043f799e1d-kardashev-ii.manifest.json",
+          "bytes": 24963,
+          "crc32": "028abe47"
+        },
+        {
+          "path": "examples/6155629ba7f5d2d6-alphaevolve_summary.json",
+          "bytes": 695,
+          "crc32": "f1cc5d0c"
+        },
+        {
+          "path": "examples/6202d12dc4273d42-README.md",
+          "bytes": 16995,
+          "crc32": "7b82d268"
+        },
+        {
+          "path": "examples/62a9cbace1af148e-experience-stream.json",
+          "bytes": 2827,
+          "crc32": "4f06ccda"
+        },
+        {
+          "path": "examples/6351b51ee4bd5aff-verifyRecap.ts",
+          "bytes": 19816,
+          "crc32": "17bcfad5"
+        },
+        {
+          "path": "examples/650219736e75c814-run.py",
+          "bytes": 8389,
+          "crc32": "5822dd42"
+        },
+        {
+          "path": "examples/6598afa3ddb7188b-alpha-meta-triangulation.json",
+          "bytes": 4774,
+          "crc32": "52182b67"
+        },
+        {
+          "path": "examples/66531c077f46aca5-README.md",
+          "bytes": 1494,
+          "crc32": "af7d8ca6"
+        },
+        {
+          "path": "examples/6662ee2e7ff7ec6a-packet.json",
+          "bytes": 1350,
+          "crc32": "7d89a590"
+        },
+        {
+          "path": "examples/671e7074350dab06-preview.ts",
+          "bytes": 10480,
+          "crc32": "8682b65b"
+        },
+        {
+          "path": "examples/680f78e475375a4c-run-demo.sh",
+          "bytes": 383,
+          "crc32": "5cffab2e"
+        },
+        {
+          "path": "examples/6a1aabe210aec01e-meta-agentic-program-synthesis-summary.json",
+          "bytes": 35281,
+          "crc32": "1299fe69"
+        },
+        {
+          "path": "examples/6b62cb88625631f0-mission_v1.json",
+          "bytes": 12395,
+          "crc32": "589a8d69"
+        },
+        {
+          "path": "examples/6bf4236e567d0ac7-infinity-symphony.thermostat_v2.json",
+          "bytes": 496,
+          "crc32": "bef50b28"
+        },
+        {
+          "path": "examples/6c7be15f93cdc3e2-scenario.json",
+          "bytes": 6082,
+          "crc32": "1f73c10b"
+        },
+        {
+          "path": "examples/6d285962755274ee-README.md",
+          "bytes": 11177,
+          "crc32": "5b9e0d63"
+        },
+        {
+          "path": "examples/6d7ca574431d9b4d-asiTakeoffDemo.ts",
+          "bytes": 16159,
+          "crc32": "0187848d"
+        },
+        {
+          "path": "examples/6f98c9ebe6ec98bb-muzero_demo.yaml",
+          "bytes": 1593,
+          "crc32": "b1447a5b"
+        },
+        {
+          "path": "examples/7078d3f008702af0-hgm_demo_config.json",
+          "bytes": 1323,
+          "crc32": "1f290890"
+        },
+        {
+          "path": "examples/746d64ce1e5406a4-sovereign-constellation-local.mjs",
+          "bytes": 2016,
+          "crc32": "afd4a7d1"
+        },
+        {
+          "path": "examples/7588b92ce2e401d3-scenario.json",
+          "bytes": 1189,
+          "crc32": "fad14977"
+        },
+        {
+          "path": "examples/75ff31fe4b2e9b81-README.md",
+          "bytes": 31170,
+          "crc32": "2904c281"
+        },
+        {
+          "path": "examples/77812287f53a53b5-RUNBOOK.md",
+          "bytes": 4772,
+          "crc32": "3e5cb8fa"
+        },
+        {
+          "path": "examples/74b65cc3f622caad-project-plan.json",
+          "bytes": 3245,
+          "crc32": "7493bee2"
+        },
+        {
+          "path": "examples/77bb48d1176123fe-review.cjs",
+          "bytes": 12260,
+          "crc32": "0d3fe9c8"
+        },
+        {
+          "path": "examples/7c49ed577ca4c1f9-review.cjs",
+          "bytes": 2323,
+          "crc32": "3a6c5011"
+        },
+        {
+          "path": "exa

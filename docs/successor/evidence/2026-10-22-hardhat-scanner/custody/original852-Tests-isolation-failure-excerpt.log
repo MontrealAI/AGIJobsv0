@@ -1,0 +1,57 @@
+2026-10-22T00:23:38.3750512Z # Subtest: actual aggregate discovery excludes every node:test suite and retains native Mocha files
+2026-10-22T00:23:38.3761071Z not ok 1 - actual aggregate discovery excludes every node:test suite and retains native Mocha files
+2026-10-22T00:23:38.3762695Z   ---
+2026-10-22T00:23:38.3763169Z   duration_ms: 86.842622
+2026-10-22T00:23:38.3763689Z   type: 'test'
+2026-10-22T00:23:38.3764574Z   location: '/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/hardhat-test-discovery.test.cjs:114:1'
+2026-10-22T00:23:38.3765336Z   failureType: 'testCodeFailure'
+2026-10-22T00:23:38.3766293Z   error: 'native runner would load node:test suite: /home/runner/work/AGIJobsv0/AGIJobsv0/test/security/discovery-protected-scope.test.mjs'
+2026-10-22T00:23:38.3767154Z   code: 'ERR_ASSERTION'
+2026-10-22T00:23:38.3768034Z   name: 'AssertionError'
+2026-10-22T00:23:38.3768567Z   expected: true
+2026-10-22T00:23:38.3769026Z   actual: false
+2026-10-22T00:23:38.3769493Z   operator: '=='
+2026-10-22T00:23:38.3770013Z   stack: |-
+2026-10-22T00:23:38.3771322Z     TestContext.<anonymous> (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/hardhat-test-discovery.test.cjs:139:12)
+2026-10-22T00:23:38.3772592Z     async Test.run (node:internal/test_runner/test:1054:7)
+2026-10-22T00:23:38.3773594Z     async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+2026-10-22T00:23:38.3774448Z   ...
+2026-10-22T00:23:38.3775375Z # Subtest: explicit native JavaScript and TypeScript selections survive the registered override
+2026-10-22T00:23:38.3776742Z ok 2 - explicit native JavaScript and TypeScript selections survive the registered override
+2026-10-22T00:23:38.3777560Z   ---
+2026-10-22T00:23:38.3777923Z   duration_ms: 3.019409
+2026-10-22T00:23:38.3778332Z   type: 'test'
+2026-10-22T00:23:38.3778687Z   ...
+2026-10-22T00:23:38.4136029Z # Subtest: receiver suites stay outside native contract discovery
+2026-10-22T00:23:38.4141367Z ok 3 - receiver suites stay outside native contract discovery
+2026-10-22T00:23:38.4142522Z   ---
+2026-10-22T00:23:38.4143278Z   duration_ms: 25.142476
+2026-10-22T00:23:38.4143735Z   type: 'test'
+2026-10-22T00:23:38.4144089Z   ...
+2026-10-22T00:23:38.4144791Z # Subtest: documented project npm command runs all relocated receiver suites
+2026-10-22T00:23:38.4145843Z ok 4 - documented project npm command runs all relocated receiver suites
+2026-10-22T00:23:38.4146520Z   ---
+2026-10-22T00:23:38.4146871Z   duration_ms: 0.733805
+2026-10-22T00:23:38.4147278Z   type: 'test'
+2026-10-22T00:23:38.4147616Z   ...
+2026-10-22T00:23:38.4151853Z # Subtest: isolated suites retain mandatory fresh-process CI registrations
+2026-10-22T00:23:38.4152926Z ok 5 - isolated suites retain mandatory fresh-process CI registrations
+2026-10-22T00:23:38.4153608Z   ---
+2026-10-22T00:23:38.4153984Z   duration_ms: 13.790386
+2026-10-22T00:23:38.4154427Z   type: 'test'
+2026-10-22T00:23:38.4154801Z   ...
+2026-10-22T00:23:38.4280456Z # Subtest: security regressions stay isolated and mandatory in their source-bound workflow
+2026-10-22T00:23:38.4282162Z ok 6 - security regressions stay isolated and mandatory in their source-bound workflow
+2026-10-22T00:23:38.4283190Z   ---
+2026-10-22T00:23:38.4283816Z   duration_ms: 15.929398
+2026-10-22T00:23:38.4284521Z   type: 'test'
+2026-10-22T00:23:38.4284943Z   ...
+2026-10-22T00:23:38.4395518Z 1..6
+2026-10-22T00:23:38.4396000Z # tests 6
+2026-10-22T00:23:38.4396558Z # suites 0
+2026-10-22T00:23:38.4397136Z # pass 5
+2026-10-22T00:23:38.4397697Z # fail 1
+2026-10-22T00:23:38.4398258Z # cancelled 0
+2026-10-22T00:23:38.4398813Z # skipped 0
+2026-10-22T00:23:38.4399352Z # todo 0
+2026-10-22T00:23:38.4399965Z # duration_ms 212.87458

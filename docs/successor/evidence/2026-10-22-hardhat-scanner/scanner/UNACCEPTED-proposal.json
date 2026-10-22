@@ -1,0 +1,628 @@
+{
+  "schema": "local/jobs-codeql-uninstalled-review-proposal/v1",
+  "status": "PROPOSAL_ONLY_NOT_INSTALLED",
+  "repository": "MontrealAI/AGIJobsv0",
+  "publicHead": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+  "executedSource": "afa1d740b68f34a8823f7c331cf8c12fc317dbb2",
+  "tree": "cb29f676e1e6d43f0d19ed72b34c248bca9a3af1",
+  "producer": {
+    "run": 39694681348,
+    "attempt": 1,
+    "event": "pull_request",
+    "ref": "refs/pull/4011/merge",
+    "artifactId": 12390791531,
+    "archiveSha256": "85ac690f505c36b8fed8a0030226b41da125c748e378cc00cc97658f6dc661b7",
+    "rawSarifSha256": "d4eaceee885ed5dfba4db9ff01bc6b10caf7742c69002d9d836a30409a863b4c"
+  },
+  "assessment": {
+    "role": "Same-session independent AI technical assessment; not human or organizational approval",
+    "reportSha256": "2eb1f0040a093721f2a067704baec43b4361513e077bc4da2fd14ae69ee9a312",
+    "publicReviewEvidence": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+    "securityImpactProposals": 11,
+    "trueUnclearedQualityWarnings": 8,
+    "acceptedFindingRecordsWritten": false,
+    "ownerQualityDispositionPending": true
+  },
+  "syntaxValidation": {
+    "installedValidator": "scripts/release/source-scanner-review-bindings-rc16.cjs",
+    "passed": true,
+    "target": "afa1d740b68f34a8823f7c331cf8c12fc317dbb2",
+    "exactRawResultAndRuleDigestsChecked": true,
+    "exactQualitySourceBlobsChecked": true,
+    "wrongSourceBlobRefused": true,
+    "scope": "Metadata syntax and input custody only; no trusted-baseline or production admission"
+  },
+  "installedAdmission": {
+    "permitted": false,
+    "actualRefusal": "rc.16 publication blocked: installed review profile differs from immutable Git source",
+    "reason": "The immutable rc.16 profile is not this proposal; non-null installed review slots cannot be replaced. This PR producer is not the frozen approved premerge push producer. A separately reviewed future source/profile must bind its own evidence."
+  },
+  "separateHolds": [
+    "rc.16 validation10of166 failures",
+    "#4007/#4008 qualified prerequisite integration",
+    "configured review and mandatory CI",
+    "future reviewed baseline/profile reconciliation",
+    "fresh exact-main producer/service/native/compiler qualification",
+    "public release and asset verification",
+    "upstream Alpha configured review; consumer pin publication held"
+  ],
+  "productionApproved": false,
+  "releaseQualified": false,
+  "publicationApproved": false,
+  "executionApproved": false,
+  "cases": [
+    {
+      "rawResultIndex": 0,
+      "rawResultSha256": "e240ef84fcadcd4f9c032fb22fdbd3efbcd950213be49bd146ce10a06a9ffcd7",
+      "technicalDisposition": "FALSE_POSITIVE_FOR_REPORTED_SECURITY_IMPACT",
+      "proposedDisposition": "Demonstrably false positive",
+      "trueQuality": false,
+      "ownerDispositionPending": false,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 1,
+      "rawResultSha256": "0033969585bc3d30d1c7709f3dbfbaf07fdd890a12e3bcb176d6d70166991f7c",
+      "technicalDisposition": "FALSE_POSITIVE_FOR_REPORTED_SECURITY_IMPACT",
+      "proposedDisposition": "Demonstrably false positive",
+      "trueQuality": false,
+      "ownerDispositionPending": false,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 2,
+      "rawResultSha256": "5b0f7c94dbe88169d83a5434dd9b22b4575e58004a6e62b4b98c0ef93f9e4303",
+      "technicalDisposition": "FALSE_POSITIVE_FOR_REPORTED_AUTHORIZATION_BYPASS",
+      "proposedDisposition": "Demonstrably false positive",
+      "trueQuality": false,
+      "ownerDispositionPending": false,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 3,
+      "rawResultSha256": "44f32a4509769629b95dd9acd72dda0e636a9dec61bc96c18d32fe8e156106b5",
+      "technicalDisposition": "FALSE_POSITIVE_FOR_REPORTED_AUTHORIZATION_BYPASS",
+      "proposedDisposition": "Demonstrably false positive",
+      "trueQuality": false,
+      "ownerDispositionPending": false,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 4,
+      "rawResultSha256": "c01a91ca796617434a6a2921d1f1100ef22dec2a435bcb4466aaed486ed9b807",
+      "technicalDisposition": "FALSE_POSITIVE_FOR_REPORTED_AUTHORIZATION_BYPASS",
+      "proposedDisposition": "Demonstrably false positive",
+      "trueQuality": false,
+      "ownerDispositionPending": false,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 5,
+      "rawResultSha256": "28ee86fcab1b3643708dc409b766d7a86bc2ac24a1357e94eadbf2056b554c3e",
+      "technicalDisposition": "FALSE_POSITIVE_FOR_REPORTED_AUTHORIZATION_BYPASS",
+      "proposedDisposition": "Demonstrably false positive",
+      "trueQuality": false,
+      "ownerDispositionPending": false,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 6,
+      "rawResultSha256": "b50f1b8b090e280ce7c2cb87d948a45903608aa9a3df701f4e0f200794858202",
+      "technicalDisposition": "FALSE_POSITIVE_FOR_REPORTED_AUTHORIZATION_BYPASS",
+      "proposedDisposition": "Demonstrably false positive",
+      "trueQuality": false,
+      "ownerDispositionPending": false,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 7,
+      "rawResultSha256": "809b937e9d730f80bfa0b1350bdb713a6d9081ad5b0ba992cb13b3635d597076",
+      "technicalDisposition": "FALSE_POSITIVE_FOR_REPORTED_AUTHORIZATION_BYPASS",
+      "proposedDisposition": "Demonstrably false positive",
+      "trueQuality": false,
+      "ownerDispositionPending": false,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 8,
+      "rawResultSha256": "9f4e1e023b23223651f9196ac2396e6dfbe684a621b7dc4520ca904aca8c2da9",
+      "technicalDisposition": "FALSE_POSITIVE_FOR_REPORTED_AUTHORIZATION_BYPASS",
+      "proposedDisposition": "Demonstrably false positive",
+      "trueQuality": false,
+      "ownerDispositionPending": false,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 9,
+      "rawResultSha256": "c5d0c1857be47bf882da95023f2c8a703673a83842e70c0b27f76e02a97a0bf3",
+      "technicalDisposition": "FALSE_POSITIVE_FOR_REPORTED_LEAF_OVERWRITE_RACE",
+      "proposedDisposition": "Demonstrably false positive",
+      "trueQuality": false,
+      "ownerDispositionPending": false,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 10,
+      "rawResultSha256": "b8f398ac2be7b8b9c08e13cfa5d736daaa5e77014a32614bbd88b4ea6f9730c9",
+      "technicalDisposition": "FALSE_POSITIVE_FOR_REPORTED_UNREVIEWED_SOURCE_ADMISSION",
+      "proposedDisposition": "Demonstrably false positive",
+      "trueQuality": false,
+      "ownerDispositionPending": false,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 11,
+      "rawResultSha256": "f1ad5ab543d6f71395f521b94dd2ff27bd67d2c5b641c21bd2254c32dde7fb7f",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 12,
+      "rawResultSha256": "a0c8fc26914b809981a63f528384d25155879d6130caf02e86a216c0b3f616a9",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 13,
+      "rawResultSha256": "9adc80398bbc3729d06eb0c7ba71fc2a1a1b36969736d070571fa4dcc9dad7df",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 14,
+      "rawResultSha256": "3ef562fae3b94d3923e1eb4e8b984ffb0ef5a190fd33622332c34a403753fc3a",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 15,
+      "rawResultSha256": "d3b8e0db1968d7639877e74eb4c613d2fa9d43b7cb11b61348179edae7e1cd2a",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 16,
+      "rawResultSha256": "1792282aede4a74926902c5dde76a06258672bc2a2d70b87c150e9b4aa087249",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 17,
+      "rawResultSha256": "38ad2f13f0bb275b770f299995511ae4df1ac3e332f2ce8c5c76fc2249991d38",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 18,
+      "rawResultSha256": "3935c3137b1d582d2f6bb9acf69955d1b2553bb39053e2b57d26df96d29713b9",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    }
+  ],
+  "proposedScannerReview": {
+    "sourceCommit": "afa1d740b68f34a8823f7c331cf8c12fc317dbb2",
+    "results": [
+      {
+        "ruleId": "js/biased-cryptographic-random",
+        "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+        "region": {
+          "startLine": 192,
+          "startColumn": 74,
+          "endColumn": 82
+        },
+        "resultSha256": "e240ef84fcadcd4f9c032fb22fdbd3efbcd950213be49bd146ce10a06a9ffcd7",
+        "disposition": "Demonstrably false positive",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. The modulo bias at line192 is mathematically real, but its value is a public synthetic left-table revision label, not a security credential, key, access decision or protected evaluation secret. research.mjs:192: seed %3 is embedded in an r0/r1/r2 CSV revision cell; the full seed is also exposed in PUBLIC-LEFT/PUBLIC-RIGHT identifiers and public note text(188-194). research.mjs:213-217 explicitly permits a caller-supplied bounded confirmationSeed;246 chooses that value or a Uint32 crypto seed only for confirmationMission. research.mjs:245 explicitly says the local generator is public, not a protected evaluator;272-274 retains seed and mission with publicSynthetic:true/protected:false. For uniform32-bit seeds, residue0 has1431655766 representatives and residues1/2 have1431655765; no uniformity claim is made for these labels. This disposition does not certify confirmation independence, scientific validity or cryptographic randomness in another future use. Treating this seed as secret/protected would require a new review. Immutable852source hash matches authenticated packet; direct source/dataflow review and exact residue-count calculation.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs"
+        ]
+      },
+      {
+        "ruleId": "js/biased-cryptographic-random",
+        "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+        "region": {
+          "startLine": 193,
+          "startColumn": 77,
+          "endColumn": 85
+        },
+        "resultSha256": "0033969585bc3d30d1c7709f3dbfbaf07fdd890a12e3bcb176d6d70166991f7c",
+        "disposition": "Demonstrably false positive",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. The modulo bias at line193 is mathematically real, but its value is a public synthetic right-table revision label, not a security credential, key, access decision or protected evaluation secret. research.mjs:193: seed %3 is embedded in an r0/r1/r2 CSV revision cell; the full seed is also exposed in PUBLIC-LEFT/PUBLIC-RIGHT identifiers and public note text(188-194). research.mjs:213-217 explicitly permits a caller-supplied bounded confirmationSeed;246 chooses that value or a Uint32 crypto seed only for confirmationMission. research.mjs:245 explicitly says the local generator is public, not a protected evaluator;272-274 retains seed and mission with publicSynthetic:true/protected:false. For uniform32-bit seeds, residue0 has1431655766 representatives and residues1/2 have1431655765; no uniformity claim is made for these labels. This disposition does not certify confirmation independence, scientific validity or cryptographic randomness in another future use. Treating this seed as secret/protected would require a new review. Immutable852source hash matches authenticated packet; direct source/dataflow review and exact residue-count calculation.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs"
+        ]
+      },
+      {
+        "ruleId": "js/user-controlled-bypass",
+        "path": "agent-gateway/apiHelpers.ts",
+        "region": {
+          "startLine": 174,
+          "startColumn": 10,
+          "endColumn": 15
+        },
+        "resultSha256": "5b0f7c94dbe88169d83a5434dd9b22b4575e58004a6e62b4b98c0ef93f9e4303",
+        "disposition": "Demonstrably false positive",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. Skipping a null/nonobject contributor drops that entry; it does not grant a principal or retain a verified signature. apiHelpers.ts:169-176 requires an array and skips malformed entries;177-185 validates/normalizes each retained address. apiHelpers.ts:207-228 verifies any nonempty supplied signature against its supplied payload and requires recovered signer to equal the contributor address;235 appends only a contributor metadata record. routes.ts:1640-1654 authenticates the request and authorizes its managed wallet before parseContributors at1683. Unsigned attribution is intentionally allowed and remains a claim. Contributor role/metadata strings are not authentication; consumers must not reinterpret them as authority. The signed payload is not shown here to be a job-scoped authorization token; this review refutes the reported gateway bypass only. Exact-source offline malformed-entry, valid/wrong signer, altered payload, missing payload, malformed signature and unsigned-metadata probes passed using real EIP191 verification.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/agent-gateway/apiHelpers.ts"
+        ]
+      },
+      {
+        "ruleId": "js/user-controlled-bypass",
+        "path": "agent-gateway/apiHelpers.ts",
+        "region": {
+          "startLine": 207,
+          "startColumn": 42,
+          "endColumn": 69
+        },
+        "resultSha256": "44f32a4509769629b95dd9acd72dda0e636a9dec61bc96c18d32fe8e156106b5",
+        "disposition": "Demonstrably false positive",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. The optional-signature branch does not make an unsigned contributor authenticated. A signature field is emitted only after successful verification. apiHelpers.ts:205-207 tests whether an optional signature is a nonempty string;211-218 verifies its actual canonical payload, matches signer to normalized address, then stores signature and recomputed digest. apiHelpers.ts:226-233 rejects a supplied nonempty signature without payload; an unsigned payloadDigest is copied as self-asserted data, without signature. routes.ts:1640-1654 applies request authentication and managed-wallet authorization independently of contributor metadata. Missing/empty/nonstring contributor signatures follow the unsigned metadata path; that is not a validated contributor identity. Downstream systems must preserve the distinction. No user/organizational approval or acceptance of unsigned attribution is established by this review. Exact-source real-EIP191 contributor probes confirm invalid supplied proof refuses and unsigned attribution has no signature/principal.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/agent-gateway/apiHelpers.ts"
+        ]
+      },
+      {
+        "ruleId": "js/user-controlled-bypass",
+        "path": "agent-gateway/apiHelpers.ts",
+        "region": {
+          "startLine": 208,
+          "startColumn": 11,
+          "endColumn": 32
+        },
+        "resultSha256": "c01a91ca796617434a6a2921d1f1100ef22dec2a435bcb4466aaed486ed9b807",
+        "disposition": "Demonstrably false positive",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. The payload-presence test fails closed for an attempted signed contributor: missing payload throws rather than bypassing verification. apiHelpers.ts:207 enters signed-evidence handling only for a nonempty string signature;208-218 verifies the provided payload and matching recovered address. apiHelpers.ts:226-228 throws Contributor signature requires its signed payload when payload is absent. apiHelpers.ts:211-224 rejects a bad signature, altered payload or different signer. This establishes proof-of-control over the supplied message only; it does not establish task acceptance, payment authority or an independent truth claim. Exact-source signed-without-payload, wrong-address, altered-payload and malformed-signature probes all refused.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/agent-gateway/apiHelpers.ts"
+        ]
+      },
+      {
+        "ruleId": "js/user-controlled-bypass",
+        "path": "agent-gateway/routes.ts",
+        "region": {
+          "startLine": 200,
+          "startColumn": 7,
+          "endColumn": 16
+        },
+        "resultSha256": "28ee86fcab1b3643708dc409b766d7a86bc2ac24a1357e94eadbf2056b554c3e",
+        "disposition": "Demonstrably false positive",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. The user-controlled x-signature presence condition controls whether verification is attempted; it cannot authorize a request by itself. routes.ts:191-195 permits operator authority only after exact comparison against configured GATEWAY_API_KEY. routes.ts:198-208 reads both headers and calls real ethers.verifyMessage(AUTH_MESSAGE+nonce,signature);209-218 additionally requires recovered signer to equal claimed address and be a managed wallet before setting a wallet principal in a private WeakMap and calling next. routes.ts:220-231 catches invalid proof and returns401;165-174 expires/rotates the challenge;234-247 checks wallet-specific authority separately. This scoped review does not certify TLS, secret distribution, ingress configuration or all gateway routes. The shared nonce can require concurrent clients to retry; that is documented behavior, not authority bypass. Nine offline exact-function HTTP-auth boundary probes passed with real EIP191 signatures: missing/partial/malformed/unmanaged/mismatched/replay refused; only managed matching signer or configured operator key succeeded.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/agent-gateway/routes.ts"
+        ]
+      },
+      {
+        "ruleId": "js/user-controlled-bypass",
+        "path": "agent-gateway/routes.ts",
+        "region": {
+          "startLine": 200,
+          "startColumn": 20,
+          "endColumn": 27
+        },
+        "resultSha256": "b50f1b8b090e280ce7c2cb87d948a45903608aa9a3df701f4e0f200794858202",
+        "disposition": "Demonstrably false positive",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. The user-controlled x-address presence condition controls whether verification is attempted; it cannot authorize a request by itself. routes.ts:191-195 permits operator authority only after exact comparison against configured GATEWAY_API_KEY. routes.ts:198-208 reads both headers and calls real ethers.verifyMessage(AUTH_MESSAGE+nonce,signature);209-218 additionally requires recovered signer to equal claimed address and be a managed wallet before setting a wallet principal in a private WeakMap and calling next. routes.ts:220-231 catches invalid proof and returns401;165-174 expires/rotates the challenge;234-247 checks wallet-specific authority separately. This scoped review does not certify TLS, secret distribution, ingress configuration or all gateway routes. The shared nonce can require concurrent clients to retry; that is documented behavior, not authority bypass. Nine offline exact-function HTTP-auth boundary probes passed with real EIP191 signatures: missing/partial/malformed/unmanaged/mismatched/replay refused; only managed matching signer or configured operator key succeeded.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/agent-gateway/routes.ts"
+        ]
+      },
+      {
+        "ruleId": "js/user-controlled-bypass",
+        "path": "apps/onebox-static/app.mjs",
+        "region": {
+          "startLine": 1482,
+          "startColumn": 8,
+          "endColumn": 15
+        },
+        "resultSha256": "809b937e9d730f80bfa0b1350bdb713a6d9081ad5b0ba992cb13b3635d597076",
+        "disposition": "Demonstrably false positive",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. The reported branch rejects a missing executor URL. It is endpoint-availability handling in a client, not a server authorization decision. app.mjs:449-468 returns null plan/exec/status when no sanitized base exists; the prefix is appended only after a base has been selected. app.mjs:1480-1487 throws when getExecUrl is empty;1488-1495 sends a normal POST using withAuth when an endpoint exists. app.mjs:383-445 constructs ordinary Authorization headers from the page-session token; no branch fabricates a credential or records an authenticated principal. app.mjs:488-509 explicitly accepts endpoint/prefix URL configuration;472-484 resolves configured endpoints. Endpoint selection remains user configurable, and prefix text can alter paths within the configured base. A URL being present does not imply a trusted backend. Backend authentication, authorization, endpoint trust, mixed HTTP/HTTPS deployment and any transaction approval are outside this finding-specific client-guard assessment. Exact-source extracted endpoint/header/executeICS probe:7prefix variants cannot create an endpoint without a base; tested variants retain configured origin; null endpoint causes0fetch calls; configured endpoint retains ordinary Bearer header with fetch stopped offline.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/apps/onebox-static/app.mjs"
+        ]
+      },
+      {
+        "ruleId": "js/user-controlled-bypass",
+        "path": "packages/successor-core/src/frontier-mission.mjs",
+        "region": {
+          "startLine": 431,
+          "startColumn": 7,
+          "endColumn": 40
+        },
+        "resultSha256": "9f4e1e023b23223651f9196ac2396e6dfbe684a621b7dc4520ca904aca8c2da9",
+        "disposition": "Demonstrably false positive",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. The kind field chooses between two serialization forms; both paths run full mission verification. It does not bypass validation or authenticate imported data. frontier-mission.mjs:417-427 bounds and parses JSON and canonicalizes inert values. frontier-mission.mjs:429-438 sends a direct FrontierMission to verifyFrontierMission; the envelope branch checks exact format/fields then calls the same verifier. frontier-mission.mjs:359-397 checks exact shape, schema, source bounds and reconstructs a mission through createFrontierMission; canonical equality with that deterministic replay is mandatory. frontier-mission.mjs:337-357 explicitly seals content equality rather than truth; sources retain NOT_RETRIEVED provenance. website/frontier-mission.js:512-531 bounds fragment inputs and verifies any workspace before replacement. A valid content seal is not independent truth, owner approval, external execution or authorization. No external model/network/wallet operation is performed by this module. 22frontier-mission tests passed; all27source/test files used were compared byte-for-byte with immutable852; three forged kind/envelope records independently refused.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/packages/successor-core/src/frontier-mission.mjs"
+        ]
+      },
+      {
+        "ruleId": "js/file-system-race",
+        "path": "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+        "region": {
+          "startLine": 532,
+          "startColumn": 5,
+          "endLine": 535,
+          "endColumn": 7
+        },
+        "resultSha256": "c5d0c1857be47bf882da95023f2c8a703673a83842e70c0b27f76e02a97a0bf3",
+        "disposition": "Demonstrably false positive",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. The early existence check is not the overwrite safety mechanism: the actual write atomically creates a new leaf using exclusive mode. four-repo-computer-lifecycle.cjs:184-188 takes operator-selected absolute input/source/output paths and checks evidence output is new and differs from input. four-repo-computer-lifecycle.cjs:532-535 writes with flag wx and mode0600; a preexisting regular leaf or leaf symlink makes O_EXCL fail instead of clobbering a target. four-repo-computer-lifecycle.cjs:152-162 prohibits external RPC/forks and requires disposable Hardhat31337;519-528 retains productionApproved:false and explicit scope limits. This does not prove immunity to parent-directory substitution or denial of service. Output ancestors must remain trusted/operator controlled. If an attacker can rename or replace those directories, an owner must assess that environment separately. The result is scoped to leaf overwrite/source evidence integrity, not a blanket filesystem-race certification. Independent child review against exact852: injecting a regular leaf or symlink between existsSync and writeFileSync produced EEXIST and preserved target bytes.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/integrations/alpha-agent/four-repo-computer-lifecycle.cjs"
+        ]
+      },
+      {
+        "ruleId": "js/file-system-race",
+        "path": "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+        "region": {
+          "startLine": 163,
+          "startColumn": 16,
+          "endLine": 166,
+          "endColumn": 6
+        },
+        "resultSha256": "b8f398ac2be7b8b9c08e13cfa5d736daaa5e77014a32614bbd88b4ea6f9730c9",
+        "disposition": "Demonstrably false positive",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. The lstat-before-open check is redundant; validation of the opened descriptor and exact captured bytes prevents replacement from admitting unreviewed code. pinned-alpha-checkout.cjs:150-166 checks ancestors/leaf and opens with O_RDONLY|O_NOFOLLOW|O_NONBLOCK. pinned-alpha-checkout.cjs:21-54 validates the actual descriptor as a bounded stable regular file while reading;181-192 checks its computed immutable Git blob identity and executable mode. pinned-alpha-checkout.cjs:230-299 imports from private captured strings under a unique scheme; relative imports must resolve to captured sourceMap entries and external/missing edges are refused. A concurrent actor can cause an abort. This does not make every path operation race free; acceptance is justified by matching pinned bytes, not by assuming pathname stability. Trust in the reviewed Git commit and installed gate code remains an external exact-source review boundary. Independent child exact-helper probes injected leaf symlink, changed regular bytes, FIFO and ancestor-symlink changed bytes immediately after lstat; all refused through open/descriptor/hash checks.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/integrations/alpha-agent/pinned-alpha-checkout.cjs"
+        ]
+      },
+      {
+        "ruleId": "js/unused-local-variable",
+        "path": "scripts/release/publish-source-release-rc16.cjs",
+        "region": {
+          "startLine": 20,
+          "startColumn": 3,
+          "endColumn": 20
+        },
+        "resultSha256": "f1ad5ab543d6f71395f521b94dd2ff27bd67d2c5b641c21bd2254c32dde7fb7f",
+        "disposition": "Acknowledged nonsecurity quality",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. scannerReviewPath is an unused local import binding in scripts/release/publish-source-release-rc16.cjs; it is a real quality finding, not a demonstrated security defect. scripts/release/publish-source-release-rc16.cjs:20 declares/imports scannerReviewPath; immutable-source TypeScript AST inspection finds exactly one identifier occurrence(the declaration) and no use in that module. The authenticated rule descriptor tags are quality/maintainability/useless-code, recommendation level, and contain no security-severity or security tag. No quality acceptance record or organizational acknowledgement has been created. An owner must choose a focused cleanup or make the specific allowed acknowledgement through the existing policy. Any cleanup must preserve required module initialization/side effects and the real publisher verification calls; removing a whole require or weakening checks is not justified. The unused-binding alert alone neither proves nor disproves complete release-gate correctness. rc16 validation failures remain separate. Exact immutable-source AST identifier count1 for this binding; complete raw result and rule metadata hashes are retained.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/scripts/release/publish-source-release-rc16.cjs"
+        ],
+        "qualityReview": {
+          "schema": "agijobsv0/nonsecurity-quality-review/1",
+          "sourceBlob": "2e7f347efbc39c5c8a7e578a1ce7517903da6a8a",
+          "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+          "queryComponentSha256": "e00c5a3646ec966459f40df177f5ee3ba079c42077da13afaff0d8ff0acf7906",
+          "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+          "behaviorAssessment": "TRUE, UNCLEARED QUALITY WARNING; owner decision pending. Proposed acknowledgement only. scannerReviewPath is an unused destructured export from the fixed relative qualifier module. The publisher still uses scannerReview and verifies source/review bindings through its active calls. Reading the unused string binding creates no output, network request, subprocess or authority. Requiring the module still performs its ordinary source-bound notes parsing; this review does not remove that evaluation. No source cleanup or initialization/check removal is performed.",
+          "independentReviewEvidence": [
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226"
+          ]
+        }
+      },
+      {
+        "ruleId": "js/unused-local-variable",
+        "path": "scripts/release/source-native-gates-rc16.cjs",
+        "region": {
+          "startLine": 7,
+          "startColumn": 9,
+          "endColumn": 21
+        },
+        "resultSha256": "a0c8fc26914b809981a63f528384d25155879d6130caf02e86a216c0b3f616a9",
+        "disposition": "Acknowledged nonsecurity quality",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. execFileSync is an unused local import binding in scripts/release/source-native-gates-rc16.cjs; it is a real quality finding, not a demonstrated security defect. scripts/release/source-native-gates-rc16.cjs:7 declares/imports execFileSync; immutable-source TypeScript AST inspection finds exactly one identifier occurrence(the declaration) and no use in that module. The authenticated rule descriptor tags are quality/maintainability/useless-code, recommendation level, and contain no security-severity or security tag. No quality acceptance record or organizational acknowledgement has been created. An owner must choose a focused cleanup or make the specific allowed acknowledgement through the existing policy. Any cleanup must preserve required module initialization/side effects and the real publisher verification calls; removing a whole require or weakening checks is not justified. The unused-binding alert alone neither proves nor disproves complete release-gate correctness. rc16 validation failures remain separate. Exact immutable-source AST identifier count1 for this binding; complete raw result and rule metadata hashes are retained.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/scripts/release/source-native-gates-rc16.cjs"
+        ],
+        "qualityReview": {
+          "schema": "agijobsv0/nonsecurity-quality-review/1",
+          "sourceBlob": "3c857923b165abf1cfe5ca56bf61d7d0c80e3b79",
+          "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+          "queryComponentSha256": "e00c5a3646ec966459f40df177f5ee3ba079c42077da13afaff0d8ff0acf7906",
+          "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+          "behaviorAssessment": "TRUE, UNCLEARED QUALITY WARNING; owner decision pending. Proposed acknowledgement only. execFileSync is destructured from the fixed node:child_process built-in but is never invoked in this module. Merely retaining the unused function binding starts no process. The actual native/source verification calls and subprocess policies in other modules remain required. No source cleanup or initialization/check removal is performed.",
+          "independentReviewEvidence": [
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226"
+          ]
+        }
+      },
+      {
+        "ruleId": "js/unused-local-variable",
+        "path": "scripts/release/source-native-gates-rc16.cjs",
+        "region": {
+          "startLine": 8,
+          "startColumn": 21,
+          "endColumn": 26
+        },
+        "resultSha256": "9adc80398bbc3729d06eb0c7ba71fc2a1a1b36969736d070571fa4dcc9dad7df",
+        "disposition": "Acknowledged nonsecurity quality",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. delay is an unused local import binding in scripts/release/source-native-gates-rc16.cjs; it is a real quality finding, not a demonstrated security defect. scripts/release/source-native-gates-rc16.cjs:8 declares/imports delay; immutable-source TypeScript AST inspection finds exactly one identifier occurrence(the declaration) and no use in that module. The authenticated rule descriptor tags are quality/maintainability/useless-code, recommendation level, and contain no security-severity or security tag. No quality acceptance record or organizational acknowledgement has been created. An owner must choose a focused cleanup or make the specific allowed acknowledgement through the existing policy. Any cleanup must preserve required module initialization/side effects and the real publisher verification calls; removing a whole require or weakening checks is not justified. The unused-binding alert alone neither proves nor disproves complete release-gate correctness. rc16 validation failures remain separate. Exact immutable-source AST identifier count1 for this binding; complete raw result and rule metadata hashes are retained.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/scripts/release/source-native-gates-rc16.cjs"
+        ],
+        "qualityReview": {
+          "schema": "agijobsv0/nonsecurity-quality-review/1",
+          "sourceBlob": "3c857923b165abf1cfe5ca56bf61d7d0c80e3b79",
+          "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+          "queryComponentSha256": "e00c5a3646ec966459f40df177f5ee3ba079c42077da13afaff0d8ff0acf7906",
+          "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+          "behaviorAssessment": "TRUE, UNCLEARED QUALITY WARNING; owner decision pending. Proposed acknowledgement only. delay is the unused setTimeout export from fixed node:timers/promises. Binding the function schedules no timer and performs no asynchronous operation. The module's qualification evaluation remains synchronous in its active decision functions. No source cleanup or initialization/check removal is performed.",
+          "independentReviewEvidence": [
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226"
+          ]
+        }
+      },
+      {
+        "ruleId": "js/unused-local-variable",
+        "path": "scripts/release/source-native-gates-rc16.cjs",
+        "region": {
+          "startLine": 13,
+          "startColumn": 3,
+          "endColumn": 26
+        },
+        "resultSha256": "3ef562fae3b94d3923e1eb4e8b984ffb0ef5a190fd33622332c34a403753fc3a",
+        "disposition": "Acknowledged nonsecurity quality",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. verifyPublicationReview is an unused local import binding in scripts/release/source-native-gates-rc16.cjs; it is a real quality finding, not a demonstrated security defect. scripts/release/source-native-gates-rc16.cjs:13 declares/imports verifyPublicationReview; immutable-source TypeScript AST inspection finds exactly one identifier occurrence(the declaration) and no use in that module. The authenticated rule descriptor tags are quality/maintainability/useless-code, recommendation level, and contain no security-severity or security tag. publish-source-release-rc16.cjs:1133,1351,1623 actively invokes verifyPublicationReview in its publication/evidence entrypoints. The unused import in the helper is not itself proof that those checks are absent. No quality acceptance record or organizational acknowledgement has been created. An owner must choose a focused cleanup or make the specific allowed acknowledgement through the existing policy. Any cleanup must preserve required module initialization/side effects and the real publisher verification calls; removing a whole require or weakening checks is not justified. The unused-binding alert alone neither proves nor disproves complete release-gate correctness. rc16 validation failures remain separate. Exact immutable-source AST identifier count1 for this binding; complete raw result and rule metadata hashes are retained.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/scripts/release/source-native-gates-rc16.cjs"
+        ],
+        "qualityReview": {
+          "schema": "agijobsv0/nonsecurity-quality-review/1",
+          "sourceBlob": "3c857923b165abf1cfe5ca56bf61d7d0c80e3b79",
+          "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+          "queryComponentSha256": "e00c5a3646ec966459f40df177f5ee3ba079c42077da13afaff0d8ff0acf7906",
+          "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+          "behaviorAssessment": "TRUE, UNCLEARED QUALITY WARNING; owner decision pending. Proposed acknowledgement only. verifyPublicationReview is an unused destructured function from the fixed relative source-profile module. This binding does not invoke or waive publication review. Current source-scope verification remains exported and active; publication entrypoints separately require the profile/three-slot review before effects. Required module initialization remains intact. No source cleanup or initialization/check removal is performed.",
+          "independentReviewEvidence": [
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226"
+          ]
+        }
+      },
+      {
+        "ruleId": "js/unused-local-variable",
+        "path": "scripts/release/source-native-gates-rc16.cjs",
+        "region": {
+          "startLine": 16,
+          "startColumn": 3,
+          "endColumn": 28
+        },
+        "resultSha256": "d3b8e0db1968d7639877e74eb4c613d2fa9d43b7cb11b61348179edae7e1cd2a",
+        "disposition": "Acknowledged nonsecurity quality",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. assertPinnedAlphaCheckout is an unused local import binding in scripts/release/source-native-gates-rc16.cjs; it is a real quality finding, not a demonstrated security defect. scripts/release/source-native-gates-rc16.cjs:16 declares/imports assertPinnedAlphaCheckout; immutable-source TypeScript AST inspection finds exactly one identifier occurrence(the declaration) and no use in that module. The authenticated rule descriptor tags are quality/maintainability/useless-code, recommendation level, and contain no security-severity or security tag. publish-source-release-rc16.cjs:1649,1686,1805,1808 actively invokes assertPinnedAlphaCheckout. This unused helper import does not independently establish a missing publisher check. No quality acceptance record or organizational acknowledgement has been created. An owner must choose a focused cleanup or make the specific allowed acknowledgement through the existing policy. Any cleanup must preserve required module initialization/side effects and the real publisher verification calls; removing a whole require or weakening checks is not justified. The unused-binding alert alone neither proves nor disproves complete release-gate correctness. rc16 validation failures remain separate. Exact immutable-source AST identifier count1 for this binding; complete raw result and rule metadata hashes are retained.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/scripts/release/source-native-gates-rc16.cjs"
+        ],
+        "qualityReview": {
+          "schema": "agijobsv0/nonsecurity-quality-review/1",
+          "sourceBlob": "3c857923b165abf1cfe5ca56bf61d7d0c80e3b79",
+          "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+          "queryComponentSha256": "e00c5a3646ec966459f40df177f5ee3ba079c42077da13afaff0d8ff0acf7906",
+          "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+          "behaviorAssessment": "TRUE, UNCLEARED QUALITY WARNING; owner decision pending. Proposed acknowledgement only. assertPinnedAlphaCheckout is an unused destructured function from the fixed relative pinned-alpha-checkout module. No Alpha preparation, import, checkout or native action is performed by reading this function binding. Existing actual native compatibility and source identity checks remain separate required gates. No source cleanup or initialization/check removal is performed.",
+          "independentReviewEvidence": [
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226"
+          ]
+        }
+      },
+      {
+        "ruleId": "js/unused-local-variable",
+        "path": "scripts/release/source-scanner-gates-rc16.cjs",
+        "region": {
+          "startLine": 8,
+          "startColumn": 21,
+          "endColumn": 26
+        },
+        "resultSha256": "1792282aede4a74926902c5dde76a06258672bc2a2d70b87c150e9b4aa087249",
+        "disposition": "Acknowledged nonsecurity quality",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. delay is an unused local import binding in scripts/release/source-scanner-gates-rc16.cjs; it is a real quality finding, not a demonstrated security defect. scripts/release/source-scanner-gates-rc16.cjs:8 declares/imports delay; immutable-source TypeScript AST inspection finds exactly one identifier occurrence(the declaration) and no use in that module. The authenticated rule descriptor tags are quality/maintainability/useless-code, recommendation level, and contain no security-severity or security tag. No quality acceptance record or organizational acknowledgement has been created. An owner must choose a focused cleanup or make the specific allowed acknowledgement through the existing policy. Any cleanup must preserve required module initialization/side effects and the real publisher verification calls; removing a whole require or weakening checks is not justified. The unused-binding alert alone neither proves nor disproves complete release-gate correctness. rc16 validation failures remain separate. Exact immutable-source AST identifier count1 for this binding; complete raw result and rule metadata hashes are retained.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/scripts/release/source-scanner-gates-rc16.cjs"
+        ],
+        "qualityReview": {
+          "schema": "agijobsv0/nonsecurity-quality-review/1",
+          "sourceBlob": "6c72c824a971b3222f432a26be6efab2bbcdf5e8",
+          "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+          "queryComponentSha256": "e00c5a3646ec966459f40df177f5ee3ba079c42077da13afaff0d8ff0acf7906",
+          "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+          "behaviorAssessment": "TRUE, UNCLEARED QUALITY WARNING; owner decision pending. Proposed acknowledgement only. delay is an unused alias for fixed node:timers/promises setTimeout in the scanner gate module. The declaration schedules no timer; scanner archive validation uses its explicit active functions. Acknowledging this quality diagnostic does not alter wait policies or scan admission. No source cleanup or initialization/check removal is performed.",
+          "independentReviewEvidence": [
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226"
+          ]
+        }
+      },
+      {
+        "ruleId": "js/unused-local-variable",
+        "path": "scripts/release/source-scanner-gates-rc16.cjs",
+        "region": {
+          "startLine": 13,
+          "startColumn": 3,
+          "endColumn": 26
+        },
+        "resultSha256": "38ad2f13f0bb275b770f299995511ae4df1ac3e332f2ce8c5c76fc2249991d38",
+        "disposition": "Acknowledged nonsecurity quality",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. verifyPublicationReview is an unused local import binding in scripts/release/source-scanner-gates-rc16.cjs; it is a real quality finding, not a demonstrated security defect. scripts/release/source-scanner-gates-rc16.cjs:13 declares/imports verifyPublicationReview; immutable-source TypeScript AST inspection finds exactly one identifier occurrence(the declaration) and no use in that module. The authenticated rule descriptor tags are quality/maintainability/useless-code, recommendation level, and contain no security-severity or security tag. publish-source-release-rc16.cjs:1133,1351,1623 actively invokes verifyPublicationReview in its publication/evidence entrypoints. The unused import in the helper is not itself proof that those checks are absent. No quality acceptance record or organizational acknowledgement has been created. An owner must choose a focused cleanup or make the specific allowed acknowledgement through the existing policy. Any cleanup must preserve required module initialization/side effects and the real publisher verification calls; removing a whole require or weakening checks is not justified. The unused-binding alert alone neither proves nor disproves complete release-gate correctness. rc16 validation failures remain separate. Exact immutable-source AST identifier count1 for this binding; complete raw result and rule metadata hashes are retained.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/scripts/release/source-scanner-gates-rc16.cjs"
+        ],
+        "qualityReview": {
+          "schema": "agijobsv0/nonsecurity-quality-review/1",
+          "sourceBlob": "6c72c824a971b3222f432a26be6efab2bbcdf5e8",
+          "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+          "queryComponentSha256": "e00c5a3646ec966459f40df177f5ee3ba079c42077da13afaff0d8ff0acf7906",
+          "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+          "behaviorAssessment": "TRUE, UNCLEARED QUALITY WARNING; owner decision pending. Proposed acknowledgement only. verifyPublicationReview is an unused function binding from the fixed relative profile module in scanner gates. It is not called here and this binding alone provides no review approval. Active full-archive/source-binding checks and separate publication entrypoint verification remain mandatory, and ordinary required-module evaluation is preserved. No source cleanup or initialization/check removal is performed.",
+          "independentReviewEvidence": [
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226"
+          ]
+        }
+      },
+      {
+        "ruleId": "js/unused-local-variable",
+        "path": "scripts/release/source-scanner-gates-rc16.cjs",
+        "region": {
+          "startLine": 17,
+          "startColumn": 3,
+          "endColumn": 28
+        },
+        "resultSha256": "3935c3137b1d582d2f6bb9acf69955d1b2553bb39053e2b57d26df96d29713b9",
+        "disposition": "Acknowledged nonsecurity quality",
+        "justification": "PROPOSED ONLY; same-session independent AI technical assessment, not human/organizational approval. assertPinnedAlphaCheckout is an unused local import binding in scripts/release/source-scanner-gates-rc16.cjs; it is a real quality finding, not a demonstrated security defect. scripts/release/source-scanner-gates-rc16.cjs:17 declares/imports assertPinnedAlphaCheckout; immutable-source TypeScript AST inspection finds exactly one identifier occurrence(the declaration) and no use in that module. The authenticated rule descriptor tags are quality/maintainability/useless-code, recommendation level, and contain no security-severity or security tag. publish-source-release-rc16.cjs:1649,1686,1805,1808 actively invokes assertPinnedAlphaCheckout. This unused helper import does not independently establish a missing publisher check. No quality acceptance record or organizational acknowledgement has been created. An owner must choose a focused cleanup or make the specific allowed acknowledgement through the existing policy. Any cleanup must preserve required module initialization/side effects and the real publisher verification calls; removing a whole require or weakening checks is not justified. The unused-binding alert alone neither proves nor disproves complete release-gate correctness. rc16 validation failures remain separate. Exact immutable-source AST identifier count1 for this binding; complete raw result and rule metadata hashes are retained.",
+        "regressionEvidence": [
+          "https://github.com/MontrealAI/AGIJobsv0/blob/afa1d740b68f34a8823f7c331cf8c12fc317dbb2/scripts/release/source-scanner-gates-rc16.cjs"
+        ],
+        "qualityReview": {
+          "schema": "agijobsv0/nonsecurity-quality-review/1",
+          "sourceBlob": "6c72c824a971b3222f432a26be6efab2bbcdf5e8",
+          "ruleMetadataSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+          "queryComponentSha256": "e00c5a3646ec966459f40df177f5ee3ba079c42077da13afaff0d8ff0acf7906",
+          "codeqlConfigSummarySha256": "e54d1848b96dc1093cbf6acc90ad9fdcc8f30d7c7d2c98cc6f41632cdb794d3f",
+          "behaviorAssessment": "TRUE, UNCLEARED QUALITY WARNING; owner decision pending. Proposed acknowledgement only. assertPinnedAlphaCheckout is an unused function binding from the fixed relative pinned checkout module in scanner gates. Reading it performs no native checkout or execution. Current scanner extraction/result/source checks remain active; actual native acceptance still requires its own original workflow. No source cleanup or initialization/check removal is performed.",
+          "independentReviewEvidence": [
+            "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226"
+          ]
+        }
+      }
+    ],
+    "reviewEvidence": [
+      "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226"
+    ]
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "index": 10,
+  "ruleId": "js/file-system-race",
+  "completeCanonicalResultSha256": "b8f398ac2be7b8b9c08e13cfa5d736daaa5e77014a32614bbd88b4ea6f9730c9",
+  "completeRuleDescriptorSha256": "2a4909bcf404ddbdfdc50b7e8e081af9e51c576ddb40c3b5fed6a21fe6892258",
+  "toolComponent": "codeql/javascript-queries",
+  "sourcePaths": [
+    "integrations/alpha-agent/pinned-alpha-checkout.cjs"
+  ],
+  "assessment": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW",
+  "rawResult": {
+    "ruleId": "js/file-system-race",
+    "rule": {
+      "id": "js/file-system-race",
+      "index": 91,
+      "toolComponent": {
+        "index": 1
+      }
+    },
+    "message": {
+      "text": "The file may have changed since it [was checked](1)."
+    },
+    "locations": [
+      {
+        "physicalLocation": {
+          "artifactLocation": {
+            "uri": "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+            "uriBaseId": "%SRCROOT%",
+            "index": 7
+          },
+          "region": {
+            "startLine": 163,
+            "startColumn": 16,
+            "endLine": 166,
+            "endColumn": 6
+          }
+        }
+      }
+    ],
+    "partialFingerprints": {
+      "primaryLocationLineHash": "eced30d22b940af3:1",
+      "primaryLocationStartColumnFingerprint": "11"
+    },
+    "relatedLocations": [
+      {
+        "id": 1,
+        "physicalLocation": {
+          "artifactLocation": {
+            "uri": "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+            "uriBaseId": "%SRCROOT%",
+            "index": 7
+          },
+          "region": {
+            "startLine": 160,
+            "startColumn": 7,
+            "endColumn": 29
+          }
+        },
+        "message": {
+          "text": "was checked"
+        }
+      }
+    ]
+  },
+  "ruleDescriptor": {
+    "id": "js/file-system-race",
+    "name": "js/file-system-race",
+    "shortDescription": {
+      "text": "Potential file system race condition"
+    },
+    "fullDescription": {
+      "text": "Separately checking the state of a file before operating on it may allow an attacker to modify the file between the two operations."
+    },
+    "defaultConfiguration": {
+      "enabled": true,
+      "level": "warning"
+    },
+    "help": {
+      "text": "# Potential file system race condition\nOften it is necessary to check the state of a file before using it. These checks usually take a file name to be checked, and if the check returns positively, then the file is opened or otherwise operated upon.\n\nHowever, in the time between the check and the operation, the underlying file referenced by the file name could be changed by an attacker, causing unexpected behavior.\n\n\n## Recommendation\nUse file descriptors instead of file names whenever possible.\n\n\n## Example\nThe following example shows a case where the code checks whether a file inside the `/tmp/` folder exists, and if it doesn't, the file is written to that location.\n\n\n```javascript\nconst fs = require(\"fs\");\nconst os = require(\"os\");\nconst path = require(\"path\");\n\nconst filePath = path.join(os.tmpdir(), \"my-temp-file.txt\");\n\nif (!fs.existsSync(filePath)) {\n  fs.writeFileSync(filePath, \"Hello\", { mode: 0o600 });\n}\n\n```\nHowever, in a multi-user environment the file might be created by another user between the existence check and the write.\n\nThis can be avoided by using `fs.open` to get a file descriptor, and then use that file descriptor in the write operation.\n\n\n```javascript\nconst fs = require(\"fs\");\nconst os = require(\"os\");\nconst path = require(\"path\");\n\nconst filePath = path.join(os.tmpdir(), \"my-temp-file.txt\");\n\ntry {\n  const fd = fs.openSync(filePath, fs.O_CREAT | fs.O_EXCL | fs.O_RDWR, 0o600);\n\n  fs.writeFileSync(fd, \"Hello\");\n} catch (e) {\n  // file existed\n}\n\n```\n\n## References\n* Wikipedia: [Time-of-check to time-of-use](https://en.wikipedia.org/wiki/Time-of-check_to_time-of-use).\n* The CERT Oracle Secure Coding Standard for C: [ FIO01-C. Be careful using functions that use file names for identification ](https://www.securecoding.cert.org/confluence/display/c/FIO01-C.+Be+careful+using+functions+that+use+file+names+for+identification).\n* NodeJS: [The FS module](https://nodejs.org/api/fs.html).\n* Common Weakness Enumeration: [CWE-367](https://cwe.mitre.org/data/definitions/367.html).\n",
+      "markdown": "# Potential file system race condition\nOften it is necessary to check the state of a file before using it. These checks usually take a file name to be checked, and if the check returns positively, then the file is opened or otherwise operated upon.\n\nHowever, in the time between the check and the operation, the underlying file referenced by the file name could be changed by an attacker, causing unexpected behavior.\n\n\n## Recommendation\nUse file descriptors instead of file names whenever possible.\n\n\n## Example\nThe following example shows a case where the code checks whether a file inside the `/tmp/` folder exists, and if it doesn't, the file is written to that location.\n\n\n```javascript\nconst fs = require(\"fs\");\nconst os = require(\"os\");\nconst path = require(\"path\");\n\nconst filePath = path.join(os.tmpdir(), \"my-temp-file.txt\");\n\nif (!fs.existsSync(filePath)) {\n  fs.writeFileSync(filePath, \"Hello\", { mode: 0o600 });\n}\n\n```\nHowever, in a multi-user environment the file might be created by another user between the existence check and the write.\n\nThis can be avoided by using `fs.open` to get a file descriptor, and then use that file descriptor in the write operation.\n\n\n```javascript\nconst fs = require(\"fs\");\nconst os = require(\"os\");\nconst path = require(\"path\");\n\nconst filePath = path.join(os.tmpdir(), \"my-temp-file.txt\");\n\ntry {\n  const fd = fs.openSync(filePath, fs.O_CREAT | fs.O_EXCL | fs.O_RDWR, 0o600);\n\n  fs.writeFileSync(fd, \"Hello\");\n} catch (e) {\n  // file existed\n}\n\n```\n\n## References\n* Wikipedia: [Time-of-check to time-of-use](https://en.wikipedia.org/wiki/Time-of-check_to_time-of-use).\n* The CERT Oracle Secure Coding Standard for C: [ FIO01-C. Be careful using functions that use file names for identification ](https://www.securecoding.cert.org/confluence/display/c/FIO01-C.+Be+careful+using+functions+that+use+file+names+for+identification).\n* NodeJS: [The FS module](https://nodejs.org/api/fs.html).\n* Common Weakness Enumeration: [CWE-367](https://cwe.mitre.org/data/definitions/367.html).\n"
+    },
+    "properties": {
+      "tags": [
+        "security",
+        "external/cwe/cwe-367"
+      ],
+      "description": "Separately checking the state of a file before operating\n              on it may allow an attacker to modify the file between\n              the two operations.",
+      "id": "js/file-system-race",
+      "kind": "problem",
+      "name": "Potential file system race condition",
+      "precision": "medium",
+      "problem.severity": "warning",
+      "security-severity": "7.7"
+    }
+  }
+}

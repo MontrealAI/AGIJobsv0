@@ -1,0 +1,395 @@
+{
+  "index": 3,
+  "ruleId": "js/user-controlled-bypass",
+  "completeCanonicalResultSha256": "44f32a4509769629b95dd9acd72dda0e636a9dec61bc96c18d32fe8e156106b5",
+  "completeRuleDescriptorSha256": "419035758102ffd1040d1d3e82d59c044405b6c0e802c80b10650b533f915707",
+  "toolComponent": "codeql/javascript-queries",
+  "sourcePaths": [
+    "agent-gateway/apiHelpers.ts",
+    "agent-gateway/routes.ts"
+  ],
+  "assessment": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW",
+  "rawResult": {
+    "ruleId": "js/user-controlled-bypass",
+    "rule": {
+      "id": "js/user-controlled-bypass",
+      "index": 88,
+      "toolComponent": {
+        "index": 1
+      }
+    },
+    "message": {
+      "text": "This condition guards a sensitive [action](1), but a [user-provided value](2) controls it."
+    },
+    "locations": [
+      {
+        "physicalLocation": {
+          "artifactLocation": {
+            "uri": "agent-gateway/apiHelpers.ts",
+            "uriBaseId": "%SRCROOT%",
+            "index": 1
+          },
+          "region": {
+            "startLine": 207,
+            "startColumn": 42,
+            "endColumn": 69
+          }
+        }
+      }
+    ],
+    "partialFingerprints": {
+      "primaryLocationLineHash": "33ca987846598110:1",
+      "primaryLocationStartColumnFingerprint": "37"
+    },
+    "codeFlows": [
+      {
+        "threadFlows": [
+          {
+            "locations": [
+              {
+                "location": {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "agent-gateway/routes.ts",
+                      "uriBaseId": "%SRCROOT%",
+                      "index": 2
+                    },
+                    "region": {
+                      "startLine": 1643,
+                      "startColumn": 19,
+                      "endColumn": 27
+                    }
+                  },
+                  "message": {
+                    "text": "req.body"
+                  }
+                }
+              },
+              {
+                "location": {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "agent-gateway/routes.ts",
+                      "uriBaseId": "%SRCROOT%",
+                      "index": 2
+                    },
+                    "region": {
+                      "startLine": 1643,
+                      "startColumn": 11,
+                      "endColumn": 15
+                    }
+                  },
+                  "message": {
+                    "text": "body"
+                  }
+                }
+              },
+              {
+                "location": {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "agent-gateway/routes.ts",
+                      "uriBaseId": "%SRCROOT%",
+                      "index": 2
+                    },
+                    "region": {
+                      "startLine": 1683,
+                      "startColumn": 40,
+                      "endColumn": 44
+                    }
+                  },
+                  "message": {
+                    "text": "body"
+                  }
+                }
+              },
+              {
+                "location": {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "agent-gateway/routes.ts",
+                      "uriBaseId": "%SRCROOT%",
+                      "index": 2
+                    },
+                    "region": {
+                      "startLine": 1683,
+                      "startColumn": 40,
+                      "endColumn": 57
+                    }
+                  },
+                  "message": {
+                    "text": "body.contributors"
+                  }
+                }
+              },
+              {
+                "location": {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "agent-gateway/apiHelpers.ts",
+                      "uriBaseId": "%SRCROOT%",
+                      "index": 1
+                    },
+                    "region": {
+                      "startLine": 167,
+                      "startColumn": 3,
+                      "endColumn": 6
+                    }
+                  },
+                  "message": {
+                    "text": "raw"
+                  }
+                }
+              },
+              {
+                "location": {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "agent-gateway/apiHelpers.ts",
+                      "uriBaseId": "%SRCROOT%",
+                      "index": 1
+                    },
+                    "region": {
+                      "startLine": 173,
+                      "startColumn": 23,
+                      "endColumn": 26
+                    }
+                  },
+                  "message": {
+                    "text": "raw"
+                  }
+                }
+              },
+              {
+                "location": {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "agent-gateway/apiHelpers.ts",
+                      "uriBaseId": "%SRCROOT%",
+                      "index": 1
+                    },
+                    "region": {
+                      "startLine": 173,
+                      "startColumn": 14,
+                      "endColumn": 19
+                    }
+                  },
+                  "message": {
+                    "text": "entry"
+                  }
+                }
+              },
+              {
+                "location": {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "agent-gateway/apiHelpers.ts",
+                      "uriBaseId": "%SRCROOT%",
+                      "index": 1
+                    },
+                    "region": {
+                      "startLine": 205,
+                      "startColumn": 24,
+                      "endColumn": 29
+                    }
+                  },
+                  "message": {
+                    "text": "entry"
+                  }
+                }
+              },
+              {
+                "location": {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "agent-gateway/apiHelpers.ts",
+                      "uriBaseId": "%SRCROOT%",
+                      "index": 1
+                    },
+                    "region": {
+                      "startLine": 205,
+                      "startColumn": 11,
+                      "endColumn": 20
+                    }
+                  },
+                  "message": {
+                    "text": "signature"
+                  }
+                }
+              },
+              {
+                "location": {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "agent-gateway/apiHelpers.ts",
+                      "uriBaseId": "%SRCROOT%",
+                      "index": 1
+                    },
+                    "region": {
+                      "startLine": 207,
+                      "startColumn": 42,
+                      "endColumn": 51
+                    }
+                  },
+                  "message": {
+                    "text": "signature"
+                  }
+                }
+              },
+              {
+                "location": {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "agent-gateway/apiHelpers.ts",
+                      "uriBaseId": "%SRCROOT%",
+                      "index": 1
+                    },
+                    "region": {
+                      "startLine": 207,
+                      "startColumn": 42,
+                      "endColumn": 58
+                    }
+                  },
+                  "message": {
+                    "text": "signature.trim()"
+                  }
+                }
+              },
+              {
+                "location": {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "agent-gateway/apiHelpers.ts",
+                      "uriBaseId": "%SRCROOT%",
+                      "index": 1
+                    },
+                    "region": {
+                      "startLine": 207,
+                      "startColumn": 42,
+                      "endColumn": 65
+                    }
+                  },
+                  "message": {
+                    "text": "signatu ... .length"
+                  }
+                }
+              },
+              {
+                "location": {
+                  "physicalLocation": {
+                    "artifactLocation": {
+                      "uri": "agent-gateway/apiHelpers.ts",
+                      "uriBaseId": "%SRCROOT%",
+                      "index": 1
+                    },
+                    "region": {
+                      "startLine": 207,
+                      "startColumn": 42,
+                      "endColumn": 69
+                    }
+                  },
+                  "message": {
+                    "text": "signatu ... gth > 0"
+                  }
+                },
+                "taxa": [
+                  {
+                    "id": "Config",
+                    "properties": {
+                      "CodeQL/DataflowRole": "step"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "relatedLocations": [
+      {
+        "id": 1,
+        "physicalLocation": {
+          "artifactLocation": {
+            "uri": "agent-gateway/apiHelpers.ts",
+            "uriBaseId": "%SRCROOT%",
+            "index": 1
+          },
+          "region": {
+            "startLine": 211,
+            "startColumn": 29,
+            "endLine": 212,
+            "endColumn": 49
+          }
+        },
+        "message": {
+          "text": "action"
+        }
+      },
+      {
+        "id": 2,
+        "physicalLocation": {
+          "artifactLocation": {
+            "uri": "agent-gateway/routes.ts",
+            "uriBaseId": "%SRCROOT%",
+            "index": 2
+          },
+          "region": {
+            "startLine": 1643,
+            "startColumn": 19,
+            "endColumn": 27
+          }
+        },
+        "message": {
+          "text": "user-provided value"
+        }
+      },
+      {
+        "physicalLocation": {
+          "artifactLocation": {
+            "uri": "agent-gateway/routes.ts",
+            "uriBaseId": "%SRCROOT%",
+            "index": 2
+          },
+          "region": {
+            "startLine": 1643,
+            "startColumn": 19,
+            "endColumn": 27
+          }
+        }
+      }
+    ]
+  },
+  "ruleDescriptor": {
+    "id": "js/user-controlled-bypass",
+    "name": "js/user-controlled-bypass",
+    "shortDescription": {
+      "text": "User-controlled bypass of security check"
+    },
+    "fullDescription": {
+      "text": "Conditions that the user controls are not suited for making security-related decisions."
+    },
+    "defaultConfiguration": {
+      "enabled": true,
+      "level": "error"
+    },
+    "help": {
+      "text": "# User-controlled bypass of security check\nUsing user-controlled data in a permissions check may allow a user to gain unauthorized access to protected functionality or data.\n\n\n## Recommendation\nWhen checking whether a user is authorized for a particular activity, do not use data that is entirely controlled by that user in the permissions check. If necessary, always validate the input, ideally against a fixed list of expected values.\n\nSimilarly, do not decide which permission to check for, based on user data. In particular, avoid using computation to decide which permissions to check for. Use fixed permissions for particular actions, rather than generating the permission to check for.\n\n\n## Example\nIn this example, we have a server that shows private information for a user, based on the request parameter `userId`. For privacy reasons, users may only view their own private information, so the server checks that the request parameter `userId` matches a cookie value for the user who is logged in.\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.cookies.loggedInUserId !== req.params.userId) {\n        // BAD: login decision made based on user controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\nThis security check is, however, insufficient since an attacker can craft their cookie values to match those of any user. To prevent this, the server can cryptographically sign the security critical cookie values:\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.signedCookies.loggedInUserId !== req.params.userId) {\n        // GOOD: login decision made based on server controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\n\n## References\n* Common Weakness Enumeration: [CWE-807](https://cwe.mitre.org/data/definitions/807.html).\n* Common Weakness Enumeration: [CWE-290](https://cwe.mitre.org/data/definitions/290.html).\n",
+      "markdown": "# User-controlled bypass of security check\nUsing user-controlled data in a permissions check may allow a user to gain unauthorized access to protected functionality or data.\n\n\n## Recommendation\nWhen checking whether a user is authorized for a particular activity, do not use data that is entirely controlled by that user in the permissions check. If necessary, always validate the input, ideally against a fixed list of expected values.\n\nSimilarly, do not decide which permission to check for, based on user data. In particular, avoid using computation to decide which permissions to check for. Use fixed permissions for particular actions, rather than generating the permission to check for.\n\n\n## Example\nIn this example, we have a server that shows private information for a user, based on the request parameter `userId`. For privacy reasons, users may only view their own private information, so the server checks that the request parameter `userId` matches a cookie value for the user who is logged in.\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.cookies.loggedInUserId !== req.params.userId) {\n        // BAD: login decision made based on user controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\nThis security check is, however, insufficient since an attacker can craft their cookie values to match those of any user. To prevent this, the server can cryptographically sign the security critical cookie values:\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.signedCookies.loggedInUserId !== req.params.userId) {\n        // GOOD: login decision made based on server controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\n\n## References\n* Common Weakness Enumeration: [CWE-807](https://cwe.mitre.org/data/definitions/807.html).\n* Common Weakness Enumeration: [CWE-290](https://cwe.mitre.org/data/definitions/290.html).\n"
+    },
+    "properties": {
+      "tags": [
+        "security",
+        "external/cwe/cwe-807",
+        "external/cwe/cwe-290"
+      ],
+      "description": "Conditions that the user controls are not suited for making security-related decisions.",
+      "id": "js/user-controlled-bypass",
+      "kind": "path-problem",
+      "name": "User-controlled bypass of security check",
+      "precision": "medium",
+      "problem.severity": "error",
+      "security-severity": "7.8"
+    }
+  }
+}

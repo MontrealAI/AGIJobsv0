@@ -1,0 +1,223 @@
+2026-10-22T00:08:30.3495361Z not ok 23 - production metadata admission preserves the actual installed profile and exact review provenance without authorizing publication
+2026-10-22T00:08:30.3496544Z   ---
+2026-10-22T00:08:30.3496990Z   duration_ms: 1261.035129
+2026-10-22T00:08:30.3497509Z   type: 'test'
+2026-10-22T00:08:30.3498435Z   location: '/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-profile-rc16.test.cjs:1040:1'
+2026-10-22T00:08:30.3499758Z   failureType: 'testCodeFailure'
+2026-10-22T00:08:30.3500757Z   error: 'Unexpected implementation-to-release change: .github/workflows/discovery-lab-receiver.yml'
+2026-10-22T00:08:30.3501687Z   code: 'ERR_TEST_FAILURE'
+2026-10-22T00:08:30.3502223Z   stack: |-
+2026-10-22T00:08:30.3503152Z     requireValue (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-profile-rc16.cjs:249:18)
+2026-10-22T00:08:30.3504594Z     verifyReleaseDelta (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-profile-rc16.cjs:391:7)
+2026-10-22T00:08:30.3506112Z     Object.verifySourceScope (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-profile-rc16.cjs:697:26)
+2026-10-22T00:08:30.3507719Z     TestContext.<anonymous> (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-profile-rc16.test.cjs:1054:28)
+2026-10-22T00:08:30.3508869Z     Test.runInAsyncScope (node:async_hooks:214:14)
+2026-10-22T00:08:30.3509883Z     Test.run (node:internal/test_runner/test:1047:25)
+2026-10-22T00:08:30.3511053Z     Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+2026-10-22T00:08:30.3512024Z     Test.postRun (node:internal/test_runner/test:1173:19)
+2026-10-22T00:08:30.3512899Z     Test.run (node:internal/test_runner/test:1101:12)
+2026-10-22T00:08:30.3513807Z     async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+2026-10-22T00:08:30.3514817Z   ...
+2026-10-22T00:08:30.3540482Z not ok 24 - partial review installations pass only strict finite source validation and refuse production admission before effects
+2026-10-22T00:08:30.3551522Z   ---
+2026-10-22T00:08:30.3552076Z   duration_ms: 701.370562
+2026-10-22T00:08:30.3552615Z   type: 'test'
+2026-10-22T00:08:30.3553659Z   location: '/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-profile-rc16.test.cjs:1112:1'
+2026-10-22T00:08:30.3554804Z   failureType: 'testCodeFailure'
+2026-10-22T00:08:30.3555850Z   error: 'Unexpected implementation-to-release change: .github/workflows/discovery-lab-receiver.yml'
+2026-10-22T00:08:30.3556826Z   code: 'ERR_TEST_FAILURE'
+2026-10-22T00:08:30.3557350Z   stack: |-
+2026-10-22T00:08:30.3558286Z     requireValue (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-profile-rc16.cjs:249:18)
+2026-10-22T00:08:30.3560354Z     verifyReleaseDelta (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-profile-rc16.cjs:391:7)
+2026-10-22T00:08:30.3561977Z     Object.verifySourceScope (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-profile-rc16.cjs:697:26)
+2026-10-22T00:08:30.3563649Z     TestContext.<anonymous> (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-profile-rc16.test.cjs:1139:27)
+2026-10-22T00:08:30.3564826Z     Test.runInAsyncScope (node:async_hooks:214:14)
+2026-10-22T00:08:30.3565598Z     Test.run (node:internal/test_runner/test:1047:25)
+2026-10-22T00:08:30.3566480Z     Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+2026-10-22T00:08:30.3567404Z     Test.postRun (node:internal/test_runner/test:1173:19)
+2026-10-22T00:08:30.3568210Z     Test.run (node:internal/test_runner/test:1101:12)
+2026-10-22T00:08:30.3569498Z     async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+2026-10-22T00:08:30.3570587Z   ...
+2026-10-22T00:08:30.4142971Z not ok 55 - the live installed review profile is independently bound to its actual immutable Git source
+2026-10-22T00:08:30.4143955Z   ---
+2026-10-22T00:08:30.4144437Z   duration_ms: 692.543037
+2026-10-22T00:08:30.4144989Z   type: 'test'
+2026-10-22T00:08:30.4146037Z   location: '/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-python-scanner-rc16.test.cjs:468:1'
+2026-10-22T00:08:30.4147158Z   failureType: 'testCodeFailure'
+2026-10-22T00:08:30.4147994Z   error: 'Source changed outside the exact two review metadata paths'
+2026-10-22T00:08:30.4148792Z   code: 'ERR_ASSERTION'
+2026-10-22T00:08:30.4149568Z   name: 'AssertionError'
+2026-10-22T00:08:30.4150143Z   expected: true
+2026-10-22T00:08:30.4150728Z   actual: false
+2026-10-22T00:08:30.4151277Z   operator: '=='
+2026-10-22T00:08:30.4151890Z   stack: |-
+2026-10-22T00:08:30.4153229Z     verifyThreeSlotReviewBinding (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-scanner-review-bindings-rc16.cjs:775:7)
+2026-10-22T00:08:30.4155261Z     validatePreparedProfile (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-profile-rc16.cjs:774:7)
+2026-10-22T00:08:30.4157048Z     TestContext.<anonymous> (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-python-scanner-rc16.test.cjs:470:16)
+2026-10-22T00:08:30.4158326Z     Test.runInAsyncScope (node:async_hooks:214:14)
+2026-10-22T00:08:30.4159352Z     Test.run (node:internal/test_runner/test:1047:25)
+2026-10-22T00:08:30.4160548Z     Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+2026-10-22T00:08:30.4161698Z     Test.postRun (node:internal/test_runner/test:1173:19)
+2026-10-22T00:08:30.4274575Z not ok 66 - rc.16 owns only its new tag/routes/assets and remains blocked pending actual security review
+2026-10-22T00:08:30.4275362Z   ---
+2026-10-22T00:08:30.4275646Z   duration_ms: 705.725104
+2026-10-22T00:08:30.4275885Z   type: 'test'
+2026-10-22T00:08:30.4276424Z   location: '/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-integrated-rc16.test.cjs:589:1'
+2026-10-22T00:08:30.4276981Z   failureType: 'testCodeFailure'
+2026-10-22T00:08:30.4277390Z   error: 'Source changed outside the exact two review metadata paths'
+2026-10-22T00:08:30.4277951Z   code: 'ERR_ASSERTION'
+2026-10-22T00:08:30.4278186Z   name: 'AssertionError'
+2026-10-22T00:08:30.4278421Z   expected: true
+2026-10-22T00:08:30.4278629Z   actual: false
+2026-10-22T00:08:30.4278833Z   operator: '=='
+2026-10-22T00:08:30.4279314Z   stack: |-
+2026-10-22T00:08:30.4280576Z     verifyThreeSlotReviewBinding (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-scanner-review-bindings-rc16.cjs:775:7)
+2026-10-22T00:08:30.4282347Z     validatePreparedProfile (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-profile-rc16.cjs:774:7)
+2026-10-22T00:08:30.4284036Z     pendingProfileFixture (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-integrated-rc16.test.cjs:43:16)
+2026-10-22T00:08:30.4285766Z     pendingReleaseFixture (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-integrated-rc16.test.cjs:61:19)
+2026-10-22T00:08:30.4287574Z     TestContext.<anonymous> (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-integrated-rc16.test.cjs:606:19)
+2026-10-22T00:08:30.4289209Z     Test.runInAsyncScope (node:async_hooks:214:14)
+2026-10-22T00:08:30.4289916Z     Test.run (node:internal/test_runner/test:1047:25)
+2026-10-22T00:08:30.4293833Z not ok 67 - four-record scanner contract requires external identities before reading reports
+2026-10-22T00:08:30.4294600Z   ---
+2026-10-22T00:08:30.4294944Z   duration_ms: 622.51779
+2026-10-22T00:08:30.4295347Z   type: 'test'
+2026-10-22T00:08:30.4296309Z   location: '/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-integrated-rc16.test.cjs:633:1'
+2026-10-22T00:08:30.4297322Z   failureType: 'testCodeFailure'
+2026-10-22T00:08:30.4298033Z   error: 'Source changed outside the exact two review metadata paths'
+2026-10-22T00:08:30.4298691Z   code: 'ERR_ASSERTION'
+2026-10-22T00:08:30.4309416Z   name: 'AssertionError'
+2026-10-22T00:08:30.4309954Z   expected: true
+2026-10-22T00:08:30.4310347Z   actual: false
+2026-10-22T00:08:30.4310733Z   operator: '=='
+2026-10-22T00:08:30.4311097Z   stack: |-
+2026-10-22T00:08:30.4312272Z     verifyThreeSlotReviewBinding (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-scanner-review-bindings-rc16.cjs:775:7)
+2026-10-22T00:08:30.4314052Z     validatePreparedProfile (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-profile-rc16.cjs:774:7)
+2026-10-22T00:08:30.4315807Z     pendingProfileFixture (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-integrated-rc16.test.cjs:43:16)
+2026-10-22T00:08:30.4317634Z     TestContext.<anonymous> (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-integrated-rc16.test.cjs:652:19)
+2026-10-22T00:08:30.4318860Z     Test.runInAsyncScope (node:async_hooks:214:14)
+2026-10-22T00:08:30.4320071Z     Test.run (node:internal/test_runner/test:1047:25)
+2026-10-22T00:08:30.4320945Z     async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+2026-10-22T00:08:30.4323753Z not ok 68 - mandatory scanner manifest is derived from actual pinned receiver Git source
+2026-10-22T00:08:30.4324495Z   ---
+2026-10-22T00:08:30.4324846Z   duration_ms: 74.220454
+2026-10-22T00:08:30.4325247Z   type: 'test'
+2026-10-22T00:08:30.4326201Z   location: '/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-integrated-rc16.test.cjs:656:1'
+2026-10-22T00:08:30.4327231Z   failureType: 'testCodeFailure'
+2026-10-22T00:08:30.4327689Z   error: |-
+2026-10-22T00:08:30.4328221Z     Expected values to be strictly deep-equal:
+2026-10-22T00:08:30.4329021Z     + actual - expected
+2026-10-22T00:08:30.4340135Z     
+2026-10-22T00:08:30.4340509Z       [
+2026-10-22T00:08:30.4341384Z         'integrations/alpha-agent/artifact-commitment.cjs',
+2026-10-22T00:08:30.4342247Z         'integrations/alpha-agent/complete-local-fixture.cjs',
+2026-10-22T00:08:30.4343052Z         'integrations/alpha-agent/deploy-local-fixture.cjs',
+2026-10-22T00:08:30.4343911Z     +   'integrations/alpha-agent/discovery-lab-contract.mjs',
+2026-10-22T00:08:30.4344772Z     +   'integrations/alpha-agent/discovery-lab-native-test.mjs',
+2026-10-22T00:08:30.4345616Z     +   'integrations/alpha-agent/discovery-lab-work-request.mjs',
+2026-10-22T00:08:30.4346515Z     +   'integrations/alpha-agent/discovery-lab-work-request.test.mjs',
+2026-10-22T00:08:30.4347568Z         'integrations/alpha-agent/four-repo-computer-lifecycle.cjs',
+2026-10-22T00:08:30.4348539Z         'integrations/alpha-agent/four-repo-computer-receipt.mjs',
+2026-10-22T00:08:30.4554990Z not ok 86 - rc.16 owns only its new tag/routes/assets and remains blocked pending actual security review
+2026-10-22T00:08:30.4555837Z   ---
+2026-10-22T00:08:30.4556197Z   duration_ms: 885.923609
+2026-10-22T00:08:30.4556626Z   type: 'test'
+2026-10-22T00:08:30.4557761Z   location: '/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-rc16.test.cjs:583:1'
+2026-10-22T00:08:30.4558756Z   failureType: 'testCodeFailure'
+2026-10-22T00:08:30.4559727Z   error: 'Source changed outside the exact two review metadata paths'
+2026-10-22T00:08:30.4560398Z   code: 'ERR_ASSERTION'
+2026-10-22T00:08:30.4560806Z   name: 'AssertionError'
+2026-10-22T00:08:30.4561217Z   expected: true
+2026-10-22T00:08:30.4561585Z   actual: false
+2026-10-22T00:08:30.4561943Z   operator: '=='
+2026-10-22T00:08:30.4562310Z   stack: |-
+2026-10-22T00:08:30.4563499Z     verifyThreeSlotReviewBinding (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-scanner-review-bindings-rc16.cjs:775:7)
+2026-10-22T00:08:30.4565495Z     validatePreparedProfile (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-profile-rc16.cjs:774:7)
+2026-10-22T00:08:30.4567176Z     pendingProfileFixture (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-rc16.test.cjs:39:16)
+2026-10-22T00:08:30.4569307Z     pendingReleaseFixture (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-rc16.test.cjs:57:19)
+2026-10-22T00:08:30.4571046Z     TestContext.<anonymous> (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-rc16.test.cjs:603:19)
+2026-10-22T00:08:30.4572146Z     Test.runInAsyncScope (node:async_hooks:214:14)
+2026-10-22T00:08:30.4572873Z     Test.run (node:internal/test_runner/test:1047:25)
+2026-10-22T00:08:30.4585837Z not ok 89 - pending Python evidence refuses before metadata, download or persistent output effects
+2026-10-22T00:08:30.4586653Z   ---
+2026-10-22T00:08:30.4586998Z   duration_ms: 899.731364
+2026-10-22T00:08:30.4587406Z   type: 'test'
+2026-10-22T00:08:30.4588271Z   location: '/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-rc16.test.cjs:684:1'
+2026-10-22T00:08:30.4589455Z   failureType: 'testCodeFailure'
+2026-10-22T00:08:30.4590160Z   error: 'Source changed outside the exact two review metadata paths'
+2026-10-22T00:08:30.4590861Z   code: 'ERR_ASSERTION'
+2026-10-22T00:08:30.4591277Z   name: 'AssertionError'
+2026-10-22T00:08:30.4591706Z   expected: true
+2026-10-22T00:08:30.4592072Z   actual: false
+2026-10-22T00:08:30.4592425Z   operator: '=='
+2026-10-22T00:08:30.4592802Z   stack: |-
+2026-10-22T00:08:30.4594307Z     verifyThreeSlotReviewBinding (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-scanner-review-bindings-rc16.cjs:775:7)
+2026-10-22T00:08:30.4596139Z     validatePreparedProfile (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-profile-rc16.cjs:774:7)
+2026-10-22T00:08:30.4597717Z     pendingProfileFixture (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-rc16.test.cjs:39:16)
+2026-10-22T00:08:30.4599434Z     pendingReleaseFixture (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-rc16.test.cjs:57:19)
+2026-10-22T00:08:30.4600987Z     TestContext.<anonymous> (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-rc16.test.cjs:685:19)
+2026-10-22T00:08:30.4602186Z     Test.runInAsyncScope (node:async_hooks:214:14)
+2026-10-22T00:08:30.4603003Z     Test.run (node:internal/test_runner/test:1047:25)
+2026-10-22T00:08:30.4665348Z not ok 104 - compiler source admits only actual Git installs of validated profile review values
+2026-10-22T00:08:30.4666411Z   ---
+2026-10-22T00:08:30.4666774Z   duration_ms: 685.287799
+2026-10-22T00:08:30.4667189Z   type: 'test'
+2026-10-22T00:08:30.4668102Z   location: '/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-security-rc16-gate.test.cjs:462:1'
+2026-10-22T00:08:30.4669375Z   failureType: 'testCodeFailure'
+2026-10-22T00:08:30.4670166Z   error: 'Source changed outside the exact two review metadata paths'
+2026-10-22T00:08:30.4670850Z   code: 'ERR_ASSERTION'
+2026-10-22T00:08:30.4671318Z   name: 'AssertionError'
+2026-10-22T00:08:30.4671866Z   expected: true
+2026-10-22T00:08:30.4672356Z   actual: false
+2026-10-22T00:08:30.4672724Z   operator: '=='
+2026-10-22T00:08:30.4673086Z   stack: |-
+2026-10-22T00:08:30.4674262Z     verifyThreeSlotReviewBinding (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-scanner-review-bindings-rc16.cjs:775:7)
+2026-10-22T00:08:30.4676071Z     validatePreparedProfile (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-profile-rc16.cjs:774:7)
+2026-10-22T00:08:30.4677796Z     TestContext.<anonymous> (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-security-rc16-gate.test.cjs:538:3)
+2026-10-22T00:08:30.4679254Z     Test.runInAsyncScope (node:async_hooks:214:14)
+2026-10-22T00:08:30.4679973Z     Test.run (node:internal/test_runner/test:1047:25)
+2026-10-22T00:08:30.4680841Z     async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+2026-10-22T00:08:30.4681548Z   ...
+2026-10-22T00:08:30.4688129Z not ok 106 - both real entrypoints reject a null notes record before network or publication
+2026-10-22T00:08:30.4688901Z   ---
+2026-10-22T00:08:30.4689507Z   duration_ms: 709.446251
+2026-10-22T00:08:30.4689907Z   type: 'test'
+2026-10-22T00:08:30.4690886Z   location: '/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-security-rc16-gate.test.cjs:853:1'
+2026-10-22T00:08:30.4691917Z   failureType: 'testCodeFailure'
+2026-10-22T00:08:30.4692660Z   error: 'Source changed outside the exact two review metadata paths'
+2026-10-22T00:08:30.4693318Z   code: 'ERR_ASSERTION'
+2026-10-22T00:08:30.4693715Z   name: 'AssertionError'
+2026-10-22T00:08:30.4694130Z   expected: true
+2026-10-22T00:08:30.4694499Z   actual: false
+2026-10-22T00:08:30.4694861Z   operator: '=='
+2026-10-22T00:08:30.4695227Z   stack: |-
+2026-10-22T00:08:30.4696635Z     verifyThreeSlotReviewBinding (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-scanner-review-bindings-rc16.cjs:775:7)
+2026-10-22T00:08:30.4698438Z     validatePreparedProfile (/home/runner/work/AGIJobsv0/AGIJobsv0/scripts/release/source-profile-rc16.cjs:774:7)
+2026-10-22T00:08:30.4700462Z     TestContext.<anonymous> (/home/runner/work/AGIJobsv0/AGIJobsv0/test/scripts/source-release-security-rc16-gate.test.cjs:874:5)
+2026-10-22T00:08:30.4701705Z     Test.runInAsyncScope (node:async_hooks:214:14)
+2026-10-22T00:08:30.4702399Z     Test.run (node:internal/test_runner/test:1047:25)
+2026-10-22T00:08:30.4703344Z     async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+2026-10-22T00:08:30.4704055Z   ...
+2026-10-22T00:08:34.1710981Z # tests 166
+2026-10-22T00:08:34.1711326Z # suites 0
+2026-10-22T00:08:34.1711675Z # pass 156
+2026-10-22T00:08:34.1712031Z # fail 10
+2026-10-22T00:08:34.1712384Z # cancelled 0
+2026-10-22T00:08:34.1712752Z # skipped 0
+2026-10-22T00:08:34.1713141Z # todo 0
+2026-10-22T00:08:34.1713759Z # duration_ms 17740.305459
+2026-10-22T00:08:34.1794159Z ##[error]Process completed with exit code 1.
+2026-10-22T00:08:34.1941366Z Post job cleanup.
+2026-10-22T00:08:34.2829453Z [command]/usr/bin/git version
+2026-10-22T00:08:34.2870592Z git version 2.55.0
+2026-10-22T00:08:34.2909432Z Temporarily overriding HOME='/home/runner/work/_temp/18097d43-2464-49b5-be41-bd651693f40b' before making global git config changes
+2026-10-22T00:08:34.2911436Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-22T00:08:34.2915776Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AGIJobsv0/AGIJobsv0
+2026-10-22T00:08:34.2956558Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-22T00:08:34.2993303Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-22T00:08:34.3235566Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-22T00:08:34.3272331Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-22T00:08:34.3653820Z Evaluate and set job outputs
+2026-10-22T00:08:34.3660852Z Set output 'selected'
+2026-10-22T00:08:34.3662739Z Cleaning up orphan processes
+2026-10-22T00:08:34.4020348Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955, actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

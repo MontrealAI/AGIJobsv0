@@ -1,0 +1,305 @@
+diff --git a/config/discovery-lab-source-candidate-v1.json b/config/discovery-lab-source-candidate-v1.json
+index 191c4767..938036d9 100644
+--- a/config/discovery-lab-source-candidate-v1.json
++++ b/config/discovery-lab-source-candidate-v1.json
+@@ -32,7 +32,7 @@
+       "before": null,
+       "after": {
+         "mode": "100644",
+-        "sha256": "46e407daaf771596192920420e2b90736956c3f0ee3940de43f2bbdc04f42893"
++        "sha256": "55e75ea1f35de29b2486d819c56e04ac042c6397225a3fbccb74f5435186dc4b"
+       },
+       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
+     },
+@@ -80,7 +80,7 @@
+       "before": null,
+       "after": {
+         "mode": "100644",
+-        "sha256": "627627fc5b0bd4273b56fa392ad4e24c1145f1661451ff629f60a8c02ea87e58"
++        "sha256": "603f6f26515803bde617f977a2a1cbd9c48e09fafc9b77dcc9f61eb18ca7728f"
+       },
+       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
+     },
+@@ -104,6 +104,28 @@
+         "sha256": "a9bea3725ba78204609bb7f446d1b79ead911137d1ff4486177dba64a235f175"
+       },
+       "reason": "Replace blanket no-change assertion only with exact three additive configurations plus complete source-package proof; preserve the96 findings and every deployed-source/scanner gate."
++    },
++    "hardhat.config.js": {
++      "before": {
++        "mode": "100644",
++        "blob": "8d201a5f8af39ccefa4970e6839584abcc1720ba"
++      },
++      "after": {
++        "mode": "100644",
++        "sha256": "738518441596cb1e6a9c691fa2c2ca68fc158a96f8856ab71f0ebc70ad0590b6"
++      },
++      "reason": "Exclude only the new Discovery node:test suite from native Mocha discovery; all other selection and mandatory dedicated Node execution remain enforced."
++    },
++    "test/scripts/hardhat-test-discovery.test.cjs": {
++      "before": {
++        "mode": "100644",
++        "blob": "25707f312769272f1f88a6d12b1c709ac07d0ae9"
++      },
++      "after": {
++        "mode": "100644",
++        "sha256": "9887b51bbc81599ff9a725b0f81747c8f9b1f3de3219015d789125216438b7dd"
++      },
++      "reason": "Exercise actual aggregate and explicit Hardhat selection plus mandatory exact-source dedicated Discovery execution; preserve existing isolation/native-suite checks."
+     }
+   }
+ }
+diff --git a/docs/successor/DISCOVERY_LAB.md b/docs/successor/DISCOVERY_LAB.md
+index d9987c52..bf86ef6c 100644
+--- a/docs/successor/DISCOVERY_LAB.md
++++ b/docs/successor/DISCOVERY_LAB.md
+@@ -41,9 +41,9 @@ Independent engineering review found and verified correction of a trusted-contex
+ 
+ ## Explicit source-scope proposal (not a release selector)
+ 
+-`config/discovery-lab-source-candidate-v1.json`, `config/discovery-lab-source-baseline-v1.json` and `scripts/release/discovery-lab-profile.py` propose a separate nonpublishing source/package profile. Its immutable baseline is the exact main/tree above. The baseline inventory reconstructs that fixed Git tree and preserves every original blob and mode except the one exact protected-scope validator transition described below. The admitted non-control additions are ten explicit new paths: this guide, the shared contract, receiver, receiver tests, transport fixture, receiver-policy workflow, `scripts/release/test-discovery-lab-profile.py`, actual native harness, exact Alpha source-pin catalog, the finite protected-scope adversarial test. The manifest, immutable baseline inventory, candidate verifier and protected-scope helper are four explicitly pinned control files, making fourteen additions in total. Exactly one existing validator path has a pinned before/after transition; no other old path has an exemption.
++`config/discovery-lab-source-candidate-v1.json`, `config/discovery-lab-source-baseline-v1.json` and `scripts/release/discovery-lab-profile.py` propose a separate nonpublishing source/package profile. Its immutable baseline is the exact main/tree above. The baseline inventory reconstructs that fixed Git tree and preserves every original blob and mode except the three exact protected-scope validator and test-isolation transitions described below. The admitted non-control additions are ten explicit new paths: this guide, the shared contract, receiver, receiver tests, transport fixture, receiver-policy workflow, `scripts/release/test-discovery-lab-profile.py`, actual native harness, exact Alpha source-pin catalog, the finite protected-scope adversarial test. The manifest, immutable baseline inventory, candidate verifier and protected-scope helper are four explicitly pinned control files, making fourteen additions in total. Exactly three existing paths have pinned before/after transitions: the protected-scope validator, Hardhat discovery configuration and its runner-isolation regression. No other old path has an exemption.
+ 
+-The candidate profile refuses published qualification and always reports `sourcePackageOnly:true`, `releaseQualified:false`, `releaseIdentity:null`, `publicationApproved:false` and `executionApproved:false`. Seventeen adversarial profile tests cover missing/extra inventory, unauthorized rehashed additions, changed dependencies or baseline bytes, mode changes and false qualification claims. The historical profiles, package-policy dispatcher, scanner queries, release selectors and publication mechanism remain unchanged; only the inherited protected-source assertion receives the explicit finite composition described below. Explicit independent scope review precedes any selector switch. The pinned actual inspector is wired only in the native compatibility harness; normal receiver use still requires explicit installed context. A fresh release identity and final-source qualification remain required.
++The candidate profile refuses published qualification and always reports `sourcePackageOnly:true`, `releaseQualified:false`, `releaseIdentity:null`, `publicationApproved:false` and `executionApproved:false`. Seventeen adversarial profile tests cover missing/extra inventory, unauthorized rehashed additions, changed dependencies or baseline bytes, mode changes and false qualification claims. The historical profiles, package-policy dispatcher, scanner queries, release selectors and publication mechanism remain unchanged; the inherited protected-source assertion and the exact test-runner isolation receive the explicit finite composition described below. Explicit independent scope review precedes any selector switch. The pinned actual inspector is wired only in the native compatibility harness; normal receiver use still requires explicit installed context. A fresh release identity and final-source qualification remain required.
+ 
+ The fixed predecessor contains 5185 files; the proposed full source inventory contains 5199. These counts describe input custody, not native execution or release qualification.
+ 
+@@ -77,10 +77,16 @@ The shared parser now encodes only captured descriptor values and validates one
+ 
+ The inherited96-result remediation gate previously refused the three new Discovery configuration files as protected-source additions. The retained failure is run39689877293/job119533136684 at285034830b6cddc47c7e1002ee85a8b008b9763d; its prior runtime/browser steps passed, but its scope assertion did not. That failure remains historical evidence.
+ 
+-The finite scope correction changes only `tools/security/validate-codeql-remediation.mjs` among the fixed predecessor's existing inputs. The candidate manifest binds its exact old mode/blob9657ecd2c072276276079e55fde51c5b66b8b37c and exact new bytes. A new helper admits exactly the three regular added files `config/discovery-lab-alpha-source.json`, `config/discovery-lab-source-baseline-v1.json` and `config/discovery-lab-source-candidate-v1.json`, requiring their absence from the historical protected tree, preserved2850348 ancestry, unchanged tracked inputs and successful full actual-source candidate verification. It observes actual tracked input paths, rather than supplying the expected inventory. Every unrelated old byte/mode and protected path remains covered.
++The initial finite scope correction changes `tools/security/validate-codeql-remediation.mjs` among the fixed predecessor's existing inputs. The candidate manifest binds its exact old mode/blob9657ecd2c072276276079e55fde51c5b66b8b37c and exact new bytes. A new helper admits exactly the three regular added files `config/discovery-lab-alpha-source.json`, `config/discovery-lab-source-baseline-v1.json` and `config/discovery-lab-source-candidate-v1.json`, requiring their absence from the historical protected tree, preserved2850348 ancestry, unchanged tracked inputs and successful full actual-source candidate verification. It observes actual tracked input paths, rather than supplying the expected inventory. Every unrelated old byte/mode and protected path remains covered.
+ 
+-No historical finding, severity, justification, baseline archive, query configuration, release selector or source-only authority flag changes. The complete96-entry findings ledger remains byte-identical. Seven new policy adversaries cover extra/missing/duplicate/substituted paths, replacement of existing protected inputs, symlinks/mode changes and malformed Git identities; source-profile adversaries independently cover the single exact before/after transition and all original refusal rules. The Discovery policy workflow runs these new tests. This source-package scope proof cannot authorize publication or operational execution. It must be independently reviewed and receive fresh exact-source hosted qualification before integration, then be explicitly reconciled with the eventual qualified publisher/telemetry baseline.
++No historical finding, severity, justification, baseline archive, query configuration, release selector or source-only authority flag changes. The complete96-entry findings ledger remains byte-identical. Seven new policy adversaries cover extra/missing/duplicate/substituted paths, replacement of existing protected inputs, symlinks/mode changes and malformed Git identities; source-profile adversaries independently cover all three exact before/after transitions and all original refusal rules. The Discovery policy workflow runs these new tests. This source-package scope proof cannot authorize publication or operational execution. It must be independently reviewed and receive fresh exact-source hosted qualification before integration, then be explicitly reconciled with the eventual qualified publisher/telemetry baseline.
+ 
+ The initial public scope correction d2840967 had a genuine review finding: deriving the candidate manifest/verifier pins from mutable HEAD allowed a descendant to redefine protected configuration bytes by repinning its own manifest. The corrected gate now compares their actual immutable Git bytes to independently fixed SHA-256 identities in the installed scope helper before invoking the source profile. The helper is a separate explicitly selected control input, so its own code is not included in the manifest whose fixed hash it enforces. This avoids a self-hash cycle. Merely rehashing a changed config/manifest or replacing the candidate verifier fails; a future legitimate source refresh requires a new explicit gate-code/pin review. The original review and source remain historical, not cleared by local success.
+ 
+ The installed Discovery scope gate also requires all three added configuration inputs to remain present. It has no empty-delta early return: deleting all three cannot fall back to the historical no-change assertion and skip finite verification. Earlier branches retain their original validator and do not import this helper.
++
++## Exact Hardhat runner isolation correction
++
++Actual source852 CI run39694681444/job119549078853 failed the existing aggregate-discovery regression because Hardhat selected the new `test/security/discovery-protected-scope.test.mjs` Node test suite for Mocha. That original failure remains retained. `hardhat.config.js` now excludes that exact path alongside the existing inherited-security suite. It does not exclude the security directory or other native Mocha suites. The real Hardhat regression verifies aggregate and explicit selection, retention of the native suite inventory, and the existing mandatory exact-source Discovery workflow invocation of the excluded suite with `node --test`. The workflow and its native/source-profile checks are unchanged.
++
++The candidate-only inventory binds the original baseline mode/blob and reviewed after-byte SHA-256 for both `hardhat.config.js` and `test/scripts/hardhat-test-discovery.test.cjs`, in addition to the prior validator transition. The installed scope helper fixes the new manifest and verifier hashes; changing configuration/test bytes and rehashing only the manifest cannot qualify. The baseline inventory, historical96-result ledger, scanners, frozen rc16 release profile and release selectors remain unchanged. This narrow runner correction does not resolve the separate rc16 final-source/profile failures or grant publication approval.
+diff --git a/hardhat.config.js b/hardhat.config.js
+index 8d201a5f..15e6761b 100644
+--- a/hardhat.config.js
++++ b/hardhat.config.js
+@@ -20,7 +20,14 @@ subtask(TASK_TEST_GET_TEST_FILES).setAction(async (args, _hre, runSuper) => {
+     if (file.startsWith(pageTests)) return false;
+     if (
+       file ===
+-      path.join(__dirname, 'test', 'security', 'inherited-codeql.test.cjs')
++        path.join(__dirname, 'test', 'security', 'inherited-codeql.test.cjs') ||
++      file ===
++        path.join(
++          __dirname,
++          'test',
++          'security',
++          'discovery-protected-scope.test.mjs'
++        )
+     )
+       return false;
+     if (
+diff --git a/scripts/release/discovery-lab-profile.py b/scripts/release/discovery-lab-profile.py
+index 630959b4..feee1782 100644
+--- a/scripts/release/discovery-lab-profile.py
++++ b/scripts/release/discovery-lab-profile.py
+@@ -17,7 +17,11 @@ BASELINE = 'config/discovery-lab-source-baseline-v1.json'
+ BASELINE_SHA256 = 'd7225ecab094653482593057be4b018e0c61dfb7c1c592baa134dc668fa81a65'
+ VERIFIER = 'scripts/release/discovery-lab-profile.py'
+ SCOPE_VERIFIER = 'tools/security/discovery-protected-scope.mjs'
+-TRANSITIONS = {'tools/security/validate-codeql-remediation.mjs': {'mode': '100644', 'blob': '9657ecd2c072276276079e55fde51c5b66b8b37c'}}
++TRANSITIONS = {
++    'tools/security/validate-codeql-remediation.mjs': {'mode': '100644', 'blob': '9657ecd2c072276276079e55fde51c5b66b8b37c'},
++    'hardhat.config.js': {'mode': '100644', 'blob': '8d201a5f8af39ccefa4970e6839584abcc1720ba'},
++    'test/scripts/hardhat-test-discovery.test.cjs': {'mode': '100644', 'blob': '25707f312769272f1f88a6d12b1c709ac07d0ae9'},
++}
+ ALLOWED = {'test/security/discovery-protected-scope.test.mjs', 'integrations/alpha-agent/discovery-lab-work-request.test.mjs', 'integrations/alpha-agent/discovery-lab-native-test.mjs', 'integrations/alpha-agent/discovery-lab-work-request.mjs', '.github/workflows/discovery-lab-receiver.yml', 'docs/successor/DISCOVERY_LAB.md', 'scripts/release/test-discovery-lab-profile.py', 'integrations/alpha-agent/fixtures/discovery-lab-request.json', 'integrations/alpha-agent/discovery-lab-contract.mjs', 'config/discovery-lab-alpha-source.json'}
+ CLAIMS = {'sourcePackageOnly': True, 'releaseQualified': False,
+           'releaseIdentity': None, 'publicationApproved': False, 'executionApproved': False}
+@@ -102,15 +106,15 @@ def inventory(root, selection):
+                 and isinstance(after['sha256'], str) and re.fullmatch('[0-9a-f]{64}', after['sha256']), 'Candidate added input identity differs')
+         expected[name] = dict(after)
+     transitions = manifest['transitions']
+-    require(isinstance(transitions, dict) and set(transitions) == set(TRANSITIONS), 'Only the exact reviewed validator transition is admitted')
++    require(isinstance(transitions, dict) and set(transitions) == set(TRANSITIONS), 'Only the exact reviewed validator and test-isolation transitions are admitted')
+     for name, before in TRANSITIONS.items():
+         item = transitions[name]
+         require(isinstance(item, dict) and set(item) == {'before', 'after', 'reason'}
+                 and same(item['before'], before) and same(expected.get(name), before)
+-                and isinstance(item['reason'], str) and item['reason'].strip(), 'Validator before-source proof differs')
++                and isinstance(item['reason'], str) and item['reason'].strip(), 'Reviewed transition before-source proof differs')
+         after = item['after']
+         require(isinstance(after, dict) and set(after) == {'mode', 'sha256'} and after['mode'] == '100644'
+-                and isinstance(after['sha256'], str) and re.fullmatch('[0-9a-f]{64}', after['sha256']), 'Validator after-source proof differs')
++                and isinstance(after['sha256'], str) and re.fullmatch('[0-9a-f]{64}', after['sha256']), 'Reviewed transition after-source proof differs')
+         expected[name] = dict(after)
+     expected[MANIFEST] = {'mode': '100644', 'sha256': selection['manifestSha256']}
+     expected[VERIFIER] = {'mode': '100644', 'sha256': selection['verifierSha256']}
+diff --git a/scripts/release/test-discovery-lab-profile.py b/scripts/release/test-discovery-lab-profile.py
+index dfe98c2d..76026cdc 100644
+--- a/scripts/release/test-discovery-lab-profile.py
++++ b/scripts/release/test-discovery-lab-profile.py
+@@ -90,14 +90,16 @@ class DiscoverySourceProfile(unittest.TestCase):
+             with self.assertRaises(ValueError):P['read'](ROOT,name)
+         with self.assertRaises(ValueError):P['tree_digest']({'a':{'mode':'100644','blob':'1'*40},'a/b':{'mode':'100644','blob':'2'*40}})
+ 
+-    def test_validator_transition_requires_exact_single_path_and_original_git_blob(self):
++    def test_reviewed_transitions_require_exact_paths_and_original_git_blobs(self):
+         self.changed_manifest(lambda m:m['transitions'].clear())
+         self.changed_manifest(lambda m:m['transitions'].update({'package.json': next(iter(m['transitions'].values()))}))
+-        self.changed_manifest(lambda m:m['transitions']['tools/security/validate-codeql-remediation.mjs']['before'].update({'blob':'a'*40}))
+-        self.changed_manifest(lambda m:m['transitions']['tools/security/validate-codeql-remediation.mjs']['after'].update({'mode':'100755'}))
+-    def test_validator_transition_bytes_remain_bound_to_the_reviewed_manifest(self):
+-        name='tools/security/validate-codeql-remediation.mjs'
+-        self.replaced(name,(ROOT/name).read_bytes()+b'\n',self.rejection)
++        for name in P['TRANSITIONS']:
++            self.changed_manifest(lambda m:m['transitions'].pop(name))
++            self.changed_manifest(lambda m:m['transitions'][name]['before'].update({'blob':'a'*40}))
++            self.changed_manifest(lambda m:m['transitions'][name]['after'].update({'mode':'100755'}))
++    def test_reviewed_transition_bytes_remain_bound_to_the_reviewed_manifest(self):
++        for name in P['TRANSITIONS']:
++            self.replaced(name,(ROOT/name).read_bytes()+b'\n',self.rejection)
+ 
+     def test_real_staged_directory_enumeration_refuses_a_rogue_file(self):
+         with tempfile.TemporaryDirectory(prefix='discovery-inventory-probe-') as folder:
+diff --git a/test/scripts/hardhat-test-discovery.test.cjs b/test/scripts/hardhat-test-discovery.test.cjs
+index 25707f31..3b22f8f7 100644
+--- a/test/scripts/hardhat-test-discovery.test.cjs
++++ b/test/scripts/hardhat-test-discovery.test.cjs
+@@ -250,12 +250,106 @@ test('security regressions stay isolated and mandatory in their source-bound wor
+   const { all, selected } = await discover();
+   assert.ok(all.includes(path.join(root, file)));
+   assert.ok(!selected.includes(path.join(root, file)));
+-  const workflow = yaml.load(fs.readFileSync(path.join(root, '.github/workflows/security-remediation.yml'), 'utf8'));
++  const workflow = yaml.load(
++    fs.readFileSync(
++      path.join(root, '.github/workflows/security-remediation.yml'),
++      'utf8'
++    )
++  );
+   const job = workflow.jobs.regressions;
+   assert.ok(job && !job.if && !job['continue-on-error']);
+-  const step = job.steps.find((step) => (step.run || '').includes(`node --test ${file}`));
++  const step = job.steps.find((step) =>
++    (step.run || '').includes(`node --test ${file}`)
++  );
+   assert.ok(step && !step.if && !step['continue-on-error']);
+   assert.match(step.run, /set -eo pipefail/);
+-  const install = job.steps.findIndex((step) => (step.run || '').includes('./scripts/ci/npm-ci.sh') && !step.if && !step['continue-on-error']);
++  const install = job.steps.findIndex(
++    (step) =>
++      (step.run || '').includes('./scripts/ci/npm-ci.sh') &&
++      !step.if &&
++      !step['continue-on-error']
++  );
+   assert.ok(install >= 0 && install < job.steps.indexOf(step));
++
++  const discoveryFile = 'test/security/discovery-protected-scope.test.mjs';
++  const absolute = path.join(root, discoveryFile);
++  assert.ok(
++    all.includes(absolute),
++    'real Hardhat discovery must see the new security suite'
++  );
++  assert.ok(
++    !selected.includes(absolute),
++    'the new node:test suite must not reach Mocha'
++  );
++  assert.deepEqual(
++    (await discover([absolute])).selected,
++    [],
++    'explicit Hardhat selection must also stay isolated'
++  );
++  const discovery = yaml.load(
++    fs.readFileSync(
++      path.join(root, '.github/workflows/discovery-lab-receiver.yml'),
++      'utf8'
++    )
++  );
++  const policy = discovery.jobs.policy;
++  assert.ok(
++    policy && !Object.hasOwn(policy, 'if') && !policy['continue-on-error'],
++    'Discovery policy must remain mandatory'
++  );
++  const invocations = policy.steps.filter((item) =>
++    (item.run || '').split('\n').some((line) => {
++      const words = line.trim().split(/\s+/);
++      return (
++        words[0] === 'node' &&
++        words[1] === '--test' &&
++        words.includes(discoveryFile) &&
++        !/[;&|]/.test(line)
++      );
++    })
++  );
++  assert.equal(
++    invocations.length,
++    1,
++    'the excluded suite must have one dedicated node:test invocation'
++  );
++  const invocation = invocations[0];
++  assert.ok(
++    !Object.hasOwn(invocation, 'if') && !invocation['continue-on-error'],
++    'Discovery regressions must not be optional'
++  );
++  assert.match(invocation.run, /set -euo pipefail/);
++  assert.match(
++    invocation.run,
++    /test "\$\(git rev-parse HEAD\)" = "\$EXPECTED_SOURCE"/
++  );
++  assert.equal(
++    invocation.env.EXPECTED_SOURCE,
++    '${{ github.event.pull_request.head.sha || github.sha }}'
++  );
++  const checkout = policy.steps.find((item) =>
++    (item.uses || '').startsWith('actions/checkout@')
++  );
++  assert.ok(
++    checkout &&
++      !Object.hasOwn(checkout, 'if') &&
++      !checkout['continue-on-error'] &&
++      policy.steps.indexOf(checkout) < policy.steps.indexOf(invocation),
++    'the source-bound checkout must be mandatory and precede regressions'
++  );
++  assert.equal(
++    checkout.with.ref,
++    invocation.env.EXPECTED_SOURCE,
++    'dedicated tests must use the selected exact head'
++  );
++  const setup = policy.steps.findIndex(
++    (item) =>
++      (item.uses || '').startsWith('actions/setup-node@') &&
++      !Object.hasOwn(item, 'if') &&
++      !item['continue-on-error']
++  );
++  assert.ok(
++    setup >= 0 && setup < policy.steps.indexOf(invocation),
++    'the native Node runtime must be installed before regressions'
++  );
+ });
+diff --git a/tools/security/discovery-protected-scope.mjs b/tools/security/discovery-protected-scope.mjs
+index 8fe90492..0f9be921 100644
+--- a/tools/security/discovery-protected-scope.mjs
++++ b/tools/security/discovery-protected-scope.mjs
+@@ -11,7 +11,7 @@ export const DISCOVERY_PROTECTED_ADDITIONS = Object.freeze([
+   'config/discovery-lab-source-candidate-v1.json'
+ ]);
+ export const DISCOVERY_SCOPE_ORIGIN = '285034830b6cddc47c7e1002ee85a8b008b9763d';
+-export const REVIEWED_DISCOVERY_POLICY = Object.freeze({manifest:'ec51bd530870b2efc15cacd798143a534f1d601fcc0bea2e08524a14b5f1bfe3', verifier:'f2b52a77f73131baf3a8004201c403488846860581bc45feea375a557ea8fb81'});
++export const REVIEWED_DISCOVERY_POLICY = Object.freeze({manifest:'ebee1b8c2bbdf2d7084d433296d6a4e1fe7bf54b9809e24b75947980e0b7550d', verifier:'4da6958cd88f4e596aaa5947f398d2367009bb9bfe487fcfa1d0bf17b4cd348b'});
+ export function assertReviewedDiscoveryPolicy(pins) {
+   assert.equal(pins.manifest, REVIEWED_DISCOVERY_POLICY.manifest, 'Discovery manifest differs from independently reviewed fixed bytes');
+   assert.equal(pins.verifier, REVIEWED_DISCOVERY_POLICY.verifier, 'Discovery verifier differs from independently reviewed fixed bytes');
+@@ -64,7 +64,7 @@ export function validateDiscoveryProtectedScope(root, baselineCommit, changes) {
+   assertReviewedDiscoveryPolicy(pins);
+   // Reuse the separately reviewed finite verifier; observe actual tracked inputs,
+   // not its expected set. The profile checks all baseline blobs/modes, each new
+-  // byte and the single exact validator transition, and can never publish.
++  // byte and the three exact validator/test-isolation transitions, and can never publish.
+   // Generated build/test reports are not tracked source; package qualification
+   // and the pre-build candidate workflow still reject unexpected source files.
+   const script = `import hashlib,json,pathlib,runpy,subprocess,sys

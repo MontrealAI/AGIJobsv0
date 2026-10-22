@@ -1,0 +1,2469 @@
+{
+  "sourceHead": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+  "observedAtUtc": "2026-10-22T00:52:38Z",
+  "scope": "Retained actual downloaded bytes; initial zip-only report retained separately. Docker build artifacts are genuine gzip, not ZIP.",
+  "archives": [
+    {
+      "artifactId": 12389359982,
+      "runId": 39694681327,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "successor-computer-use-evidence",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12389359982.zip",
+      "bytes": 9379006,
+      "sha256": "1fedebcb87cd89ebcc43745410a59673e561b96da11a69a9de4bbce8c38228ba",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": "accepted/action-journal.jsonl",
+          "bytes": 5118,
+          "crc32": "67ab9a38"
+        },
+        {
+          "path": "accepted/alpha-operator-commands.json",
+          "bytes": 1577,
+          "crc32": "935cc8f8"
+        },
+        {
+          "path": "accepted/alpha-computer-task.json",
+          "bytes": 18280,
+          "crc32": "3e1c1c98"
+        },
+        {
+          "path": "accepted/alpha-operator-commands.txt",
+          "bytes": 1601,
+          "crc32": "db3fce59"
+        },
+        {
+          "path": "accepted/chatgpt-work-mission.txt",
+          "bytes": 3465,
+          "crc32": "0bf56034"
+        },
+        {
+          "path": "accepted/evidence.json",
+          "bytes": 44223,
+          "crc32": "9149756a"
+        },
+        {
+          "path": "accepted/executed-task.json",
+          "bytes": 18278,
+          "crc32": "3d7f30b9"
+        },
+        {
+          "path": "accepted/execution-manifest.json",
+          "bytes": 5542,
+          "crc32": "673366fc"
+        },
+        {
+          "path": "accepted/frozen-mission-report.json",
+          "bytes": 142701,
+          "crc32": "04370723"
+        },
+        {
+          "path": "accepted/receipt.json",
+          "bytes": 1542,
+          "crc32": "8668075c"
+        },
+        {
+          "path": "accepted/review.json",
+          "bytes": 4718,
+          "crc32": "7b2c3fd7"
+        },
+        {
+          "path": "accepted/screen-000.png",
+          "bytes": 88661,
+          "crc32": "5ccac590"
+        },
+        {
+          "path": "accepted/screen-001.png",
+          "bytes": 88673,
+          "crc32": "adbe2a8c"
+        },
+        {
+          "path": "accepted/screen-002.png",
+          "bytes": 89783,
+          "crc32": "a6b8eb56"
+        },
+        {
+          "path": "accepted/screen-003.png",
+          "bytes": 89783,
+          "crc32": "a6b8eb56"
+        },
+        {
+          "path": "accepted/screen-004.png",
+          "bytes": 89760,
+          "crc32": "2ee12a3b"
+        },
+        {
+          "path": "accepted/screen-005.png",
+          "bytes": 89856,
+          "crc32": "31349640"
+        },
+        {
+          "path": "accepted/screen-006.png",
+          "bytes": 89856,
+          "crc32": "31349640"
+        },
+        {
+          "path": "accepted/screen-007.png",
+          "bytes": 89948,
+          "crc32": "f51a06f2"
+        },
+        {
+          "path": "accepted/screen-008.png",
+          "bytes": 90087,
+          "crc32": "4f50e113"
+        },
+        {
+          "path": "accepted/screen-009.png",
+          "bytes": 90087,
+          "crc32": "4f50e113"
+        },
+        {
+          "path": "accepted/screen-010.png",
+          "bytes": 89316,
+          "crc32": "b305d72e"
+        },
+        {
+          "path": "accepted/screen-011.png",
+          "bytes": 89914,
+          "crc32": "75723958"
+        },
+        {
+          "path": "accepted/screen-012.png",
+          "bytes": 85672,
+          "crc32": "6d6cceb9"
+        },
+        {
+          "path": "accepted/screen-013.png",
+          "bytes": 48406,
+          "crc32": "b5b7ca7e"
+        },
+        {
+          "path": "accepted/screen-014.png",
+          "bytes": 102057,
+          "crc32": "cb9814e3"
+        },
+        {
+          "path": "accepted/supplier-desk.html",
+          "bytes": 16493,
+          "crc32": "bc437601"
+        },
+        {
+          "path": "accepted/visible-text.txt",
+          "bytes": 2404,
+          "crc32": "00132d39"
+        },
+        {
+          "path": "accepted/worker-process.json",
+          "bytes": 111,
+          "crc32": "ad672abc"
+        },
+        {
+          "path": "accepted/worker-runtime.json",
+          "bytes": 192,
+          "crc32": "7d0c39e7"
+        },
+        {
+          "path": "accepted/worker-stderr.log",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "forged/action-journal.jsonl",
+          "bytes": 5132,
+          "crc32": "d961a9a9"
+        },
+        {
+          "path": "forged/alpha-computer-task.json",
+          "bytes": 18280,
+          "crc32": "3e1c1c98"
+        },
+        {
+          "path": "forged/alpha-operator-commands.json",
+          "bytes": 1573,
+          "crc32": "daf2c85b"
+        },
+        {
+          "path": "forged/alpha-operator-commands.txt",
+          "bytes": 1597,
+          "crc32": "dd798fda"
+        },
+        {
+          "path": "forged/chatgpt-work-mission.txt",
+          "bytes": 3465,
+          "crc32": "0bf56034"
+        },
+        {
+          "path": "forged/evidence.json",
+          "bytes": 41227,
+          "crc32": "5e8534bc"
+        },
+        {
+          "path": "forged/executed-task.json",
+          "bytes": 18278,
+          "crc32": "3d7f30b9"
+        },
+        {
+          "path": "forged/execution-manifest.json",
+          "bytes": 5542,
+          "crc32": "673366fc"
+        },
+        {
+          "path": "forged/frozen-mission-report.json",
+          "bytes": 142701,
+          "crc32": "04370723"
+        },
+        {
+          "path": "forged/receipt.json",
+          "bytes": 1500,
+          "crc32": "496bb640"
+        },
+        {
+          "path": "forged/review.json",
+          "bytes": 1938,
+          "crc32": "f1f95634"
+        },
+        {
+          "path": "forged/screen-000.png",
+          "bytes": 88661,
+          "crc32": "5ccac590"
+        },
+        {
+          "path": "forged/screen-001.png",
+          "bytes": 88673,
+          "crc32": "adbe2a8c"
+        },
+        {
+          "path": "forged/screen-002.png",
+          "bytes": 89783,
+          "crc32": "a6b8eb56"
+        },
+        {
+          "path": "forged/screen-003.png",
+          "bytes": 89783,
+          "crc32": "a6b8eb56"
+        },
+        {
+          "path": "forged/screen-004.png",
+          "bytes": 89760,
+          "crc32": "2ee12a3b"
+        },
+        {
+          "path": "forged/screen-005.png",
+          "bytes": 89856,
+          "crc32": "31349640"
+        },
+        {
+          "path": "forged/screen-006.png",
+          "bytes": 89856,
+          "crc32": "31349640"
+        },
+        {
+          "path": "forged/screen-007.png",
+          "bytes": 89948,
+          "crc32": "f51a06f2"
+        },
+        {
+          "path": "forged/screen-008.png",
+          "bytes": 90087,
+          "crc32": "4f50e113"
+        },
+        {
+          "path": "forged/screen-009.png",
+          "bytes": 90087,
+          "crc32": "4f50e113"
+        },
+        {
+          "path": "forged/screen-010.png",
+          "bytes": 89316,
+          "crc32": "b305d72e"
+        },
+        {
+          "path": "forged/screen-012.png",
+          "bytes": 85672,
+          "crc32": "6d6cceb9"
+        },
+        {
+          "path": "forged/screen-011.png",
+          "bytes": 89914,
+          "crc32": "75723958"
+        },
+        {
+          "path": "forged/screen-013.png",
+          "bytes": 48406,
+          "crc32": "b5b7ca7e"
+        },
+        {
+          "path": "forged/screen-014.png",
+          "bytes": 102057,
+          "crc32": "cb9814e3"
+        },
+        {
+          "path": "forged/supplier-desk.html",
+          "bytes": 16493,
+          "crc32": "bc437601"
+        },
+        {
+          "path": "forged/visible-text.txt",
+          "bytes": 2404,
+          "crc32": "00132d39"
+        },
+        {
+          "path": "forged/worker-process.json",
+          "bytes": 111,
+          "crc32": "01c13426"
+        },
+        {
+          "path": "forged/worker-runtime.json",
+          "bytes": 192,
+          "crc32": "7d0c39e7"
+        },
+        {
+          "path": "forged/worker-stderr.log",
+          "bytes": 1272,
+          "crc32": "a83224df"
+        },
+        {
+          "path": "hard-deadline/action-journal.jsonl",
+          "bytes": 5116,
+          "crc32": "0f7ad621"
+        },
+        {
+          "path": "hard-deadline/alpha-computer-task.json",
+          "bytes": 18258,
+          "crc32": "593f6e01"
+        },
+        {
+          "path": "hard-deadline/alpha-operator-commands.json",
+          "bytes": 1587,
+          "crc32": "40cbf634"
+        },
+        {
+          "path": "hard-deadline/alpha-operator-commands.txt",
+          "bytes": 1611,
+          "crc32": "dee8f7e9"
+        },
+        {
+          "path": "hard-deadline/chatgpt-work-mission.txt",
+          "bytes": 3465,
+          "crc32": "63c7876d"
+        },
+        {
+          "path": "hard-deadline/evidence.json",
+          "bytes": 43830,
+          "crc32": "8b301520"
+        },
+        {
+          "path": "hard-deadline/executed-task.json",
+          "bytes": 18256,
+          "crc32": "d131dd21"
+        },
+        {
+          "path": "hard-deadline/execution-manifest.json",
+          "bytes": 5461,
+          "crc32": "684808e2"
+        },
+        {
+          "path": "hard-deadline/frozen-mission-report.json",
+          "bytes": 140101,
+          "crc32": "27d3f3e5"
+        },
+        {
+          "path": "hard-deadline/receipt.json",
+          "bytes": 1496,
+          "crc32": "7aa8711c"
+        },
+        {
+          "path": "hard-deadline/review.json",
+          "bytes": 4717,
+          "crc32": "06db4cf2"
+        },
+        {
+          "path": "hard-deadline/screen-000.png",
+          "bytes": 88600,
+          "crc32": "49c8b89e"
+        },
+        {
+          "path": "hard-deadline/screen-002.png",
+          "bytes": 89722,
+          "crc32": "4e297458"
+        },
+        {
+          "path": "hard-deadline/screen-001.png",
+          "bytes": 88612,
+          "crc32": "81265926"
+        },
+        {
+          "path": "hard-deadline/screen-003.png",
+          "bytes": 89722,
+          "crc32": "4e297458"
+        },
+        {
+          "path": "hard-deadline/screen-005.png",
+          "bytes": 89872,
+          "crc32": "07d9e768"
+        },
+        {
+          "path": "hard-deadline/screen-004.png",
+          "bytes": 89762,
+          "crc32": "68e2b742"
+        },
+        {
+          "path": "hard-deadline/screen-006.png",
+          "bytes": 89872,
+          "crc32": "07d9e768"
+        },
+        {
+          "path": "hard-deadline/screen-007.png",
+          "bytes": 89754,
+          "crc32": "e46e9cce"
+        },
+        {
+          "path": "hard-deadline/screen-009.png",
+          "bytes": 89905,
+          "crc32": "2066480d"
+        },
+        {
+          "path": "hard-deadline/screen-008.png",
+          "bytes": 89905,
+          "crc32": "2066480d"
+        },
+        {
+          "path": "hard-deadline/screen-010.png",
+          "bytes": 89127,
+          "crc32": "f6b4ab1c"
+        },
+        {
+          "path": "hard-deadline/screen-011.png",
+          "bytes": 89728,
+          "crc32": "05414a6c"
+        },
+        {
+          "path": "hard-deadline/screen-012.png",
+          "bytes": 85249,
+          "crc32": "3dabed29"
+        },
+        {
+          "path": "hard-deadline/screen-013.png",
+          "bytes": 48035,
+          "crc32": "43aba87e"
+        },
+        {
+          "path": "hard-deadline/screen-014.png",
+          "bytes": 100515,
+          "crc32": "39ffaf98"
+        },
+        {
+          "path": "hard-deadline/supplier-desk.html",
+          "bytes": 16493,
+          "crc32": "cab6b4b4"
+        },
+        {
+          "path": "hard-deadline/visible-text.txt",
+          "bytes": 2364,
+          "crc32": "7fc67069"
+        },
+        {
+          "path": "hard-deadline/worker-process.json",
+          "bytes": 111,
+          "crc32": "28bba235"
+        },
+        {
+          "path": "hard-deadline/worker-runtime.json",
+          "bytes": 192,
+          "crc32": "7d0c39e7"
+        },
+        {
+          "path": "hard-deadline/worker-stderr.log",
+          "bytes": 1272,
+          "crc32": "a83224df"
+        },
+        {
+          "path": "hard-deadline-report.json",
+          "bytes": 90890,
+          "crc32": "e87d3a01"
+        },
+        {
+          "path": "late/action-journal.jsonl",
+          "bytes": 5110,
+          "crc32": "06d686ed"
+        },
+        {
+          "path": "late/alpha-computer-task.json",
+          "bytes": 18280,
+          "crc32": "3e1c1c98"
+        },
+        {
+          "path": "late/alpha-operator-commands.json",
+          "bytes": 1569,
+          "crc32": "3661e95a"
+        },
+        {
+          "path": "late/alpha-operator-commands.txt",
+          "bytes": 1593,
+          "crc32": "b74a9456"
+        },
+        {
+          "path": "late/chatgpt-work-mission.txt",
+          "bytes": 3465,
+          "crc32": "0bf56034"
+        },
+        {
+          "path": "late/evidence.json",
+          "bytes": 43969,
+          "crc32": "0d17128f"
+        },
+        {
+          "path": "late/execution-manifest.json",
+          "bytes": 5542,
+          "crc32": "673366fc"
+        },
+        {
+          "path": "late/frozen-mission-report.json",
+          "bytes": 142701,
+          "crc32": "04370723"
+        },
+        {
+          "path": "late/executed-task.json",
+          "bytes": 18278,
+          "crc32": "3d7f30b9"
+        },
+        {
+          "path": "late/receipt.json",
+          "bytes": 1500,
+          "crc32": "26a355df"
+        },
+        {
+          "path": "late/review.json",
+          "bytes": 4730,
+          "crc32": "0c615a6d"
+        },
+        {
+          "path": "late/screen-000.png",
+          "bytes": 88661,
+          "crc32": "5ccac590"
+        },
+        {
+          "path": "late/screen-001.png",
+          "bytes": 88673,
+          "crc32": "adbe2a8c"
+        },
+        {
+          "path": "late/screen-002.png",
+          "bytes": 89783,
+          "crc32": "a6b8eb56"
+        },
+        {
+          "path": "late/screen-003.png",
+          "bytes": 89783,
+          "crc32": "a6b8eb56"
+        },
+        {
+          "path": "late/screen-004.png",
+          "bytes": 89655,
+          "crc32": "4232b203"
+        },
+        {
+          "path": "late/screen-005.png",
+          "bytes": 89764,
+          "crc32": "385912c5"
+        },
+        {
+          "path": "late/screen-006.png",
+          "bytes": 89764,
+          "crc32": "385912c5"
+        },
+        {
+          "path": "late/screen-007.png",
+          "bytes": 89813,
+          "crc32": "34946043"
+        },
+        {
+          "path": "late/screen-008.png",
+          "bytes": 89962,
+          "crc32": "00252352"
+        },
+        {
+          "path": "late/screen-009.png",
+          "bytes": 89962,
+          "crc32": "00252352"
+        },
+        {
+          "path": "late/screen-010.png",
+          "bytes": 89183,
+          "crc32": "25e1f7bc"
+        },
+        {
+          "path": "late/screen-011.png",
+          "bytes": 89785,
+          "crc32": "331216a7"
+        },
+        {
+          "path": "late/screen-012.png",
+          "bytes": 85795,
+          "crc32": "9836ce4e"
+        },
+        {
+          "path": "late/screen-013.png",
+          "bytes": 48547,
+          "crc32": "574de39b"
+        },
+        {
+          "path": "late/screen-014.png",
+          "bytes": 101101,
+          "crc32": "33bdf094"
+        },
+        {
+          "path": "late/supplier-desk.html",
+          "bytes": 16493,
+          "crc32": "bc437601"
+        },
+        {
+          "path": "late/worker-process.json",
+          "bytes": 111,
+          "crc32": "3627ff8b"
+        },
+        {
+          "path": "late/visible-text.txt",
+          "bytes": 2376,
+          "crc32": "d5211f2f"
+        },
+        {
+          "path": "late/worker-stderr.log",
+          "bytes": 1272,
+          "crc32": "a83224df"
+        },
+        {
+          "path": "late/worker-runtime.json",
+          "bytes": 192,
+          "crc32": "7d0c39e7"
+        },
+        {
+          "path": "mission-prepared/alpha-computer-task.json",
+          "bytes": 33514,
+          "crc32": "31474ff3"
+        },
+        {
+          "path": "mission-prepared/execution-manifest.json",
+          "bytes": 2930,
+          "crc32": "d8991a35"
+        },
+        {
+          "path": "mission-prepared/initial-workspace.json",
+          "bytes": 2345,
+          "crc32": "2aec2d36"
+        },
+        {
+          "path": "mission-prepared/mission-desk.html",
+          "bytes": 29711,
+          "crc32": "fc075f77"
+        },
+        {
+          "path": "mission-prepared/operator-runtime.txt",
+          "bytes": 692,
+          "crc32": "d99e0fcd"
+        },
+        {
+          "path": "mission-prepared/mission-export.json",
+          "bytes": 2275,
+          "crc32": "eebf854d"
+        },
+        {
+          "path": "mission-prepared/scripted-broker-source.html",
+          "bytes": 376,
+          "crc32": "0f6088bb"
+        },
+        {
+          "path": "mission-studio/action-journal.jsonl",
+          "bytes": 14435,
+          "crc32": "6641d551"
+        },
+        {
+          "path": "mission-prepared/sealed-mission.json",
+          "bytes": 2458,
+          "crc32": "f8e38c0a"
+        },
+        {
+          "path": "mission-studio/alpha-computer-task.json",
+          "bytes": 33514,
+          "crc32": "31474ff3"
+        },
+        {
+          "path": "mission-studio/evidence.json",
+          "bytes": 145869,
+          "crc32": "37788623"
+        },
+        {
+          "path": "mission-studio/executed-task.json",
+          "bytes": 33514,
+          "crc32": "31474ff3"
+        },
+        {
+          "path": "mission-studio/execution-manifest.json",
+          "bytes": 2930,
+          "crc32": "d8991a35"
+        },
+        {
+          "path": "mission-studio/initial-workspace.json",
+          "bytes": 2345,
+          "crc32": "2aec2d36"
+        },
+        {
+          "path": "mission-studio/mission-desk.html",
+          "bytes": 29711,
+          "crc32": "fc075f77"
+        },
+        {
+          "path": "mission-studio/mission-export.json",
+          "bytes": 2275,
+          "crc32": "eebf854d"
+        },
+        {
+          "path": "mission-studio/operator-runtime.txt",
+          "bytes": 692,
+          "crc32": "d99e0fcd"
+        },
+        {
+          "path": "mission-studio/observed-draft.json",
+          "bytes": 1920,
+          "crc32": "3e9e9ada"
+        },
+        {
+          "path": "mission-studio/review.json",
+          "bytes": 8073,
+          "crc32": "569b311f"
+        },
+        {
+          "path": "mission-studio/screen-000.png",
+          "bytes": 85467,
+          "crc32": "a5e05098"
+        },
+        {
+          "path": "mission-studio/screen-001.png",
+          "bytes": 85467,
+          "crc32": "a5e05098"
+        },
+        {
+          "path": "mission-studio/screen-002.png",
+          "bytes": 103779,
+          "crc32": "43243df0"
+        },
+        {
+          "path": "mission-studio/screen-003.png",
+          "bytes": 106621,
+          "crc32": "9de5822e"
+        },
+        {
+          "path": "mission-studio/screen-004.png",
+          "bytes": 107048,
+          "crc32": "6cbdafb7"
+        },
+        {
+          "path": "mission-studio/screen-005.png",
+          "bytes": 35113,
+          "crc32": "76566552"
+        },
+        {
+          "path": "mission-studio/screen-007.png",
+          "bytes": 112007,
+          "crc32": "37a72727"
+        },
+        {
+          "path": "mission-studio/screen-008.png",
+          "bytes": 105368,
+          "crc32": "2fdde5d0"
+        },
+        {
+          "path": "mission-studio/screen-009.png",
+          "bytes": 106376,
+          "crc32": "8f32bbc8"
+        },
+        {
+          "path": "mission-studio/screen-006.png",
+          "bytes": 58722,
+          "crc32": "5b413609"
+        },
+        {
+          "path": "mission-studio/screen-010.png",
+          "bytes": 102183,
+          "crc32": "2ce1844c"
+        },
+        {
+          "path": "mission-studio/screen-011.png",
+          "bytes": 103294,
+          "crc32": "fa04b5a5"
+        },
+        {
+          "path": "mission-studio/screen-012.png",
+          "bytes": 104364,
+          "crc32": "a01eb3ec"
+        },
+        {
+          "path": "mission-studio/screen-013.png",
+          "bytes": 92680,
+          "crc32": "48282456"
+        },
+        {
+          "path": "mission-studio/screen-014.png",
+          "bytes": 91273,
+          "crc32": "b894c8de"
+        },
+        {
+          "path": "mission-studio/screen-015.png",
+          "bytes": 92620,
+          "crc32": "83a141a7"
+        },
+        {
+          "path": "mission-studio/screen-016.png",
+          "bytes": 111322,
+          "crc32": "21c56c78"
+        },
+        {
+          "path": "mission-studio/screen-017.png",
+          "bytes": 112537,
+          "crc32": "62ed0b5e"
+        },
+        {
+          "path": "mission-studio/screen-019.png",
+          "bytes": 129461,
+          "crc32": "95f4ff54"
+        },
+        {
+          "path": "mission-studio/screen-018.png",
+          "bytes": 112537,
+          "crc32": "99cbee59"
+        },
+        {
+          "path": "mission-studio/screen-020.png",
+          "bytes": 64613,
+          "crc32": "a4cc2ba3"
+        },
+        {
+          "path": "mission-studio/screen-021.png",
+          "bytes": 64616,
+          "crc32": "036bfd19"
+        },
+        {
+          "path": "mission-studio/screen-022.png",
+          "bytes": 91119,
+          "crc32": "b2d0bea2"
+        },
+        {
+          "path": "mission-studio/screen-024.png",
+          "bytes": 91731,
+          "crc32": "e64c39fa"
+        },
+        {
+          "path": "mission-studio/screen-023.png",
+          "bytes": 91715,
+          "crc32": "ec811e60"
+        },
+        {
+          "path": "mission-studio/screen-025.png",
+          "bytes": 85459,
+          "crc32": "ab531fe6"
+        },
+        {
+          "path": "mission-studio/screen-026.png",
+          "bytes": 85459,
+          "crc32": "ab531fe6"
+        },
+        {
+          "path": "mission-studio/screen-027.png",
+          "bytes": 85443,
+          "crc32": "d7d33cbf"
+        },
+        {
+          "path": "mission-studio/screen-028.png",
+          "bytes": 85705,
+          "crc32": "5b7c449a"
+        },
+        {
+          "path": "mission-studio/screen-029.png",
+          "bytes": 82386,
+          "crc32": "688c3257"
+        },
+        {
+          "path": "mission-studio/screen-030.png",
+          "bytes": 82424,
+          "crc32": "b1b77038"
+        },
+        {
+          "path": "mission-studio/screen-031.png",
+          "bytes": 82431,
+          "crc32": "57b0969c"
+        },
+        {
+          "path": "mission-studio/scripted-broker-source.html",
+          "bytes": 376,
+          "crc32": "0f6088bb"
+        },
+        {
+          "path": "mission-studio/sealed-mission.json",
+          "bytes": 2458,
+          "crc32": "f8e38c0a"
+        },
+        {
+          "path": "mission-studio/visible-text.txt",
+          "bytes": 5058,
+          "crc32": "5e3e2e42"
+        },
+        {
+          "path": "mission-studio/worker-cleanup.json",
+          "bytes": 76,
+          "crc32": "603dae34"
+        },
+        {
+          "path": "mission-studio/worker-process.json",
+          "bytes": 111,
+          "crc32": "56660d9c"
+        },
+        {
+          "path": "mission-studio/worker-runtime.json",
+          "bytes": 192,
+          "crc32": "7d0c39e7"
+        },
+        {
+          "path": "mission-studio/worker-stderr.log",
+          "bytes": 1272,
+          "crc32": "a83224df"
+        },
+        {
+          "path": "no-incumbent/action-journal.jsonl",
+          "bytes": 5116,
+          "crc32": "2d972a95"
+        },
+        {
+          "path": "no-incumbent/alpha-computer-task.json",
+          "bytes": 18259,
+          "crc32": "a67ed06e"
+        },
+        {
+          "path": "no-incumbent/alpha-operator-commands.json",
+          "bytes": 1585,
+          "crc32": "8c33d20a"
+        },
+        {
+          "path": "no-incumbent/alpha-operator-commands.txt",
+          "bytes": 1609,
+          "crc32": "c9f74104"
+        },
+        {
+          "path": "no-incumbent/chatgpt-work-mission.txt",
+          "bytes": 3463,
+          "crc32": "cf6f4e52"
+        },
+        {
+          "path": "no-incumbent/evidence.json",
+          "bytes": 43823,
+          "crc32": "f5d75df2"
+        },
+        {
+          "path": "no-incumbent/executed-task.json",
+          "bytes": 18257,
+          "crc32": "01ad50c3"
+        },
+        {
+          "path": "no-incumbent/execution-manifest.json",
+          "bytes": 5463,
+          "crc32": "66a26d67"
+        },
+        {
+          "path": "no-incumbent/frozen-mission-report.json",
+          "bytes": 129165,
+          "crc32": "dfc63ea6"
+        },
+        {
+          "path": "no-incumbent/receipt.json",
+          "bytes": 1498,
+          "crc32": "675a3997"
+        },
+        {
+          "path": "no-incumbent/review.json",
+          "bytes": 4714,
+          "crc32": "38edfa64"
+        },
+        {
+          "path": "no-incumbent/screen-000.png",
+          "bytes": 87969,
+          "crc32": "f0b49364"
+        },
+        {
+          "path": "no-incumbent/screen-001.png",
+          "bytes": 87981,
+          "crc32": "f3746eef"
+        },
+        {
+          "path": "no-incumbent/screen-002.png",
+          "bytes": 89091,
+          "crc32": "51574266"
+        },
+        {
+          "path": "no-incumbent/screen-003.png",
+          "bytes": 89091,
+          "crc32": "51574266"
+        },
+        {
+          "path": "no-incumbent/screen-004.png",
+          "bytes": 88965,
+          "crc32": "74041303"
+        },
+        {
+          "path": "no-incumbent/screen-005.png",
+          "bytes": 89072,
+          "crc32": "c05b899f"
+        },
+        {
+          "path": "no-incumbent/screen-006.png",
+          "bytes": 89072,
+          "crc32": "c05b899f"
+        },
+        {
+          "path": "no-incumbent/screen-008.png",
+          "bytes": 89271,
+          "crc32": "39a983c4"
+        },
+        {
+          "path": "no-incumbent/screen-007.png",
+          "bytes": 89121,
+          "crc32": "cfe81b18"
+        },
+        {
+          "path": "no-incumbent/screen-009.png",
+          "bytes": 89271,
+          "crc32": "39a983c4"
+        },
+        {
+          "path": "no-incumbent/screen-010.png",
+          "bytes": 88492,
+          "crc32": "1ddd584c"
+        },
+        {
+          "path": "no-incumbent/screen-012.png",
+          "bytes": 84744,
+          "crc32": "2889f51b"
+        },
+        {
+          "path": "no-incumbent/screen-011.png",
+          "bytes": 89095,
+          "crc32": "5b3b7f3d"
+        },
+        {
+          "path": "no-incumbent/screen-013.png",
+          "bytes": 48113,
+          "crc32": "770e8cd3"
+        },
+        {
+          "path": "no-incumbent/screen-014.png",
+          "bytes": 100150,
+          "crc32": "19a2aa77"
+        },
+        {
+          "path": "no-incumbent/supplier-desk.html",
+          "bytes": 16491,
+          "crc32": "00fe8b62"
+        },
+        {
+          "path": "no-incumbent/visible-text.txt",
+          "bytes": 2364,
+          "crc32": "4f17fc92"
+        },
+        {
+          "path": "no-incumbent/worker-process.json",
+          "bytes": 111,
+          "crc32": "386387e0"
+        },
+        {
+          "path": "no-incumbent/worker-runtime.json",
+          "bytes": 192,
+          "crc32": "7d0c39e7"
+        },
+        {
+          "path": "no-incumbent-report.json",
+          "bytes": 84011,
+          "crc32": "8430dc28"
+        },
+        {
+          "path": "no-incumbent/worker-stderr.log",
+          "bytes": 1274,
+          "crc32": "be980b10"
+        },
+        {
+          "path": "prepared/alpha-computer-task.json",
+          "bytes": 18280,
+          "crc32": "3e1c1c98"
+        },
+        {
+          "path": "prepared/alpha-operator-commands.txt",
+          "bytes": 1601,
+          "crc32": "915342b0"
+        },
+        {
+          "path": "prepared/chatgpt-work-mission.txt",
+          "bytes": 3465,
+          "crc32": "0bf56034"
+        },
+        {
+          "path": "prepared/alpha-operator-commands.json",
+          "bytes": 1577,
+          "crc32": "871106a9"
+        },
+        {
+          "path": "prepared/execution-manifest.json",
+          "bytes": 5542,
+          "crc32": "673366fc"
+        },
+        {
+          "path": "prepared/frozen-mission-report.json",
+          "bytes": 142701,
+          "crc32": "04370723"
+        },
+        {
+          "path": "prepared/supplier-desk.html",
+          "bytes": 16493,
+          "crc32": "bc437601"
+        }
+      ]
+    },
+    {
+      "artifactId": 12390059949,
+      "runId": 39694681412,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "culture-contract-coverage",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12390059949.zip",
+      "bytes": 427056,
+      "sha256": "e304634881e54f4428e79f4192cc31194dd65236cb2e2b47253bfe4efab63cbc",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": "coverage/base.css",
+          "bytes": 5143,
+          "crc32": "6db662f0"
+        },
+        {
+          "path": "coverage/contracts/CultureRegistry.sol.html",
+          "bytes": 30656,
+          "crc32": "55b2cd3f"
+        },
+        {
+          "path": "coverage/contracts/SelfPlayArena.sol.html",
+          "bytes": 77332,
+          "crc32": "092d9ea1"
+        },
+        {
+          "path": "coverage/contracts/index.html",
+          "bytes": 4350,
+          "crc32": "4b92b1bc"
+        },
+        {
+          "path": "coverage/contracts/test/MockIdentityRegistry.sol.html",
+          "bytes": 3668,
+          "crc32": "cc1e9fb0"
+        },
+        {
+          "path": "coverage/contracts/test/MockJobRegistry.sol.html",
+          "bytes": 5231,
+          "crc32": "8f48c2bd"
+        },
+        {
+          "path": "coverage/contracts/test/MockStakeManager.sol.html",
+          "bytes": 4743,
+          "crc32": "8b461e6b"
+        },
+        {
+          "path": "coverage/contracts/test/MockValidationModule.sol.html",
+          "bytes": 6836,
+          "crc32": "f66f9696"
+        },
+        {
+          "path": "coverage/contracts/test/index.html",
+          "bytes": 5744,
+          "crc32": "2b3583a3"
+        },
+        {
+          "path": "coverage/coverage-final.json",
+          "bytes": 54035,
+          "crc32": "5778da86"
+        },
+        {
+          "path": "coverage/index.html",
+          "bytes": 4274,
+          "crc32": "eb20b85f"
+        },
+        {
+          "path": "coverage/lcov-report/base.css",
+          "bytes": 5143,
+          "crc32": "6db662f0"
+        },
+        {
+          "path": "coverage/lcov-report/contracts/CultureRegistry.sol.html",
+          "bytes": 30656,
+          "crc32": "55b2cd3f"
+        },
+        {
+          "path": "coverage/lcov-report/contracts/SelfPlayArena.sol.html",
+          "bytes": 77332,
+          "crc32": "092d9ea1"
+        },
+        {
+          "path": "coverage/lcov-report/contracts/index.html",
+          "bytes": 4350,
+          "crc32": "4b92b1bc"
+        },
+        {
+          "path": "coverage/lcov-report/contracts/test/MockIdentityRegistry.sol.html",
+          "bytes": 3668,
+          "crc32": "cc1e9fb0"
+        },
+        {
+          "path": "coverage/lcov-report/contracts/test/MockJobRegistry.sol.html",
+          "bytes": 5231,
+          "crc32": "8f48c2bd"
+        },
+        {
+          "path": "coverage/lcov-report/contracts/test/MockStakeManager.sol.html",
+          "bytes": 4743,
+          "crc32": "8b461e6b"
+        },
+        {
+          "path": "coverage/lcov-report/contracts/test/MockValidationModule.sol.html",
+          "bytes": 6836,
+          "crc32": "f66f9696"
+        },
+        {
+          "path": "coverage/lcov-report/contracts/test/index.html",
+          "bytes": 5744,
+          "crc32": "2b3583a3"
+        },
+        {
+          "path": "coverage/lcov-report/index.html",
+          "bytes": 4274,
+          "crc32": "eb20b85f"
+        },
+        {
+          "path": "coverage/lcov-report/prettify.css",
+          "bytes": 676,
+          "crc32": "76072b43"
+        },
+        {
+          "path": "coverage/lcov-report/prettify.js",
+          "bytes": 17569,
+          "crc32": "f5920cea"
+        },
+        {
+          "path": "coverage/lcov-report/sort-arrow-sprite.png",
+          "bytes": 209,
+          "crc32": "537af1fc"
+        },
+        {
+          "path": "coverage/lcov-report/sorter.js",
+          "bytes": 5174,
+          "crc32": "fb4cce25"
+        },
+        {
+          "path": "coverage/prettify.css",
+          "bytes": 676,
+          "crc32": "76072b43"
+        },
+        {
+          "path": "coverage/lcov.info",
+          "bytes": 10970,
+          "crc32": "2d23a649"
+        },
+        {
+          "path": "coverage/prettify.js",
+          "bytes": 17569,
+          "crc32": "f5920cea"
+        },
+        {
+          "path": "coverage/sort-arrow-sprite.png",
+          "bytes": 209,
+          "crc32": "537af1fc"
+        },
+        {
+          "path": "coverage/sorter.js",
+          "bytes": 5174,
+          "crc32": "fb4cce25"
+        },
+        {
+          "path": "lcov.info",
+          "bytes": 11873,
+          "crc32": "ec704a83"
+        },
+        {
+          "path": "out/forge/AccessControl.sol/AccessControl.json",
+          "bytes": 19128,
+          "crc32": "6fcc1859"
+        },
+        {
+          "path": "out/forge/Base.sol/CommonBase.json",
+          "bytes": 4661,
+          "crc32": "18033e63"
+        },
+        {
+          "path": "out/forge/Base.sol/ScriptBase.json",
+          "bytes": 3510,
+          "crc32": "dd4275a5"
+        },
+        {
+          "path": "out/forge/Base.sol/TestBase.json",
+          "bytes": 3506,
+          "crc32": "674e3378"
+        },
+        {
+          "path": "out/forge/Context.sol/Context.json",
+          "bytes": 2625,
+          "crc32": "8f592e41"
+        },
+        {
+          "path": "out/forge/CultureRegistry.sol/CultureRegistry.json",
+          "bytes": 61894,
+          "crc32": "23465866"
+        },
+        {
+          "path": "out/forge/CultureRegistry.sol/IIdentityRegistry.json",
+          "bytes": 5411,
+          "crc32": "e4b5dd88"
+        },
+        {
+          "path": "out/forge/CultureRegistry.t.sol/CultureRegistryTest.json",
+          "bytes": 228841,
+          "crc32": "ad8c0d62"
+        },
+        {
+          "path": "out/forge/CultureRegistry.t.sol/MockIdentityRegistry.json",
+          "bytes": 21604,
+          "crc32": "dc61f395"
+        },
+        {
+          "path": "out/forge/ERC165.sol/ERC165.json",
+          "bytes": 4645,
+          "crc32": "20f62f87"
+        },
+        {
+          "path": "out/forge/IAccessControl.sol/IAccessControl.json",
+          "bytes": 13086,
+          "crc32": "07d526bc"
+        },
+        {
+          "path": "out/forge/IERC165.sol/IERC165.json",
+          "bytes": 3813,
+          "crc32": "d05abb0b"
+        },
+        {
+          "path": "out/forge/IMulticall3.sol/IMulticall3.json",
+          "bytes": 19768,
+          "crc32": "2f62dcc3"
+        },
+        {
+          "path": "out/forge/MockIdentityRegistry.sol/MockIdentityRegistry.json",
+          "bytes": 8434,
+          "crc32": "405e0af1"
+        },
+        {
+          "path": "out/forge/MockJobRegistry.sol/MockJobRegistry.json",
+          "bytes": 17072,
+          "crc32": "a6fe7058"
+        },
+        {
+          "path": "out/forge/MockStakeManager.sol/MockStakeManager.json",
+          "bytes": 13647,
+          "crc32": "ddbee0e1"
+        },
+        {
+          "path": "out/forge/MockValidationModule.sol/MockValidationModule.json",
+          "bytes": 20823,
+          "crc32": "788f4de0"
+        },
+        {
+          "path": "out/forge/Ownable.sol/Ownable.json",
+          "bytes": 7658,
+          "crc32": "288b954b"
+        },
+        {
+          "path": "out/forge/Pausable.sol/Pausable.json",
+          "bytes": 5433,
+          "crc32": "58696850"
+        },
+        {
+          "path": "out/forge/ReentrancyGuard.sol/ReentrancyGuard.json",
+          "bytes": 3349,
+          "crc32": "2a774c54"
+        },
+        {
+          "path": "out/forge/SelfPlayArena.sol/IIdentityRegistry.json",
+          "bytes": 7967,
+          "crc32": "0db60820"
+        },
+        {
+          "path": "out/forge/SelfPlayArena.sol/IJobRegistry.json",
+          "bytes": 9995,
+          "crc32": "6831ba3a"
+        },
+        {
+          "path": "out/forge/SelfPlayArena.sol/IStakeManager.json",
+          "bytes": 8009,
+          "crc32": "fd17c0f1"
+        },
+        {
+          "path": "out/forge/SelfPlayArena.sol/IValidationModule.json",
+          "bytes": 9438,
+          "crc32": "c7cc1eaa"
+        },
+        {
+          "path": "out/forge/SelfPlayArena.sol/SelfPlayArena.json",
+          "bytes": 170553,
+          "crc32": "2c29f06a"
+        },
+        {
+          "path": "out/forge/SelfPlayArena.t.sol/ArenaIdentityRegistry.json",
+          "bytes": 25060,
+          "crc32": "49ca155c"
+        },
+        {
+          "path": "out/forge/SelfPlayArena.t.sol/SelfPlayArenaTest.json",
+          "bytes": 368324,
+          "crc32": "0bf35708"
+        },
+        {
+          "path": "out/forge/StdAssertions.sol/StdAssertions.json",
+          "bytes": 16150,
+          "crc32": "db2d6bfb"
+        },
+        {
+          "path": "out/forge/StdChains.sol/StdChains.json",
+          "bytes": 4605,
+          "crc32": "61aade76"
+        },
+        {
+          "path": "out/forge/StdCheats.sol/StdCheats.json",
+          "bytes": 4822,
+          "crc32": "299e2180"
+        },
+        {
+          "path": "out/forge/StdCheats.sol/StdCheatsSafe.json",
+          "bytes": 4830,
+          "crc32": "e75f8908"
+        },
+        {
+          "path": "out/forge/StdConstants.sol/StdConstants.json",
+          "bytes": 5048,
+          "crc32": "36f58f96"
+        },
+        {
+          "path": "out/forge/StdError.sol/stdError.json",
+          "bytes": 10821,
+          "crc32": "b7e13eef"
+        },
+        {
+          "path": "out/forge/StdInvariant.sol/StdInvariant.json",
+          "bytes": 10024,
+          "crc32": "e8048055"
+        },
+        {
+          "path": "out/forge/StdJson.sol/stdJson.json",
+          "bytes": 3199,
+          "crc32": "1f852fe2"
+        },
+        {
+          "path": "out/forge/StdMath.sol/stdMath.json",
+          "bytes": 2533,
+          "crc32": "a7b86b6c"
+        },
+        {
+          "path": "out/forge/StdStorage.sol/stdStorage.json",
+          "bytes": 3221,
+          "crc32": "bf7cc69f"
+        },
+        {
+          "path": "out/forge/StdStorage.sol/stdStorageSafe.json",
+          "bytes": 5087,
+          "crc32": "36c4e696"
+        },
+        {
+          "path": "out/forge/StdStyle.sol/StdStyle.json",
+          "bytes": 3210,
+          "crc32": "d592ebcb"
+        },
+        {
+          "path": "out/forge/StdToml.sol/stdToml.json",
+          "bytes": 3202,
+          "crc32": "87739ee9"
+        },
+        {
+          "path": "out/forge/StdUtils.sol/StdUtils.json",
+          "bytes": 3547,
+          "crc32": "02f85831"
+        },
+        {
+          "path": "out/forge/Test.sol/Test.json",
+          "bytes": 35416,
+          "crc32": "7a8a2790"
+        },
+        {
+          "path": "out/forge/Vm.sol/Vm.json",
+          "bytes": 629127,
+          "crc32": "10b0dd7f"
+        },
+        {
+          "path": "out/forge/Vm.sol/VmSafe.json",
+          "bytes": 492488,
+          "crc32": "e06fd1da"
+        },
+        {
+          "path": "out/forge/build-info/3396c474564b4512.json",
+          "bytes": 2384,
+          "crc32": "ef1b78da"
+        },
+        {
+          "path": "out/forge/console.sol/console.json",
+          "bytes": 2538,
+          "crc32": "3c21e96f"
+        },
+        {
+          "path": "out/forge/safeconsole.sol/safeconsole.json",
+          "bytes": 2674,
+          "crc32": "e058c2a7"
+        }
+      ]
+    },
+    {
+      "artifactId": 12390453163,
+      "runId": 39694681326,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "e2e-logs",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12390453163.zip",
+      "bytes": 357592,
+      "sha256": "20d0662220058681b5b060bb9a21a89dcf094bedcc14576341625f80db2b92f6",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": "test/e2e/fixtures/localnet-artifacts.json",
+          "bytes": 698,
+          "crc32": "c489cf0f"
+        },
+        {
+          "path": "test/e2e/localnet.gateway.e2e.test.ts",
+          "bytes": 13234,
+          "crc32": "449afcd6"
+        },
+        {
+          "path": "test/v2/AGITypeEdge.test.js",
+          "bytes": 7261,
+          "crc32": "1b43f9f9"
+        },
+        {
+          "path": "test/v2/AckModuleValidation.test.js",
+          "bytes": 2893,
+          "crc32": "7da515ae"
+        },
+        {
+          "path": "test/v2/ArbitratorCommittee.test.js",
+          "bytes": 8755,
+          "crc32": "29490d65"
+        },
+        {
+          "path": "test/v2/ArtifactRegistry.t.sol",
+          "bytes": 18076,
+          "crc32": "c90af335"
+        },
+        {
+          "path": "test/v2/ArtifactRegistry.test.js",
+          "bytes": 4604,
+          "crc32": "f2390ef1"
+        },
+        {
+          "path": "test/v2/AttestationRegistry.t.sol",
+          "bytes": 5152,
+          "crc32": "b445e19e"
+        },
+        {
+          "path": "test/v2/AttestationRegistry.test.js",
+          "bytes": 9476,
+          "crc32": "2cd9a531"
+        },
+        {
+          "path": "test/v2/AuditModule.test.js",
+          "bytes": 1634,
+          "crc32": "cf944708"
+        },
+        {
+          "path": "test/v2/AuthorityHandover.test.js",
+          "bytes": 32835,
+          "crc32": "f0d62acd"
+        },
+        {
+          "path": "test/v2/BurnReduction.test.js",
+          "bytes": 9374,
+          "crc32": "5165a7b6"
+        },
+        {
+          "path": "test/v2/CertificateNFT.test.js",
+          "bytes": 2440,
+          "crc32": "1f358626"
+        },
+        {
+          "path": "test/v2/CertificateNFTConfig.t.sol",
+          "bytes": 1674,
+          "crc32": "6e5da071"
+        },
+        {
+          "path": "test/v2/CertificateNFTMarketplace.test.js",
+          "bytes": 8921,
+          "crc32": "d27fda2f"
+        },
+        {
+          "path": "test/v2/CertificateNFTMint.test.js",
+          "bytes": 2419,
+          "crc32": "c56495a2"
+        },
+        {
+          "path": "test/v2/CertificateNFTModuleNoEther.test.js",
+          "bytes": 1003,
+          "crc32": "2c462183"
+        },
+        {
+          "path": "test/v2/CertificateNFTNoEther.test.js",
+          "bytes": 988,
+          "crc32": "c33062b3"
+        },
+        {
+          "path": "test/v2/CertificateNFTStakeManager.test.js",
+          "bytes": 1120,
+          "crc32": "d1bfc222"
+        },
+        {
+          "path": "test/v2/ContractEmployerFinalize.test.js",
+          "bytes": 5357,
+          "crc32": "b0fef513"
+        },
+        {
+          "path": "test/v2/CultureRegistry.t.sol",
+          "bytes": 6102,
+          "crc32": "80e0f831"
+        },
+        {
+          "path": "test/v2/DemoOwnerMatrixBootstrap.test.js",
+          "bytes": 2232,
+          "crc32": "52c7ebf4"
+        },
+        {
+          "path": "test/v2/Deployer.test.js",
+          "bytes": 21046,
+          "crc32": "5328981d"
+        },
+        {
+          "path": "test/v2/DeploymentCli.test.js",
+          "bytes": 13608,
+          "crc32": "ad42eea5"
+        },
+        {
+          "path": "test/v2/DeploymentScripts.test.js",
+          "bytes": 5101,
+          "crc32": "2cbd989b"
+        },
+        {
+          "path": "test/v2/DiscoveryModule.test.js",
+          "bytes": 2364,
+          "crc32": "e552f758"
+        },
+        {
+          "path": "test/v2/DisputeModuleConfig.t.sol",
+          "bytes": 1503,
+          "crc32": "5e83d0df"
+        },
+        {
+          "path": "test/v2/DisputeModuleModuleNoEther.test.js",
+          "bytes": 2412,
+          "crc32": "22e4459f"
+        },
+        {
+          "path": "test/v2/ENSOwnershipVerifier.t.sol",
+          "bytes": 2000,
+          "crc32": "dba9ccb9"
+        },
+        {
+          "path": "test/v2/ENSOwnershipVerifier.test.js",
+          "bytes": 8684,
+          "crc32": "4b1b6762"
+        },
+        {
+          "path": "test/v2/ENSValidatorBehavior.test.js",
+          "bytes": 9341,
+          "crc32": "d2945fc8"
+        },
+        {
+          "path": "test/v2/EmployerReputation.test.js",
+          "bytes": 7762,
+          "crc32": "7f70b764"
+        },
+        {
+          "path": "test/v2/EnergyOracle.t.sol",
+          "bytes": 6885,
+          "crc32": "8936ef2d"
+        },
+        {
+          "path": "test/v2/FeePool.t.sol",
+          "bytes": 12053,
+          "crc32": "233c6291"
+        },
+        {
+          "path": "test/v2/FeePool.test.js",
+          "bytes": 22380,
+          "crc32": "39917af7"
+        },
+        {
+          "path": "test/v2/FixedImplementations.test.js",
+          "bytes": 21978,
+          "crc32": "05cffc3d"
+        },
+        {
+          "path": "test/v2/GatewayRegistryCompatibility.test.js",
+          "bytes": 8434,
+          "crc32": "11964b1f"
+        },
+        {
+          "path": "test/v2/GenericValidatorBurnEvidence.test.js",
+          "bytes": 8267,
+          "crc32": "50371628"
+        },
+        {
+          "path": "test/v2/GenericValidatorFinalizedRecovery.test.js",
+          "bytes": 5578,
+          "crc32": "56825e24"
+        },
+        {
+          "path": "test/v2/GlobalGovernanceCouncil.test.ts",
+          "bytes": 4257,
+          "crc32": "1ccb75a6"
+        },
+        {
+          "path": "test/v2/GlobalGovernanceCouncil.t.sol",
+          "bytes": 2687,
+          "crc32": "670b6ee2"
+        },
+        {
+          "path": "test/v2/GovernanceFinalizeBlacklist.test.js",
+          "bytes": 6438,
+          "crc32": "41923c4a"
+        },
+        {
+          "path": "test/v2/GovernanceConfiguration.test.js",
+          "bytes": 22496,
+          "crc32": "0599b0ec"
+        },
+        {
+          "path": "test/v2/GovernanceHandover.test.js",
+          "bytes": 3273,
+          "crc32": "059feee5"
+        },
+        {
+          "path": "test/v2/GovernanceReward.integration.test.js",
+          "bytes": 5049,
+          "crc32": "6b8545e9"
+        },
+        {
+          "path": "test/v2/GovernanceReward.test.js",
+          "bytes": 4395,
+          "crc32": "248a7da7"
+        },
+        {
+          "path": "test/v2/GovernanceTimelock.test.js",
+          "bytes": 3189,
+          "crc32": "520aa67d"
+        },
+        {
+          "path": "test/v2/GovernorFlow.test.js",
+          "bytes": 3424,
+          "crc32": "5e031e26"
+        },
+        {
+          "path": "test/v2/HGMControlModule.test.js",
+          "bytes": 15097,
+          "crc32": "6d0f77ba"
+        },
+        {
+          "path": "test/v2/HamiltonianMonitor.test.js",
+          "bytes": 3843,
+          "crc32": "a5265c6a"
+        },
+        {
+          "path": "test/v2/IdentityRegistryConfig.t.sol",
+          "bytes": 1190,
+          "crc32": "ffb6e5ce"
+        },
+        {
+          "path": "test/v2/IdentityRegistryNoEther.test.js",
+          "bytes": 1176,
+          "crc32": "73c81a67"
+        },
+        {
+          "path": "test/v2/IdentityRegistrySetters.test.js",
+          "bytes": 16759,
+          "crc32": "3dd51b3f"
+        },
+        {
+          "path": "test/v2/IdentityReputationVersion.test.js",
+          "bytes": 1373,
+          "crc32": "b0163422"
+        },
+        {
+          "path": "test/v2/IdentityVerification.test.js",
+          "bytes": 9627,
+          "crc32": "c3b052b8"
+        },
+        {
+          "path": "test/v2/Integration.t.sol",
+          "bytes": 6936,
+          "crc32": "9f504ae6"
+        },
+        {
+          "path": "test/v2/JobEscrow.test.js",
+          "bytes": 7804,
+          "crc32": "9a4ec811"
+        },
+        {
+          "path": "test/v2/JobEscrowNoEther.test.js",
+          "bytes": 2036,
+          "crc32": "db0f349f"
+        },
+        {
+          "path": "test/v2/JobExpiration.test.js",
+          "bytes": 7507,
+          "crc32": "cf037454"
+        },
+        {
+          "path": "test/v2/JobFundedEvent.test.js",
+          "bytes": 1396,
+          "crc32": "4fc12b12"
+        },
+        {
+          "path": "test/v2/JobExpirationBoundary.test.js",
+          "bytes": 6770,
+          "crc32": "a7dd52d6"
+        },
+        {
+          "path": "test/v2/JobRegistry.test.js",
+          "bytes": 40861,
+          "crc32": "53312129"
+        },
+        {
+          "path": "test/v2/JobRegistryApply.test.js",
+          "bytes": 6402,
+          "crc32": "ae3825a3"
+        },
+        {
+          "path": "test/v2/JobRegistryAuthCache.test.js",
+          "bytes": 17947,
+          "crc32": "f9cd85c5"
+        },
+        {
+          "path": "test/v2/JobRegistryAuthCacheExpiry.test.js",
+          "bytes": 5794,
+          "crc32": "7c18cdf4"
+        },
+        {
+          "path": "test/v2/JobRegistryBurnReceipt.test.js",
+          "bytes": 12599,
+          "crc32": "24620fc9"
+        },
+        {
+          "path": "test/v2/JobRegistryDeadlineFuzz.t.sol",
+          "bytes": 2590,
+          "crc32": "0d34e2d7"
+        },
+        {
+          "path": "test/v2/JobRegistryModuleVersion.test.js",
+          "bytes": 6850,
+          "crc32": "e22d2429"
+        },
+        {
+          "path": "test/v2/JobRegistryNoEther.test.js",
+          "bytes": 1388,
+          "crc32": "64274129"
+        },
+        {
+          "path": "test/v2/JobRegistryPause.test.js",
+          "bytes": 3351,
+          "crc32": "f3ce4bba"
+        },
+        {
+          "path": "test/v2/JobRegistrySnapshot.test.js",
+          "bytes": 5187,
+          "crc32": "8eb32781"
+        },
+        {
+          "path": "test/v2/JobRegistryTreasury.test.js",
+          "bytes": 7429,
+          "crc32": "96ff099b"
+        },
+        {
+          "path": "test/v2/JobRouter.t.sol",
+          "bytes": 3649,
+          "crc32": "b0b1ed73"
+        },
+        {
+          "path": "test/v2/JobStakeLifecycle.test.js",
+          "bytes": 8586,
+          "crc32": "a4e463db"
+        },
+        {
+          "path": "test/v2/JobStakePercentage.test.js",
+          "bytes": 4933,
+          "crc32": "3f80e03b"
+        },
+        {
+          "path": "test/v2/KlerosDisputeModuleNoEther.test.js",
+          "bytes": 2269,
+          "crc32": "b0b34ecc"
+        },
+        {
+          "path": "test/v2/LocalAgialpha.test.js",
+          "bytes": 909,
+          "crc32": "99b79a26"
+        },
+        {
+          "path": "test/v2/MidJobUpgrade.test.js",
+          "bytes": 6502,
+          "crc32": "b4658256"
+        },
+        {
+          "path": "test/v2/ModuleInstaller.test.js",
+          "bytes": 2407,
+          "crc32": "a1a827bf"
+        },
+        {
+          "path": "test/v2/ModuleReplacement.test.js",
+          "bytes": 8368,
+          "crc32": "a37631fa"
+        },
+        {
+          "path": "test/v2/NoValidationModuleNoEther.test.js",
+          "bytes": 1104,
+          "crc32": "891c480f"
+        },
+        {
+          "path": "test/v2/OneclickNetwork.test.js",
+          "bytes": 7719,
+          "crc32": "58aa6fe9"
+        },
+        {
+          "path": "test/v2/OperatorRewardPool.test.js",
+          "bytes": 4698,
+          "crc32": "1e5f1d4d"
+        },
+        {
+          "path": "test/v2/OracleValidationModuleNoEther.test.js",
+          "bytes": 1162,
+          "crc32": "904799e4"
+        },
+        {
+          "path": "test/v2/OwnerConfigurator.test.js",
+          "bytes": 7131,
+          "crc32": "88d93ddd"
+        },
+        {
+          "path": "test/v2/Ownership.test.js",
+          "bytes": 7621,
+          "crc32": "b7c2f1ab"
+        },
+        {
+          "path": "test/v2/OwnershipTimelock.test.js",
+          "bytes": 3621,
+          "crc32": "9821219f"
+        },
+        {
+          "path": "test/v2/Phase6ExpansionManager.test.js",
+          "bytes": 23662,
+          "crc32": "4a6c74a3"
+        },
+        {
+          "path": "test/v2/Phase8UniversalValueManager.t.sol",
+          "bytes": 18799,
+          "crc32": "7704fbaf"
+        },
+        {
+          "path": "test/v2/Phase8UniversalValueManager.test.ts",
+          "bytes": 12437,
+          "crc32": "12ddbdae"
+        },
+        {
+          "path": "test/v2/PlatformIncentives.t.sol",
+          "bytes": 6665,
+          "crc32": "7f851d89"
+        },
+        {
+          "path": "test/v2/PlatformIncentivesAck.test.js",
+          "bytes": 3589,
+          "crc32": "48c611da"
+        },
+        {
+          "path": "test/v2/PlatformRegistry.test.js",
+          "bytes": 20297,
+          "crc32": "f8db5199"
+        },
+        {
+          "path": "test/v2/PlatformRewardsFlow.test.js",
+          "bytes": 6370,
+          "crc32": "6fba8d34"
+        },
+        {
+          "path": "test/v2/ProviderDeploymentConfig.test.js",
+          "bytes": 3224,
+          "crc32": "2f7425f1"
+        },
+        {
+          "path": "test/v2/QuadraticVoting.test.js",
+          "bytes": 4038,
+          "crc32": "28c2c4c0"
+        },
+        {
+          "path": "test/v2/QuadraticVotingReentrancy.test.js",
+          "bytes": 2487,
+          "crc32": "0de66475"
+        },
+        {
+          "path": "test/v2/RandaoCoordinator.test.js",
+          "bytes": 15568,
+          "crc32": "070698f7"
+        },
+        {
+          "path": "test/v2/ReputationEngine.test.js",
+          "bytes": 9006,
+          "crc32": "d507ad74"
+        },
+        {
+          "path": "test/v2/ReputationEngineConfig.t.sol",
+          "bytes": 1215,
+          "crc32": "ae5b4008"
+        },
+        {
+          "path": "test/v2/ReputationEngineNoEther.test.js",
+          "bytes": 1143,
+          "crc32": "b099cda5"
+        },
+        {
+          "path": "test/v2/ReputationEntropy.test.js",
+          "bytes": 1896,
+          "crc32": "35de4e3a"
+        },
+        {
+          "path": "test/v2/ReputationIncentives.t.sol",
+          "bytes": 2893,
+          "crc32": "88070be7"
+        },
+        {
+          "path": "test/v2/ReputationIncentives.test.js",
+          "bytes": 2838,
+          "crc32": "35491bd3"
+        },
+        {
+          "path": "test/v2/ReputationTerminalSettlement.test.js",
+          "bytes": 16674,
+          "crc32": "aa54b77a"
+        },
+        {
+          "path": "test/v2/RevenueDistributor.test.js",
+          "bytes": 4464,
+          "crc32": "d7f96714"
+        },
+        {
+          "path": "test/v2/RewardEngineMB.kappa.test.js",
+          "bytes": 944,
+          "crc32": "dcc08d2e"
+        },
+        {
+          "path": "test/v2/RewardEngineMB.metrics.test.js",
+          "bytes": 4672,
+          "crc32": "d11ec3eb"
+        },
+        {
+          "path": "test/v2/RewardEngineMB.t.sol",
+          "bytes": 27741,
+          "crc32": "3818370a"
+        },
+        {
+          "path": "test/v2/RewardEngineMB.test.js",
+          "bytes": 10905,
+          "crc32": "cd930b54"
+        },
+        {
+          "path": "test/v2/RoutingModule.test.js",
+          "bytes": 2967,
+          "crc32": "20799a45"
+        },
+        {
+          "path": "test/v2/RoutingModuleCommitReveal.test.js",
+          "bytes": 5221,
+          "crc32": "d222c45f"
+        },
+        {
+          "path": "test/v2/RuntimeAutomaticValidatorContext.test.js",
+          "bytes": 12922,
+          "crc32": "70b88a02"
+        },
+        {
+          "path": "test/v2/RuntimeAutomaticValidatorLifecycle.test.js",
+          "bytes": 22780,
+          "crc32": "4bb30a85"
+        },
+        {
+          "path": "test/v2/RuntimeGatewayRoundRecovery.test.js",
+          "bytes": 30491,
+          "crc32": "146bacf1"
+        },
+        {
+          "path": "test/v2/RuntimeValidationProtocol.test.js",
+          "bytes": 23183,
+          "crc32": "ea52a7f7"
+        },
+        {
+          "path": "test/v2/RuntimeValidationScheduling.test.js",
+          "bytes": 9220,
+          "crc32": "f05a6849"
+        },
+        {
+          "path": "test/v2/SelfPlayArena.t.sol",
+          "bytes": 12524,
+          "crc32": "ebff45cc"
+        },
+        {
+          "path": "test/v2/ShardRegistry.test.js",
+          "bytes": 7802,
+          "crc32": "bee526cd"
+        },
+        {
+          "path": "test/v2/StakeManager.test.js",
+          "bytes": 52614,
+          "crc32": "baf01c0a"
+        },
+        {
+          "path": "test/v2/StakeManagerAcknowledgeAndDeposit.test.js",
+          "bytes": 4282,
+          "crc32": "da729fa4"
+        },
+        {
+          "path": "test/v2/StakeManagerAutoTune.test.js",
+          "bytes": 4368,
+          "crc32": "0dc4295b"
+        },
+        {
+          "path": "test/v2/StakeManagerBurn.t.sol",
+          "bytes": 3404,
+          "crc32": "3c6e982e"
+        },
+        {
+          "path": "test/v2/StakeManagerExtras.test.js",
+          "bytes": 4382,
+          "crc32": "c3fdb12a"
+        },
+        {
+          "path": "test/v2/StakeManagerFuzz.t.sol",
+          "bytes": 4304,
+          "crc32": "a75104a2"
+        },
+        {
+          "path": "test/v2/StakeManagerNoEther.test.js",
+          "bytes": 1552,
+          "crc32": "29afb25c"
+        },
+        {
+          "path": "test/v2/StakeManagerPause.test.js",
+          "bytes": 3044,
+          "crc32": "1a171c9a"
+        },
+        {
+          "path": "test/v2/StakeManagerReentrancy.test.js",
+          "bytes": 3469,
+          "crc32": "999e524f"
+        },
+        {
+          "path": "test/v2/StakeManagerRelease.test.js",
+          "bytes": 8931,
+          "crc32": "ec8ae16e"
+        },
+        {
+          "path": "test/v2/StakeManagerSlash.t.sol",
+          "bytes": 5232,
+          "crc32": "58c76fc1"
+        },
+        {
+          "path": "test/v2/StakeManagerSlashing.test.js",
+          "bytes": 29524,
+          "crc32": "934cc8ef"
+        },
+        {
+          "path": "test/v2/StakeManagerSyncBoost.test.js",
+          "bytes": 3395,
+          "crc32": "386cef7c"
+        },
+        {
+          "path": "test/v2/StakeManagerUnbond.t.sol",
+          "bytes": 4376,
+          "crc32": "b40caebb"
+        },
+        {
+          "path": "test/v2/StakeManagerValidatorRewards.test.js",
+          "bytes": 5961,
+          "crc32": "c1886f8d"
+        },
+        {
+          "path": "test/v2/SystemPause.test.js",
+          "bytes": 24308,
+          "crc32": "18bcd31e"
+        },
+        {
+          "path": "test/v2/TaxPolicyIntegration.test.js",
+          "bytes": 10252,
+          "crc32": "e34b83f4"
+        },
+        {
+          "path": "test/v2/Thermostat.t.sol",
+          "bytes": 3941,
+          "crc32": "33531c7d"
+        },
+        {
+          "path": "test/v2/ThermoMath.t.sol",
+          "bytes": 7360,
+          "crc32": "1dcb64dc"
+        },
+        {
+          "path": "test/v2/TimelockAccess.test.js",
+          "bytes": 4388,
+          "crc32": "3a07f8a1"
+        },
+        {
+          "path": "test/v2/ValidationFinalizeGas.t.sol",
+          "bytes": 7033,
+          "crc32": "47983aa0"
+        },
+        {
+          "path": "test/v2/ValidationMigrationPreflight.test.js",
+          "bytes": 8938,
+          "crc32": "54def63d"
+        },
+        {
+          "path": "test/v2/ValidationModule.test.js",
+          "bytes": 33788,
+          "crc32": "047df9c8"
+        },
+        {
+          "path": "test/v2/ValidationModuleAccess.test.js",
+          "bytes": 11672,
+          "crc32": "83389a9c"
+        },
+        {
+          "path": "test/v2/ValidationModuleApprovals.test.js",
+          "bytes": 2658,
+          "crc32": "067cf195"
+        },
+        {
+          "path": "test/v2/ValidationModuleAuthCache.test.js",
+          "bytes": 5038,
+          "crc32": "1b66820e"
+        },
+        {
+          "path": "test/v2/ValidationModuleCommitteeSize.test.js",
+          "bytes": 6001,
+          "crc32": "893ad9ba"
+        },
+        {
+          "path": "test/v2/ValidationModuleFailover.test.js",
+          "bytes": 4182,
+          "crc32": "6a06995a"
+        },
+        {
+          "path": "test/v2/ValidationModuleFlow.test.js",
+          "bytes": 19163,
+          "crc32": "2cebd78d"
+        },
+        {
+          "path": "test/v2/ValidationModuleMaxPoolSize.test.js",
+          "bytes": 1372,
+          "crc32": "b3ce1860"
+        },
+        {
+          "path": "test/v2/ValidationModuleNoEther.test.js",
+          "bytes": 1679,
+          "crc32": "c46cac1b"
+        },
+        {
+          "path": "test/v2/ValidationModulePause.test.js",
+          "bytes": 2090,
+          "crc32": "c492c3a3"
+        },
+        {
+          "path": "test/v2/ValidationModuleQuorumPenalty.test.js",
+          "bytes": 7990,
+          "crc32": "ab6c5128"
+        },
+        {
+          "path": "test/v2/ValidationModuleReentrancy.test.js",
+          "bytes": 5461,
+          "crc32": "7560b034"
+        },
+        {
+          "path": "test/v2/ValidationSlashingFuzz.t.sol",
+          "bytes": 3556,
+          "crc32": "299d1e53"
+        },
+        {
+          "path": "test/v2/ValidationStoreSafety.test.js",
+          "bytes": 14655,
+          "crc32": "1908e1b4"
+        },
+        {
+          "path": "test/v2/ValidatorAuthCacheInvalidation.test.js",
+          "bytes": 6026,
+          "crc32": "e167cafb"
+        },
+        {
+          "path": "test/v2/ValidatorSelectionCache.test.js",
+          "bytes": 3430,
+          "crc32": "d23290e2"
+        },
+        {
+          "path": "test/v2/ValidatorSelectionFuzz.t.sol",
+          "bytes": 9110,
+          "crc32": "70e48668"
+        },
+        {
+          "path": "test/v2/ValidatorSelectionLargePool.test.js",
+          "bytes": 3254,
+          "crc32": "75c02166"
+        },
+        {
+          "path": "test/v2/ValidatorSelectionReservoir.test.js",
+          "bytes": 3015,
+          "crc32": "2dab5679"
+        },
+        {
+          "path": "test/v2/ValidatorSelectionRotation.test.js",
+          "bytes": 2933,
+          "crc32": "f5c054a5"
+        },
+        {
+          "path": "test/v2/ValidatorStakeLock.t.sol",
+          "bytes": 9023,
+          "crc32": "5db8fd8d"
+        },
+        {
+          "path": "test/v2/ValidatorWeightedSelection.test.js",
+          "bytes": 2600,
+          "crc32": "436f1c34"
+        },
+        {
+          "path": "test/v2/comprehensiveFlow.test.js",
+          "bytes": 11216,
+          "crc32": "e4a324bb"
+        },
+        {
+          "path": "test/v2/endToEnd.integration.test.js",
+          "bytes": 7095,
+          "crc32": "ce71e810"
+        },
+        {
+          "path": "test/v2/gasProfile.test.js",
+          "bytes": 856,
+          "crc32": "aacc3afe"
+        },
+        {
+          "path": "test/v2/helpers/FixedImplementationFixtures.sol",
+          "bytes": 1671,
+          "crc32": "1767ca27"
+        },
+        {
+          "path": "test/v2/identity.test.ts",
+          "bytes": 19908,
+          "crc32": "905d761c"
+        },
+        {
+          "path": "test/v2/invariant/FeePoolInvariant.t.sol",
+          "bytes": 8155,
+          "crc32": "3766c9d8"
+        },
+        {
+          "path": "test/v2/invariant/JobEscrowInvariant.t.sol",
+          "bytes": 7933,
+          "crc32": "bc546188"
+        },
+        {
+          "path": "test/v2/invariant/JobStakePercentageInvariant.t.sol",
+          "bytes": 2088,
+          "crc32": "f656d2bc"
+        },
+        {
+          "path": "test/v2/invariant/ReputationGrowthInvariant.t.sol",
+          "bytes": 2826,
+          "crc32": "5f06d4da"
+        },
+        {
+          "path": "test/v2/invariant/StakeManagerAccountingInvariant.t.sol",
+          "bytes": 5846,
+          "crc32": "e7527d8f"
+        },
+        {
+          "path": "test/v2/invariant/SystemPauseControlInvariant.t.sol",
+          "bytes": 9806,
+          "crc32": "dc53a354"
+        },
+        {
+          "path": "test/v2/jobFinalization.integration.test.js",
+          "bytes": 17242,
+          "crc32": "1b651fa3"
+        },
+        {
+          "path": "test/v2/jobCommitRevealFlow.test.ts",
+          "bytes": 13550,
+          "crc32": "1a275599"
+        },
+        {
+          "path": "test/v2/jobLifecycle.test.ts",
+          "bytes": 10938,
+          "crc32": "6c8a84b7"
+        },
+        {
+          "path": "test/v2/jobLifecycleWithDispute.integration.test.ts",
+          "bytes": 11159,
+          "crc32": "654ceeca"
+        },
+        {
+          "path": "test/v2/kernel/KernelPipeline.t.sol",
+          "bytes": 14210,
+          "crc32": "14a5756d"
+        },
+        {
+          "path": "test/v2/kernel/RewardEngineKernel.t.sol",
+          "bytes": 2993,
+          "crc32": "0268ebe8"
+        },
+        {
+          "path": "test/v2/kernel/StakeManagerKernel.t.sol",
+          "bytes": 2552,
+          "crc32": "0d310a60"
+        },
+        {
+          "path": "test/v2/klerosArbitration.integration.test.ts",
+          "bytes": 9534,
+          "crc32": "d1bdd17a"
+        },
+        {
+          "path": "test/v2/midJobReplacementFuzz.test.js",
+          "bytes": 6458,
+          "crc32": "4bc087f1"
+        },
+        {
+          "path": "test/v2/multiOperatorLifecycle.integration.test.js",
+          "bytes": 8527,
+          "crc32": "bde216e2"
+        },
+        {
+          "path": "test/v2/planetaryTakeoff.integration.test.ts",
+          "bytes": 13597,
+        

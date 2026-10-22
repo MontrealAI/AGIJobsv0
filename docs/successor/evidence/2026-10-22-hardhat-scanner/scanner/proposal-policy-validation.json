@@ -1,0 +1,139 @@
+{
+  "schema": "local/jobs-review-proposal-policy-validation/v1",
+  "proposalSha256": "bd321917a5dfbca5b8e4fcbfeeb8d9451e9d8c820711e83357545bfab1cf7b91",
+  "exactResultMultiset": {
+    "checked": 19,
+    "passed": true
+  },
+  "metadataSyntaxAtActualExecutedSource": {
+    "source": "afa1d740b68f34a8823f7c331cf8c12fc317dbb2",
+    "passed": true
+  },
+  "publicHeadAncestryRefusal": {
+    "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+    "status": 1,
+    "message": "Command failed: git --no-replace-objects -C /workspace/scratch/32717074a7f1/jobs-successor merge-base --is-ancestor afa1d740b68f34a8823f7c331cf8c12fc317dbb2 852420e82ae3f5bbf0c397a4c1d550d210d4916f"
+  },
+  "immutableProfileRefusal": "rc.16 publication blocked: installed review profile differs from immutable Git source",
+  "qualityWarnings": {
+    "count": 8,
+    "true": true,
+    "uncleared": true,
+    "ownerDispositionPending": true,
+    "priorMetadataComparisons": [
+      {
+        "path": "scripts/release/publish-source-release-rc16.cjs",
+        "region": {
+          "startLine": 20,
+          "startColumn": 3,
+          "endColumn": 20
+        },
+        "priorAcknowledgementNotTransferred": true,
+        "sourceBlobSame": true,
+        "ruleMetadataSame": true,
+        "queryComponentSame": false,
+        "configSummarySame": true
+      },
+      {
+        "path": "scripts/release/source-native-gates-rc16.cjs",
+        "region": {
+          "startLine": 7,
+          "startColumn": 9,
+          "endColumn": 21
+        },
+        "priorAcknowledgementNotTransferred": true,
+        "sourceBlobSame": true,
+        "ruleMetadataSame": true,
+        "queryComponentSame": false,
+        "configSummarySame": true
+      },
+      {
+        "path": "scripts/release/source-native-gates-rc16.cjs",
+        "region": {
+          "startLine": 8,
+          "startColumn": 21,
+          "endColumn": 26
+        },
+        "priorAcknowledgementNotTransferred": true,
+        "sourceBlobSame": true,
+        "ruleMetadataSame": true,
+        "queryComponentSame": false,
+        "configSummarySame": true
+      },
+      {
+        "path": "scripts/release/source-native-gates-rc16.cjs",
+        "region": {
+          "startLine": 13,
+          "startColumn": 3,
+          "endColumn": 26
+        },
+        "priorAcknowledgementNotTransferred": true,
+        "sourceBlobSame": true,
+        "ruleMetadataSame": true,
+        "queryComponentSame": false,
+        "configSummarySame": true
+      },
+      {
+        "path": "scripts/release/source-native-gates-rc16.cjs",
+        "region": {
+          "startLine": 16,
+          "startColumn": 3,
+          "endColumn": 28
+        },
+        "priorAcknowledgementNotTransferred": true,
+        "sourceBlobSame": true,
+        "ruleMetadataSame": true,
+        "queryComponentSame": false,
+        "configSummarySame": true
+      },
+      {
+        "path": "scripts/release/source-scanner-gates-rc16.cjs",
+        "region": {
+          "startLine": 8,
+          "startColumn": 21,
+          "endColumn": 26
+        },
+        "priorAcknowledgementNotTransferred": true,
+        "sourceBlobSame": true,
+        "ruleMetadataSame": true,
+        "queryComponentSame": false,
+        "configSummarySame": true
+      },
+      {
+        "path": "scripts/release/source-scanner-gates-rc16.cjs",
+        "region": {
+          "startLine": 13,
+          "startColumn": 3,
+          "endColumn": 26
+        },
+        "priorAcknowledgementNotTransferred": true,
+        "sourceBlobSame": true,
+        "ruleMetadataSame": true,
+        "queryComponentSame": false,
+        "configSummarySame": true
+      },
+      {
+        "path": "scripts/release/source-scanner-gates-rc16.cjs",
+        "region": {
+          "startLine": 17,
+          "startColumn": 3,
+          "endColumn": 28
+        },
+        "priorAcknowledgementNotTransferred": true,
+        "sourceBlobSame": true,
+        "ruleMetadataSame": true,
+        "queryComponentSame": false,
+        "configSummarySame": true
+      }
+    ]
+  },
+  "publicAssessment": {
+    "comment": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+    "bodyExactReadback": true,
+    "localBodySha256": "c430f050d232d8fed4d58fd6b0b0ece5cdb7d36e4ab1ba0ea72b39d6bc4b52e4"
+  },
+  "installedRecordsChanged": false,
+  "productionApproved": false,
+  "releaseQualified": false,
+  "publicationApproved": false
+}

@@ -1,0 +1,2102 @@
+mples/7d11e196802668b8-README.md",
+          "bytes": 3297,
+          "crc32": "6d3de5fc"
+        },
+        {
+          "path": "examples/7dbcb86754bf62fb-fullPipeline.ts",
+          "bytes": 10555,
+          "crc32": "b795e694"
+        },
+        {
+          "path": "examples/7e11fab0ede0c6f0-run_demo.py",
+          "bytes": 5047,
+          "crc32": "9dc69656"
+        },
+        {
+          "path": "examples/7e4254bbfbdaa51f-asi-global-local.sh",
+          "bytes": 608,
+          "crc32": "73a81e0e"
+        },
+        {
+          "path": "examples/7ee050ae861f0de8-verify-scenario.mjs",
+          "bytes": 16393,
+          "crc32": "4a76d4c8"
+        },
+        {
+          "path": "examples/829ea992dfebac89-doctor.cjs",
+          "bytes": 15494,
+          "crc32": "4079045e"
+        },
+        {
+          "path": "examples/82a1d047cd0d1c8b-run-local-stack.mjs",
+          "bytes": 2763,
+          "crc32": "25edf141"
+        },
+        {
+          "path": "examples/8300f8969a5cc1eb-atlas-conductor-local.sh",
+          "bytes": 622,
+          "crc32": "9d8ce8d8"
+        },
+        {
+          "path": "examples/833a447c90f1adde-README.md",
+          "bytes": 4367,
+          "crc32": "80aa8932"
+        },
+        {
+          "path": "examples/83ad3f03cad71b2f-fabric.example.json",
+          "bytes": 7177,
+          "crc32": "d1bb4ce3"
+        },
+        {
+          "path": "examples/886ec33f1ed3eb90-strategies.yaml",
+          "bytes": 3835,
+          "crc32": "3f906520"
+        },
+        {
+          "path": "examples/8a2cb4bbbd251ec3-emergency-drill.json",
+          "bytes": 581,
+          "crc32": "67d92a33"
+        },
+        {
+          "path": "examples/8a571a90308e7114-architecture.mmd",
+          "bytes": 718,
+          "crc32": "967a07d6"
+        },
+        {
+          "path": "examples/8bd57984ac952a38-runDemo.ts",
+          "bytes": 38816,
+          "crc32": "12815ee5"
+        },
+        {
+          "path": "examples/8ee40f874d7acd90-run_demo.py",
+          "bytes": 5533,
+          "crc32": "df3d0ab0"
+        },
+        {
+          "path": "examples/91334d72db3e1ef3-RUNBOOK.md",
+          "bytes": 4504,
+          "crc32": "fc8b511d"
+        },
+        {
+          "path": "examples/919d32b70d7154bc-evidence.py",
+          "bytes": 11587,
+          "crc32": "7a1d520d"
+        },
+        {
+          "path": "examples/91967da6f194c584-latest.json",
+          "bytes": 123199,
+          "crc32": "0593850f"
+        },
+        {
+          "path": "examples/94dc5a729f7d21e7-mission-review-checklist.md",
+          "bytes": 3921,
+          "crc32": "76d25340"
+        },
+        {
+          "path": "examples/959f83beccc1d382-operator-playbook.md",
+          "bytes": 2604,
+          "crc32": "51744973"
+        },
+        {
+          "path": "examples/964464aa51631fff-README.md",
+          "bytes": 7754,
+          "crc32": "95cd0c0d"
+        },
+        {
+          "path": "examples/96a4c270e69d4445-project-plan.json",
+          "bytes": 11064,
+          "crc32": "69c93de4"
+        },
+        {
+          "path": "examples/9810db1bcda7d267-default.json",
+          "bytes": 965,
+          "crc32": "41899455"
+        },
+        {
+          "path": "examples/98fa9eeea24a026d-project-plan.json",
+          "bytes": 4040,
+          "crc32": "13740508"
+        },
+        {
+          "path": "examples/99e02c8b0c1ebe8b-README.md",
+          "bytes": 1422,
+          "crc32": "0896dff3"
+        },
+        {
+          "path": "examples/9bc27e856702abc6-project-plan.json",
+          "bytes": 11009,
+          "crc32": "ef743485"
+        },
+        {
+          "path": "examples/9c8e840951fccc93-run_demo.py",
+          "bytes": 5930,
+          "crc32": "65c9b51e"
+        },
+        {
+          "path": "examples/9da7c64748be42e2-README.md",
+          "bytes": 2744,
+          "crc32": "c88d9e25"
+        },
+        {
+          "path": "examples/9e0021d24ad99626-config.toml",
+          "bytes": 1005,
+          "crc32": "06b14bb0"
+        },
+        {
+          "path": "examples/9f3adc8482ac8a80-README.md",
+          "bytes": 3800,
+          "crc32": "812da0ec"
+        },
+        {
+          "path": "examples/a3ce9d478b0622da-Makefile",
+          "bytes": 5153,
+          "crc32": "f2eebdab"
+        },
+        {
+          "path": "examples/a4f2b1eb4b4af051-run-kardashev-demo.ts",
+          "bytes": 247173,
+          "crc32": "67f59875"
+        },
+        {
+          "path": "examples/a5d7af48bdd34f51-README.md",
+          "bytes": 10646,
+          "crc32": "22c9ce4f"
+        },
+        {
+          "path": "examples/a7b3e10c50bc5fcc-RUNBOOK.md",
+          "bytes": 5009,
+          "crc32": "6511cf0b"
+        },
+        {
+          "path": "examples/a979400d4bae82b2-execute.mjs",
+          "bytes": 5703,
+          "crc32": "ee860cf4"
+        },
+        {
+          "path": "examples/a98e4753531d5f16-cli.mjs",
+          "bytes": 3315,
+          "crc32": "a4c9ad38"
+        },
+        {
+          "path": "examples/a99b00ca86ff63bc-README.md",
+          "bytes": 6591,
+          "crc32": "60439fc0"
+        },
+        {
+          "path": "examples/ab68565916ae1207-zenith-celestial-archon-local.sh",
+          "bytes": 2286,
+          "crc32": "47134047"
+        },
+        {
+          "path": "examples/ad5a95a6821822c0-kardashev-energy-schedule.json",
+          "bytes": 6438,
+          "crc32": "ab2f2d23"
+        },
+        {
+          "path": "examples/ade60be90956e6e7-deployConstellation.ts",
+          "bytes": 3163,
+          "crc32": "a7693b7e"
+        },
+        {
+          "path": "examples/aeeb1a988b394f6d-infinity-symphony-local.sh",
+          "bytes": 3608,
+          "crc32": "0a676a93"
+        },
+        {
+          "path": "examples/b171c08c8f1b8599-README.md",
+          "bytes": 5709,
+          "crc32": "e866f9ee"
+        },
+        {
+          "path": "examples/b54051dd8d6f501d-default.json",
+          "bytes": 1793,
+          "crc32": "233dbddd"
+        },
+        {
+          "path": "examples/b6aa88f8131425e2-mission_alpha-meta.json",
+          "bytes": 16905,
+          "crc32": "9cf1cebf"
+        },
+        {
+          "path": "examples/b72d497a4787f73e-project-plan.json",
+          "bytes": 4662,
+          "crc32": "7c55607e"
+        },
+        {
+          "path": "examples/b7bdf8448f9abbd0-README.md",
+          "bytes": 3233,
+          "crc32": "44fbf438"
+        },
+        {
+          "path": "examples/bbf5a5a411807f3a-verifyReports.ts",
+          "bytes": 48426,
+          "crc32": "1581b67b"
+        },
+        {
+          "path": "examples/bc242cb16214eb6a-simulation.py",
+          "bytes": 6012,
+          "crc32": "f1155c6e"
+        },
+        {
+          "path": "examples/bc4a1f33b2e384c8-zenith-planetary-os-local.sh",
+          "bytes": 2666,
+          "crc32": "b0aa9059"
+        },
+        {
+          "path": "examples/bea256be7e22f00f-local-fixture.json",
+          "bytes": 25465,
+          "crc32": "9e3690fb"
+        },
+        {
+          "path": "examples/bfd60f691c1d806d-zenith-sapience-local.sh",
+          "bytes": 2146,
+          "crc32": "e88a74e3"
+        },
+        {
+          "path": "examples/c102437f8cb61dd1-latest.json",
+          "bytes": 108581,
+          "crc32": "2fcf48ea"
+        },
+        {
+          "path": "examples/c102437f8cb61dd1-sample.json",
+          "bytes": 108581,
+          "crc32": "2fcf48ea"
+        },
+        {
+          "path": "examples/c268928d2ac17451-README.md",
+          "bytes": 1421,
+          "crc32": "fc125dc1"
+        },
+        {
+          "path": "examples/c32a6b4c5574e469-orchestrator.ts",
+          "bytes": 7777,
+          "crc32": "4e59ac8d"
+        },
+        {
+          "path": "examples/c3693f0cc89616fe-synthesisEngine.ts",
+          "bytes": 26889,
+          "crc32": "680d77fd"
+        },
+        {
+          "path": "examples/c5bfd5f3357318a1-catalog.mjs",
+          "bytes": 7689,
+          "crc32": "48c05078"
+        },
+        {
+          "path": "examples/c9c08e9da2d4d630-package.json",
+          "bytes": 56066,
+          "crc32": "29392630"
+        },
+        {
+          "path": "examples/ca3db5af85fcc243-project-plan.json",
+          "bytes": 4645,
+          "crc32": "b578a956"
+        },
+        {
+          "path": "examples/cc920c38866e24e6-universal.value.manifest.json",
+          "bytes": 24616,
+          "crc32": "ccc8c181"
+        },
+        {
+          "path": "examples/ce13893e529a0420-runner.py",
+          "bytes": 22992,
+          "crc32": "75c568f1"
+        },
+        {
+          "path": "examples/d02ea69fa85e16c1-omega.simulation.json",
+          "bytes": 3179,
+          "crc32": "da7e1fb8"
+        },
+        {
+          "path": "examples/d0c0043a329200d7-aurora.demo.ts",
+          "bytes": 52558,
+          "crc32": "c08adb67"
+        },
+        {
+          "path": "examples/d1520bcb62874f2a-COMPUTER-WORK.md",
+          "bytes": 13291,
+          "crc32": "d5ec6c95"
+        },
+        {
+          "path": "examples/d2db779715963b58-mesh.ui.config.json",
+          "bytes": 281,
+          "crc32": "c1251821"
+        },
+        {
+          "path": "examples/d306c157ce5a54ec-runDemo.ts",
+          "bytes": 80663,
+          "crc32": "f1707a92"
+        },
+        {
+          "path": "examples/d392192f475f4992-app.js",
+          "bytes": 38219,
+          "crc32": "43ecbcd1"
+        },
+        {
+          "path": "examples/d68249bbc657f9be-run-demo.mjs",
+          "bytes": 4384,
+          "crc32": "8c85c0e5"
+        },
+        {
+          "path": "examples/d5c6644c0d00b748-model.mjs",
+          "bytes": 5200,
+          "crc32": "a2cc3fdf"
+        },
+        {
+          "path": "examples/d786f3275a128f95-engine.cjs",
+          "bytes": 3065,
+          "crc32": "2189e287"
+        },
+        {
+          "path": "examples/d8173485b5f762e1-mission_v2.json",
+          "bytes": 3065,
+          "crc32": "5cf42093"
+        },
+        {
+          "path": "examples/d8877f375338e3b5-__main__.py",
+          "bytes": 10881,
+          "crc32": "4a9f8867"
+        },
+        {
+          "path": "examples/d9787acf816a7eaa-README.md",
+          "bytes": 3261,
+          "crc32": "2da2592e"
+        },
+        {
+          "path": "examples/da807d23600b2396-run_demo.py",
+          "bytes": 7702,
+          "crc32": "43c7b104"
+        },
+        {
+          "path": "examples/dc1fbaf586e52a50-scenario.json",
+          "bytes": 759,
+          "crc32": "43b6d150"
+        },
+        {
+          "path": "examples/dc500718c74d3840-RUNBOOK.md",
+          "bytes": 5261,
+          "crc32": "6057700c"
+        },
+        {
+          "path": "examples/dd9ded7a5847767a-__init__.py",
+          "bytes": 1009,
+          "crc32": "248b12e3"
+        },
+        {
+          "path": "examples/e2b77b1346876547-run_demo.py",
+          "bytes": 2418,
+          "crc32": "ae661158"
+        },
+        {
+          "path": "examples/e2d302afdd4f2730-local-fixture.json",
+          "bytes": 11505,
+          "crc32": "23acac7f"
+        },
+        {
+          "path": "examples/ddc2414746480d8e-index.ts",
+          "bytes": 6334,
+          "crc32": "5adf8ef2"
+        },
+        {
+          "path": "examples/e427a730c6318b78-README.md",
+          "bytes": 6261,
+          "crc32": "eb0cfb06"
+        },
+        {
+          "path": "examples/e78020a19624f2d3-review.mjs",
+          "bytes": 9710,
+          "crc32": "d97d057a"
+        },
+        {
+          "path": "examples/e580230a93ae292a-alpha-mark-recap.json",
+          "bytes": 17647,
+          "crc32": "de5367d3"
+        },
+        {
+          "path": "examples/e78c815a0a58614f-zenith-omnidominion-local.sh",
+          "bytes": 2328,
+          "crc32": "1dc94ddb"
+        },
+        {
+          "path": "examples/e79705ad9f67fe72-run.sh",
+          "bytes": 287,
+          "crc32": "52fc98c5"
+        },
+        {
+          "path": "examples/e9058539220fd6e5-project-plan.json",
+          "bytes": 14413,
+          "crc32": "003971c8"
+        },
+        {
+          "path": "examples/e97a55b52c7b1e03-runScenario.ts",
+          "bytes": 24939,
+          "crc32": "3f53841a"
+        },
+        {
+          "path": "examples/e9f1a9a3d375ecd0-demo_runner.py",
+          "bytes": 70905,
+          "crc32": "2af49616"
+        },
+        {
+          "path": "examples/eb518fbfa6d1f678-launch-playbook.md",
+          "bytes": 6454,
+          "crc32": "02ee62d7"
+        },
+        {
+          "path": "examples/ec3179df8714ccc7-absolute_zero_reasoner_metrics.json",
+          "bytes": 1208,
+          "crc32": "aa928dae"
+        },
+        {
+          "path": "examples/f097503602c57e76-cli.py",
+          "bytes": 1955,
+          "crc32": "ab5db489"
+        },
+        {
+          "path": "examples/f176bcc2da5d2a09-default_config.yaml",
+          "bytes": 894,
+          "crc32": "1cbd9563"
+        },
+        {
+          "path": "examples/f3471e582456116b-grand-symphony.sh",
+          "bytes": 563,
+          "crc32": "f2af62d1"
+        },
+        {
+          "path": "examples/f3471e582456116b-launch.sh",
+          "bytes": 563,
+          "crc32": "f2af62d1"
+        },
+        {
+          "path": "examples/f59fb879b8b3e36d-review.mjs",
+          "bytes": 9641,
+          "crc32": "4420d01d"
+        },
+        {
+          "path": "examples/f843ff85923f2f90-README.md",
+          "bytes": 7929,
+          "crc32": "62b04047"
+        },
+        {
+          "path": "examples/f92763789c7d87ce-run.py",
+          "bytes": 7021,
+          "crc32": "de17737f"
+        },
+        {
+          "path": "examples/f9896f99378ae4b3-test_run_demo_tests_runner.py",
+          "bytes": 37986,
+          "crc32": "479d1f03"
+        },
+        {
+          "path": "examples/f9f6a12137a86d82-config.demo.yaml",
+          "bytes": 3783,
+          "crc32": "52555957"
+        },
+        {
+          "path": "examples/faa4f74cb87d1e04-README.md",
+          "bytes": 2953,
+          "crc32": "2bdc7023"
+        },
+        {
+          "path": "examples/fbfa9478b53f4863-__main__.py",
+          "bytes": 2017,
+          "crc32": "00fcbdf7"
+        },
+        {
+          "path": "examples/fccebc1fcb0b70fa-execute.mjs",
+          "bytes": 5023,
+          "crc32": "e9a23dc1"
+        },
+        {
+          "path": "examples/ffc500390dfb8968-stellar-scenario.yaml",
+          "bytes": 5260,
+          "crc32": "69399578"
+        },
+        {
+          "path": "examples/ecc542c8f48a08de-mission.meta-agentic-program-synthesis.json",
+          "bytes": 6464,
+          "crc32": "987171d6"
+        },
+        {
+          "path": "experiments/alpha-agi-mark/index.html",
+          "bytes": 19768,
+          "crc32": "777260b4"
+        },
+        {
+          "path": "experiments/atlas/atlas.mjs",
+          "bytes": 10305,
+          "crc32": "ef142666"
+        },
+        {
+          "path": "experiments/atlas/example.mjs",
+          "bytes": 1146,
+          "crc32": "a5bedf53"
+        },
+        {
+          "path": "experiments/atlas/engine.mjs",
+          "bytes": 7600,
+          "crc32": "80eb4078"
+        },
+        {
+          "path": "experiments/atlas/index.html",
+          "bytes": 6231,
+          "crc32": "4556361b"
+        },
+        {
+          "path": "experiments/atlas/style.css",
+          "bytes": 9472,
+          "crc32": "363325e4"
+        },
+        {
+          "path": "experiments/celestial/app.mjs",
+          "bytes": 9246,
+          "crc32": "2315a9a0"
+        },
+        {
+          "path": "experiments/atlas/i18n.mjs",
+          "bytes": 5050,
+          "crc32": "a3f5129e"
+        },
+        {
+          "path": "experiments/celestial/engine.mjs",
+          "bytes": 4683,
+          "crc32": "0a4f62f6"
+        },
+        {
+          "path": "experiments/celestial/i18n.mjs",
+          "bytes": 4352,
+          "crc32": "bb3353ad"
+        },
+        {
+          "path": "experiments/celestial/index.html",
+          "bytes": 5287,
+          "crc32": "f9720a06"
+        },
+        {
+          "path": "experiments/celestial/json.mjs",
+          "bytes": 2361,
+          "crc32": "43a1a86d"
+        },
+        {
+          "path": "experiments/celestial/scenario.json",
+          "bytes": 945,
+          "crc32": "f39eb361"
+        },
+        {
+          "path": "experiments/culture/assets/index-C1Ns7uS0.js",
+          "bytes": 578696,
+          "crc32": "bb6a842d"
+        },
+        {
+          "path": "experiments/culture/assets/index-Ci29iGk9.css",
+          "bytes": 12098,
+          "crc32": "9eb1771e"
+        },
+        {
+          "path": "experiments/celestial/style.css",
+          "bytes": 9811,
+          "crc32": "43265be5"
+        },
+        {
+          "path": "experiments/culture/index.html",
+          "bytes": 1081,
+          "crc32": "9258b1ee"
+        },
+        {
+          "path": "experiments/empowerment/app.mjs",
+          "bytes": 15244,
+          "crc32": "745a63b8"
+        },
+        {
+          "path": "experiments/empowerment/cli-example/ledger.json",
+          "bytes": 1723,
+          "crc32": "95608a92"
+        },
+        {
+          "path": "experiments/empowerment/cli-example/packet.json",
+          "bytes": 1682,
+          "crc32": "fd22f328"
+        },
+        {
+          "path": "experiments/empowerment/cli-example/receipt.json",
+          "bytes": 302,
+          "crc32": "8d9e7b80"
+        },
+        {
+          "path": "experiments/empowerment/cli-example/provenance.json",
+          "bytes": 704,
+          "crc32": "6b6f0e3c"
+        },
+        {
+          "path": "experiments/empowerment/cli-example/report.md",
+          "bytes": 350,
+          "crc32": "3d65b417"
+        },
+        {
+          "path": "experiments/empowerment/index.html",
+          "bytes": 5956,
+          "crc32": "29122992"
+        },
+        {
+          "path": "experiments/empowerment/model.mjs",
+          "bytes": 11186,
+          "crc32": "a615fad8"
+        },
+        {
+          "path": "experiments/empowerment/styles.css",
+          "bytes": 4795,
+          "crc32": "889ffa6d"
+        },
+        {
+          "path": "experiments/governance/engine.mjs",
+          "bytes": 6132,
+          "crc32": "c2998c74"
+        },
+        {
+          "path": "experiments/governance/governance.mjs",
+          "bytes": 11018,
+          "crc32": "644434e2"
+        },
+        {
+          "path": "experiments/governance/i18n.mjs",
+          "bytes": 5553,
+          "crc32": "7e0a85bb"
+        },
+        {
+          "path": "experiments/governance/index.html",
+          "bytes": 7340,
+          "crc32": "f22a779e"
+        },
+        {
+          "path": "experiments/governance/style.css",
+          "bytes": 8585,
+          "crc32": "333a1224"
+        },
+        {
+          "path": "experiments/huxley-godel/build.json",
+          "bytes": 149,
+          "crc32": "6de9f427"
+        },
+        {
+          "path": "experiments/huxley-godel/index.html",
+          "bytes": 18779,
+          "crc32": "f3e2ca4d"
+        },
+        {
+          "path": "experiments/huxley-godel/legacy/bootstrap.min.css",
+          "bytes": 232803,
+          "crc32": "42adc624"
+        },
+        {
+          "path": "experiments/huxley-godel/legacy/index.html",
+          "bytes": 12359,
+          "crc32": "91fc9b67"
+        },
+        {
+          "path": "experiments/huxley-godel/legacy/script.js",
+          "bytes": 3459781,
+          "crc32": "891476fa"
+        },
+        {
+          "path": "experiments/huxley-godel/legacy/styles.css",
+          "bytes": 4550,
+          "crc32": "b163b833"
+        },
+        {
+          "path": "experiments/huxley-godel/model.mjs",
+          "bytes": 10350,
+          "crc32": "493dcf2a"
+        },
+        {
+          "path": "experiments/huxley-godel/records/paused.json",
+          "bytes": 99160,
+          "crc32": "b3fa7df7"
+        },
+        {
+          "path": "experiments/huxley-godel/records/constrained.json",
+          "bytes": 205871,
+          "crc32": "30c2b8dd"
+        },
+        {
+          "path": "experiments/huxley-godel/records/reference.json",
+          "bytes": 1143579,
+          "crc32": "545bd443"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/constrained/baseline_timeline.json",
+          "bytes": 26896,
+          "crc32": "86b26689"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/constrained/effective_config.json",
+          "bytes": 1319,
+          "crc32": "404c6ac1"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/constrained/hgm_lineage.mmd",
+          "bytes": 190,
+          "crc32": "4eb8c388"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/constrained/logs.md",
+          "bytes": 12882,
+          "crc32": "d8fec94e"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/constrained/hgm_timeline.json",
+          "bytes": 110281,
+          "crc32": "8b813801"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/constrained/roi_comparison.svg",
+          "bytes": 3586,
+          "crc32": "270e337f"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/constrained/summary.json",
+          "bytes": 1097,
+          "crc32": "83e24f46"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/constrained/summary.txt",
+          "bytes": 293,
+          "crc32": "b360b5f4"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/paused/baseline_timeline.json",
+          "bytes": 2,
+          "crc32": "0d4cbb29"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/paused/effective_config.json",
+          "bytes": 1321,
+          "crc32": "bb9ce3e1"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/paused/hgm_lineage.mmd",
+          "bytes": 55,
+          "crc32": "1b5f0813"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/paused/hgm_timeline.json",
+          "bytes": 65414,
+          "crc32": "a4fdbe39"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/paused/logs.md",
+          "bytes": 6286,
+          "crc32": "21e6cae5"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/paused/roi_comparison.svg",
+          "bytes": 71,
+          "crc32": "37b9d102"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/paused/summary.json",
+          "bytes": 1087,
+          "crc32": "69780294"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/paused/summary.txt",
+          "bytes": 277,
+          "crc32": "079b25f4"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/reference/baseline_timeline.json",
+          "bytes": 27464,
+          "crc32": "141c731e"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/reference/effective_config.json",
+          "bytes": 1322,
+          "crc32": "fce18eff"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/reference/hgm_lineage.mmd",
+          "bytes": 1820,
+          "crc32": "f479e610"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/reference/hgm_timeline.json",
+          "bytes": 926756,
+          "crc32": "79b4bcc4"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/reference/roi_comparison.svg",
+          "bytes": 3586,
+          "crc32": "8980e6f0"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/reference/summary.json",
+          "bytes": 1126,
+          "crc32": "9680bb12"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/reference/logs.md",
+          "bytes": 13600,
+          "crc32": "1a7ad8c6"
+        },
+        {
+          "path": "experiments/huxley-godel/reproduction/reference/summary.txt",
+          "bytes": 330,
+          "crc32": "bebcf97e"
+        },
+        {
+          "path": "experiments/huxley-godel/styles.css",
+          "bytes": 12079,
+          "crc32": "7f63e295"
+        },
+        {
+          "path": "experiments/huxley-godel/viewer.js",
+          "bytes": 3467845,
+          "crc32": "79813fe9"
+        },
+        {
+          "path": "experiments/iconic/desk.mjs",
+          "bytes": 7829,
+          "crc32": "41a35b3b"
+        },
+        {
+          "path": "experiments/iconic/engine.mjs",
+          "bytes": 7919,
+          "crc32": "f261b943"
+        },
+        {
+          "path": "experiments/iconic/fixtures.mjs",
+          "bytes": 1817,
+          "crc32": "6e101370"
+        },
+        {
+          "path": "experiments/iconic/index.html",
+          "bytes": 6737,
+          "crc32": "ec41cf28"
+        },
+        {
+          "path": "experiments/iconic/i18n.mjs",
+          "bytes": 7270,
+          "crc32": "967a6194"
+        },
+        {
+          "path": "experiments/iconic/json.mjs",
+          "bytes": 2391,
+          "crc32": "353ba059"
+        },
+        {
+          "path": "experiments/iconic/style.css",
+          "bytes": 9472,
+          "crc32": "363325e4"
+        },
+        {
+          "path": "experiments/kardashev-business/app.mjs",
+          "bytes": 7006,
+          "crc32": "dcd4574d"
+        },
+        {
+          "path": "experiments/kardashev-business/architecture.svg",
+          "bytes": 2156,
+          "crc32": "df6f5442"
+        },
+        {
+          "path": "experiments/kardashev-business/catalog.mjs",
+          "bytes": 7689,
+          "crc32": "48c05078"
+        },
+        {
+          "path": "experiments/kardashev-business/core.mjs",
+          "bytes": 7809,
+          "crc32": "622a47f9"
+        },
+        {
+          "path": "experiments/kardashev-business/styles.css",
+          "bytes": 13321,
+          "crc32": "357383ce"
+        },
+        {
+          "path": "experiments/kardashev-ii/README.md",
+          "bytes": 17445,
+          "crc32": "4f4e6e9c"
+        },
+        {
+          "path": "experiments/kardashev-business/index.html",
+          "bytes": 16940,
+          "crc32": "e0c1e57d"
+        },
+        {
+          "path": "experiments/kardashev-ii/index.html",
+          "bytes": 14444,
+          "crc32": "243d4437"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/README.md",
+          "bytes": 7709,
+          "crc32": "0d8decc4"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/index.html",
+          "bytes": 7740,
+          "crc32": "a8adb530"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/COMPUTER-WORK.md",
+          "bytes": 13335,
+          "crc32": "bde69f5d"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/README.md",
+          "bytes": 7839,
+          "crc32": "295eb537"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/index.html",
+          "bytes": 7731,
+          "crc32": "68cf176e"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/mermaid/mermaid.min.js",
+          "bytes": 3572661,
+          "crc32": "1a3125e0"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/stellar-dyson.mmd",
+          "bytes": 416,
+          "crc32": "feafda3b"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/stellar-mermaid.mmd",
+          "bytes": 2512,
+          "crc32": "808ddf66"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/stellar-operator-briefing.md",
+          "bytes": 2835,
+          "crc32": "ab4d59f1"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/stellar-orchestration-report.md",
+          "bytes": 2156,
+          "crc32": "e6c5f979"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/stellar-run-manifest.json",
+          "bytes": 377,
+          "crc32": "433276e0"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/stellar-safe-transaction-batch.json",
+          "bytes": 44381,
+          "crc32": "2f83e29b"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/stellar-stability-ledger.json",
+          "bytes": 4800,
+          "crc32": "fb03da8c"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/stellar-telemetry.json",
+          "bytes": 16073,
+          "crc32": "e3240b1b"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/ui/computer-work-model.mjs",
+          "bytes": 9503,
+          "crc32": "852caf72"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/ui/computer-work.css",
+          "bytes": 2939,
+          "crc32": "a0ed4371"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/ui/computer-work.mjs",
+          "bytes": 12418,
+          "crc32": "fd67bf62"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/ui/dashboard.js",
+          "bytes": 10701,
+          "crc32": "5a718a80"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/ui/runtime.js",
+          "bytes": 2944,
+          "crc32": "2c029003"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/ui/dashboard.js",
+          "bytes": 10701,
+          "crc32": "5a718a80"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/output/ui/style.css",
+          "bytes": 6054,
+          "crc32": "95b34789"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/ui/runtime.js",
+          "bytes": 129,
+          "crc32": "9337a4f0"
+        },
+        {
+          "path": "experiments/kardashev-ii/k2-stellar-demo/ui/style.css",
+          "bytes": 6054,
+          "crc32": "95b34789"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/COMPUTER-WORK.md",
+          "bytes": 13335,
+          "crc32": "bde69f5d"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/README.md",
+          "bytes": 17635,
+          "crc32": "0ede4404"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/governance-playbook.md",
+          "bytes": 1276,
+          "crc32": "0208ffae"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/index.html",
+          "bytes": 14402,
+          "crc32": "de6286cf"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-action-path.md",
+          "bytes": 3088,
+          "crc32": "cfad6edc"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-consistency-ledger.json",
+          "bytes": 1731,
+          "crc32": "e9199ba2"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-diagrams.inline.js",
+          "bytes": 8391,
+          "crc32": "f68ced48"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-dyson.mmd",
+          "bytes": 291,
+          "crc32": "4bc567dd"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-energy-feeds.json",
+          "bytes": 1120,
+          "crc32": "5f674959"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-energy-schedule.json",
+          "bytes": 6438,
+          "crc32": "ab2f2d23"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-equilibrium-ledger.inline.js",
+          "bytes": 6343,
+          "crc32": "1776cbe8"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-equilibrium-ledger.json",
+          "bytes": 7751,
+          "crc32": "e62098a9"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-fabric-ledger.json",
+          "bytes": 2447,
+          "crc32": "792ec44f"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-logistics-ledger.json",
+          "bytes": 4718,
+          "crc32": "50cd3582"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-mermaid.mmd",
+          "bytes": 1394,
+          "crc32": "61205c5b"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-monte-carlo.json",
+          "bytes": 858,
+          "crc32": "3015e984"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-operator-briefing.md",
+          "bytes": 5541,
+          "crc32": "91b1bde9"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-orchestration-report.md",
+          "bytes": 10760,
+          "crc32": "f0732084"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-owner-proof.inline.js",
+          "bytes": 8872,
+          "crc32": "c82f5a42"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-owner-proof.json",
+          "bytes": 11780,
+          "crc32": "033a4ea0"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-report.md",
+          "bytes": 5146,
+          "crc32": "db77b0ed"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-run-manifest.json",
+          "bytes": 768,
+          "crc32": "2f591fb0"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-safe-transaction-batch.json",
+          "bytes": 19557,
+          "crc32": "53b4143b"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-scenario-sweep.json",
+          "bytes": 10381,
+          "crc32": "757ac72d"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-settlement-ledger.json",
+          "bytes": 2549,
+          "crc32": "e9dc0584"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-stability-ledger.inline.js",
+          "bytes": 13827,
+          "crc32": "aea571a1"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-stability-ledger.json",
+          "bytes": 18568,
+          "crc32": "e2a0b046"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-task-hierarchy.mmd",
+          "bytes": 6444,
+          "crc32": "48411415"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-task-ledger.json",
+          "bytes": 2852,
+          "crc32": "9cb7a888"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-telemetry.inline.js",
+          "bytes": 50326,
+          "crc32": "8e6d4ef2"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/kardashev-telemetry.json",
+          "bytes": 72406,
+          "crc32": "cfa9a085"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/mermaid/dyson-hierarchy.mmd",
+          "bytes": 1007,
+          "crc32": "0d6db0c1"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/mermaid/interplanetary-settlement.mmd",
+          "bytes": 615,
+          "crc32": "35ac47eb"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/mermaid/mermaid.esm.min.mjs",
+          "bytes": 26249,
+          "crc32": "6fa7ffd4"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/mermaid/mermaid.min.js",
+          "bytes": 3572661,
+          "crc32": "1a3125e0"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/ui/computer-work-model.mjs",
+          "bytes": 9503,
+          "crc32": "852caf72"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/ui/computer-work.css",
+          "bytes": 2939,
+          "crc32": "a0ed4371"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/ui/computer-work.mjs",
+          "bytes": 12418,
+          "crc32": "fd67bf62"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/ui/runtime.js",
+          "bytes": 2944,
+          "crc32": "2c029003"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/ui/dashboard.js",
+          "bytes": 94338,
+          "crc32": "2da0d97c"
+        },
+        {
+          "path": "experiments/kardashev-ii/output/ui/style.css",
+          "bytes": 13035,
+          "crc32": "2a2600a9"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/README.md",
+          "bytes": 11965,
+          "crc32": "babe03af"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/index.html",
+          "bytes": 11237,
+          "crc32": "506c169e"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/COMPUTER-WORK.md",
+          "bytes": 13335,
+          "crc32": "bde69f5d"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/README.md",
+          "bytes": 12095,
+          "crc32": "88d42659"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/index.html",
+          "bytes": 11228,
+          "crc32": "3630820a"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-consistency-ledger.json",
+          "bytes": 2004,
+          "crc32": "d5cf7c7a"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-action-path.md",
+          "bytes": 2841,
+          "crc32": "17e742b7"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-dyson.mmd",
+          "bytes": 291,
+          "crc32": "c7a68a1a"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-diagrams.inline.js",
+          "bytes": 5652,
+          "crc32": "94f359ef"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-energy-feeds.json",
+          "bytes": 1562,
+          "crc32": "3fc87c38"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-energy-schedule.json",
+          "bytes": 8226,
+          "crc32": "a063f3f9"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-equilibrium-ledger.json",
+          "bytes": 7508,
+          "crc32": "5f2163ce"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-equilibrium-ledger.inline.js",
+          "bytes": 6100,
+          "crc32": "8f929542"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-fabric-ledger.json",
+          "bytes": 3050,
+          "crc32": "fe942768"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-logistics-ledger.json",
+          "bytes": 6063,
+          "crc32": "7a6660c7"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-mermaid.mmd",
+          "bytes": 1631,
+          "crc32": "46533669"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-monte-carlo.json",
+          "bytes": 855,
+          "crc32": "98e5084f"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-operator-briefing.md",
+          "bytes": 5379,
+          "crc32": "bd8c2730"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-orchestration-report.md",
+          "bytes": 11571,
+          "crc32": "b162433d"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-owner-proof.inline.js",
+          "bytes": 10364,
+          "crc32": "d7bf5e3b"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-owner-proof.json",
+          "bytes": 13752,
+          "crc32": "6ebf92a3"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-safe-transaction-batch.json",
+          "bytes": 24044,
+          "crc32": "3eeef916"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-run-manifest.json",
+          "bytes": 766,
+          "crc32": "4cd4c20c"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-scenario-sweep.json",
+          "bytes": 10403,
+          "crc32": "9c1d3f1b"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-settlement-ledger.json",
+          "bytes": 3298,
+          "crc32": "8dea8054"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-stability-ledger.inline.js",
+          "bytes": 14572,
+          "crc32": "ea8a8a43"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-stability-ledger.json",
+          "bytes": 19598,
+          "crc32": "7264b470"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-task-hierarchy.mmd",
+          "bytes": 3521,
+          "crc32": "d4bf3085"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-task-ledger.json",
+          "bytes": 2879,
+          "crc32": "14574c19"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-telemetry.json",
+          "bytes": 85468,
+          "crc32": "c05be4ca"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/lattice-telemetry.inline.js",
+          "bytes": 59175,
+          "crc32": "e40c99d4"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/ui/computer-work-model.mjs",
+          "bytes": 9503,
+          "crc32": "852caf72"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/mermaid/mermaid.min.js",
+          "bytes": 3572661,
+          "crc32": "1a3125e0"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/ui/computer-work.css",
+          "bytes": 2939,
+          "crc32": "a0ed4371"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/ui/computer-work.mjs",
+          "bytes": 12418,
+          "crc32": "fd67bf62"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/ui/runtime.js",
+          "bytes": 2944,
+          "crc32": "2c029003"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/ui/dashboard.js",
+          "bytes": 29098,
+          "crc32": "e47854ee"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/output/ui/style.css",
+          "bytes": 9890,
+          "crc32": "c0647c3d"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/ui/dashboard.js",
+          "bytes": 29098,
+          "crc32": "e47854ee"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/ui/runtime.js",
+          "bytes": 129,
+          "crc32": "9337a4f0"
+        },
+        {
+          "path": "experiments/kardashev-ii/stellar-civilization-lattice/ui/style.css",
+          "bytes": 9890,
+          "crc32": "c0647c3d"
+        },
+        {
+          "path": "experiments/kardashev-ii/ui/computer-work-model.mjs",
+          "bytes": 9503,
+          "crc32": "852caf72"
+        },
+        {
+          "path": "experiments/kardashev-ii/ui/computer-work.css",
+          "bytes": 2939,
+          "crc32": "a0ed4371"
+        },
+        {
+          "path": "experiments/kardashev-ii/ui/computer-work.mjs",
+          "bytes": 12418,
+          "crc32": "fd67bf62"
+        },
+        {
+          "path": "experiments/kardashev-ii/ui/dashboard.js",
+          "bytes": 94338,
+          "crc32": "2da0d97c"
+        },
+        {
+          "path": "experiments/kardashev-ii/ui/runtime.js",
+          "bytes": 2944,
+          "crc32": "2c029003"
+        },
+        {
+          "path": "experiments/kardashev-ii/ui/style.css",
+          "bytes": 13035,
+          "crc32": "2a2600a9"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/app.mjs",
+          "bytes": 15150,
+          "crc32": "134091ba"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/architecture.svg",
+          "bytes": 2149,
+          "crc32": "c5d55161"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/abnfDiagram-VCTEODGH-TEA3RDRP.mjs",
+          "bytes": 2318,
+          "crc32": "4ba386d2"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/architecture-7GRP2DOG-WIOEPKKC.mjs",
+          "bytes": 171,
+          "crc32": "75b2f2ce"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/architectureDiagram-5GKGNRK7-IUUAGMGG.mjs",
+          "bytes": 152864,
+          "crc32": "c9f76b54"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/blockDiagram-I7D4REHJ-H2GE7SYF.mjs",
+          "bytes": 40289,
+          "crc32": "9f79e74f"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/c4Diagram-7LVT6UL2-WAENTX34.mjs",
+          "bytes": 65821,
+          "crc32": "d0a33635"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-2JSABCF6.mjs",
+          "bytes": 1944,
+          "crc32": "40e1d8db"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-2TMDBVSO.mjs",
+          "bytes": 18230,
+          "crc32": "e47afa92"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-3DCYZUEE.mjs",
+          "bytes": 221,
+          "crc32": "a1daa074"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-3OMKEKJK.mjs",
+          "bytes": 1896,
+          "crc32": "a6aa1283"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-4MN3PEV7.mjs",
+          "bytes": 27329,
+          "crc32": "b2a8fcc2"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-5WVV4OZJ.mjs",
+          "bytes": 15729,
+          "crc32": "ce3d7d17"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-6MVLJKUM.mjs",
+          "bytes": 443881,
+          "crc32": "4823ce95"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-6UWNCOQI.mjs",
+          "bytes": 560,
+          "crc32": "ba6867f7"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-7BDR4BIA.mjs",
+          "bytes": 9737,
+          "crc32": "e4bf4641"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-7D3IGRDT.mjs",
+          "bytes": 239512,
+          "crc32": "b98573c2"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-7GWBIHLS.mjs",
+          "bytes": 360,
+          "crc32": "196146c1"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-7SE3UUVD.mjs",
+          "bytes": 62042,
+          "crc32": "354b2698"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-A6BRJ3HY.mjs",
+          "bytes": 10107,
+          "crc32": "c37b539a"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-BJREH4HH.mjs",
+          "bytes": 922,
+          "crc32": "8956b43f"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-DTE6TTZ5.mjs",
+          "bytes": 25646,
+          "crc32": "e346c049"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-DAWC6X4W.mjs",
+          "bytes": 1119,
+          "crc32": "83114c1e"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-E3ALPESA.mjs",
+          "bytes": 2538,
+          "crc32": "56554e95"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-DTYMUAXQ.mjs",
+          "bytes": 460,
+          "crc32": "a5d8af81"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-EEH3LXII.mjs",
+          "bytes": 311,
+          "crc32": "d3bf1ea0"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-ENLH6SHP.mjs",
+          "bytes": 38378,
+          "crc32": "3de314d1"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-EVLGTDQQ.mjs",
+          "bytes": 830,
+          "crc32": "9247ed44"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-FKDFCXN2.mjs",
+          "bytes": 596,
+          "crc32": "f8e883a1"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-GSQE2MXH.mjs",
+          "bytes": 263,
+          "crc32": "b797b386"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-H6H4JT3J.mjs",
+          "bytes": 47125,
+          "crc32": "fd09d366"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-ICIE4FHQ.mjs",
+          "bytes": 5897,
+          "crc32": "67183812"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-KUM7DRQM.mjs",
+          "bytes": 49263,
+          "crc32": "b9128c72"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-LTWVH3PQ.mjs",
+          "bytes": 452,
+          "crc32": "c0eb8d05"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-MRCMRGWE.mjs",
+          "bytes": 52399,
+          "crc32": "49810199"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-MW7JT3VL.mjs",
+          "bytes": 156,
+          "crc32": "a5743b7b"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-NU365AZA.mjs",
+          "bytes": 446,
+          "crc32": "539cd8bc"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-OIYKPOHC.mjs",
+          "bytes": 108545,
+          "crc32": "ee09f31e"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-QLMG6PSC.mjs",
+          "bytes": 1416,
+          "crc32": "d5274558"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-RGGLETDI.mjs",
+          "bytes": 459,
+          "crc32": "0dcc9f17"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-TJH3VLKG.mjs",
+          "bytes": 2025,
+          "crc32": "ebf4668d"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-UIIIICU3.mjs",
+          "bytes": 1049,
+          "crc32": "d07275f4"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-UKMX6XZU.mjs",
+          "bytes": 454,
+          "crc32": "cc93fe91"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-UCMBQXML.mjs",
+          "bytes": 1668,
+          "crc32": "1deae049"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-UUWR2P3F.mjs",
+          "bytes": 1032,
+          "crc32": "ae1deeb6"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-VDHCSVUT.mjs",
+          "bytes": 55511,
+          "crc32": "1050feab"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-VC7F2OIH.mjs",
+          "bytes": 3325,
+          "crc32": "1a8b486c"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-WBFG7KTJ.mjs",
+          "bytes": 105571,
+          "crc32": "a2e49999"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-WXQFMZ7R.mjs",
+          "bytes": 189,
+          "crc32": "4955457f"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-XA25CXS4.mjs",
+          "bytes": 1580,
+          "crc32": "96406c57"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-XUG2ZWPL.mjs",
+          "bytes": 493,
+          "crc32": "b5ca7ab0"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-XTLHNC2S.mjs",
+          "bytes": 38378,
+          "crc32": "761ee33a"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-Y57S3C3T.mjs",
+          "bytes": 36729,
+          "crc32": "f3d1588a"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-YCS2SR6S.mjs",
+          "bytes": 668212,
+          "crc32": "714e9a89"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-YEKQJ4YC.mjs",
+          "bytes": 544,
+          "crc32": "aeaff25d"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/chunk-ZBYO7E46.mjs",
+          "bytes": 899,
+          "crc32": "8b9f30a7"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/classDiagram-ZZMXUADV-HNJJINAO.mjs",
+          "bytes": 799,
+          "crc32": "044cfbdf"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/classDiagram-v2-VYDZK3BY-QSI6R6LF.mjs",
+          "bytes": 799,
+          "crc32": "044cfbdf"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/cose-bilkent-JH36ORCC-FBMVAB7C.mjs",
+          "bytes": 82366,
+          "crc32": "5346bc34"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/cynefin-OW5HDTMX-7VIEWG7U.mjs",
+          "bytes": 161,
+          "crc32": "8700dde1"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/cynefinDiagram-5FMLGOSQ-UVCMJWB2.mjs",
+          "bytes": 10617,
+          "crc32": "43603f86"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/diagram-S7CK7UJ4-PSY6IGP3.mjs",
+          "bytes": 8744,
+          "crc32": "3f7153d4"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/dagre-GXQ25YYZ-LRECZFWW.mjs",
+          "bytes": 11045,
+          "crc32": "001fe8b4"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/diagram-UQ7AKVKN-57K7WN7N.mjs",
+          "bytes": 6626,
+          "crc32": "8032bc0c"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/diagram-VSXAHHWV-Z4FUPEXZ.mjs",
+          "bytes": 11246,
+          "crc32": "1f8ef00a"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/diagram-VX7I27RA-JYTGTSKV.mjs",
+          "bytes": 11638,
+          "crc32": "ffbf2a82"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/diagram-Z3DM3KII-LB6JE3VZ.mjs",
+          "bytes": 4787,
+          "crc32": "de599c1c"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/ebnfDiagram-PWID7BFC-KKRFIXLK.mjs",
+          "bytes": 2532,
+          "crc32": "3c4b3b29"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/eventmodeling-NTZA5JFV-RPYYXY4K.mjs",
+          "bytes": 173,
+          "crc32": "1c0675b9"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/erDiagram-RLTQ6QDP-2QIQQDHR.mjs",
+          "bytes": 31121,
+          "crc32": "84c7d891"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/flowDiagram-HODETNUW-O2XL73NH.mjs",
+          "bytes": 673,
+          "crc32": "1e6e5407"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/ganttDiagram-EL5Y4UJY-LX5JSTBC.mjs",
+          "bytes": 50335,
+          "crc32": "e92911da"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/gitGraph-4MIJSDKK-RK7BCAOJ.mjs",
+          "bytes": 163,
+          "crc32": "a9537ce8"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/gitGraphDiagram-WWUBYQGX-WLXQN5BS.mjs",
+          "bytes": 29728,
+          "crc32": "116da382"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/infoDiagram-27XIBGKW-CDP7CAKG.mjs",
+          "bytes": 1134,
+          "crc32": "1b4d7f70"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/info-A6RAGUB7-YO2W6UQE.mjs",
+          "bytes": 155,
+          "crc32": "e06461cd"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/ishikawaDiagram-5VMMS53U-EJY3KH5P.mjs",
+          "bytes": 17610,
+          "crc32": "2eaf7caf"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/journeyDiagram-3NMN7TZE-YFGMRPTF.mjs",
+          "bytes": 23564,
+          "crc32": "b52a6bad"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/kanban-definition-UXKFOSKX-HRDNE4AD.mjs",
+          "bytes": 20792,
+          "crc32": "562e52b8"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/katex-KW45RUM6.mjs",
+          "bytes": 267711,
+          "crc32": "e81bbbdc"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/packet-AYTQ26CC-X4LBM2AZ.mjs",
+          "bytes": 159,
+          "crc32": "7ec7125c"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/mindmap-definition-YA3MSWOX-CWCWTN6X.mjs",
+          "bytes": 23838,
+          "crc32": "5fb11873"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/pegDiagram-XKGWAZYB-37YYRY6T.mjs",
+          "bytes": 2474,
+          "crc32": "1e2c09c0"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/pie-WAS4IAKB-NIUO7SEM.mjs",
+          "bytes": 153,
+          "crc32": "4c5a4a44"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/pieDiagram-E7YTZNPT-RMYA2MKT.mjs",
+          "bytes": 5634,
+          "crc32": "fb2bee88"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/prime.mjs",
+          "bytes": 652,
+          "crc32": "12a36110"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/quadrantDiagram-AXDQQJYC-DNVFG5TS.mjs",
+          "bytes": 34046,
+          "crc32": "7a64e212"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/radar-RG4KPBEZ-5K6K7PKY.mjs",
+          "bytes": 157,
+          "crc32": "9157dfd5"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/railroad-74A4TZTK-C6ZC3EBG.mjs",
+          "bytes": 163,
+          "crc32": "49249790"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/railroad-abnf-HS5TGJTU-YHGMEI7O.mjs",
+          "bytes": 171,
+          "crc32": "6152e34e"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/railroad-ebnf-LZEXJU2U-5V4A75EJ.mjs",
+          "bytes": 171,
+          "crc32": "f185be07"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/railroad-peg-WCYAUIDC-3YBIU3FK.mjs",
+          "bytes": 169,
+          "crc32": "04cb7dd5"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/railroadDiagram-O6MQD6OU-AZJASH3H.mjs",
+          "bytes": 2140,
+          "crc32": "f328ce48"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/requirementDiagram-BXWQKSXE-IBH7OFPY.mjs",
+          "bytes": 31426,
+          "crc32": "6c46e967"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/runtime.mjs",
+          "bytes": 658,
+          "crc32": "a88e9e32"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/sankeyDiagram-P5KCCOFB-N75SLPSA.mjs",
+          "bytes": 23001,
+          "crc32": "c38d13cc"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/sequenceDiagram-WJ2MYXX4-3B5ZJBVW.mjs",
+          "bytes": 116939,
+          "crc32": "b07d5542"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/sizeCapture-INFHLROL-NQYUFI5J.mjs",
+          "bytes": 921,
+          "crc32": "d89f72f5"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/stateDiagram-v2-MP3YSRHH-FQTZFNWD.mjs",
+          "bytes": 773,
+          "crc32": "1545da3b"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/stateDiagram-D77RDMKH-YL7ZIPEJ.mjs",
+          "bytes": 10701,
+          "crc32": "ebc83bc9"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/swimlanes-42K2YHIH-3YA2SUGI.mjs",
+          "bytes": 113533,
+          "crc32": "52aa60c0"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/swimlanesDiagram-VR7AAH4N-W35CDQFU.mjs",
+          "bytes": 873,
+          "crc32": "02612cc2"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/timeline-definition-24CTP7MA-6ILND5GY.mjs",
+          "bytes": 30828,
+          "crc32": "42e9f726"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/treeView-Q6P3EWNA-EG7JHLSL.mjs",
+          "bytes": 163,
+          "crc32": "6fa176a1"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/treemap-WGGIJYW6-CSNCD4RV.mjs",
+          "bytes": 161,
+          "crc32": "d2ed7594"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/vennDiagram-4TSXK5OY-3XNBRJJ6.mjs",
+          "bytes": 41695,
+          "crc32": "46c58dd7"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/viewer.css",
+          "bytes": 802,
+          "crc32": "5fa52c5b"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/wardleyDiagram-VM6X3IG4-HIWO6MAC.mjs",
+          "bytes": 25918,
+          "crc32": "b4f68c9b"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/wardley-WFR3VGLG-ESI64JTE.mjs",
+          "bytes": 161,
+          "crc32": "6b0fa76d"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/legacy/xychartDiagram-S5SC5T6Z-W7I33SQC.mjs",
+          "bytes": 43313,
+          "crc32": "265ffd64"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v10/ui/dashboard-data-v10.json",
+          "bytes": 30909,
+          "crc32": "8a1c9099"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v10/ui/dashboard.js",
+          "bytes": 12539,
+          "crc32": "7eca690f"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v10/ui/index.html",
+          "bytes": 4668,
+          "crc32": "25a4acea"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v10/ui/styles.css",
+          "bytes": 3207,
+          "crc32": "98be3634"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v11/ui/dashboard-data-v11.json",
+          "bytes": 19132,
+          "crc32": "39500b43"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v11/ui/index.html",
+          "bytes": 5163,
+          "crc32": "cdf9adc2"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v11/ui/dashboard.js",
+          "bytes": 12118,
+          "crc32": "6cc546a7"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v11/ui/styles.css",
+          "bytes": 3358,
+          "crc32": "a60a6515"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v2/latest_run_v2.json",
+          "bytes": 7574,
+          "crc32": "49da4e34"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v2/ui/dashboard.js",
+          "bytes": 7198,
+          "crc32": "40f4279e"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v2/ui/index.html",
+          "bytes": 5946,
+          "crc32": "5bbdde80"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v3/ui/dashboard-data.json",
+          "bytes": 13029,
+          "crc32": "045fbe9d"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v2/ui/styles.css",
+          "bytes": 3918,
+          "crc32": "b762b61a"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v3/ui/dashboard.js",
+          "bytes": 5

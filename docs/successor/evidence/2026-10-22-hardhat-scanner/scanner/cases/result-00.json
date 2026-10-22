@@ -1,0 +1,95 @@
+{
+  "index": 0,
+  "ruleId": "js/biased-cryptographic-random",
+  "completeCanonicalResultSha256": "e240ef84fcadcd4f9c032fb22fdbd3efbcd950213be49bd146ce10a06a9ffcd7",
+  "completeRuleDescriptorSha256": "f1ffac2bc24f99e823497c4937dfc49b6dc9cd4470cde90d73ee96c0cf9ae7be",
+  "toolComponent": "codeql/javascript-queries",
+  "sourcePaths": [
+    "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs"
+  ],
+  "assessment": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW",
+  "rawResult": {
+    "ruleId": "js/biased-cryptographic-random",
+    "rule": {
+      "id": "js/biased-cryptographic-random",
+      "index": 25,
+      "toolComponent": {
+        "index": 1
+      }
+    },
+    "message": {
+      "text": "Using modulo on a [cryptographically secure random number](1) produces biased results."
+    },
+    "locations": [
+      {
+        "physicalLocation": {
+          "artifactLocation": {
+            "uri": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+            "uriBaseId": "%SRCROOT%",
+            "index": 0
+          },
+          "region": {
+            "startLine": 192,
+            "startColumn": 74,
+            "endColumn": 82
+          }
+        }
+      }
+    ],
+    "partialFingerprints": {
+      "primaryLocationLineHash": "702f97ca62e7f243:1",
+      "primaryLocationStartColumnFingerprint": "69"
+    },
+    "relatedLocations": [
+      {
+        "id": 1,
+        "physicalLocation": {
+          "artifactLocation": {
+            "uri": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+            "uriBaseId": "%SRCROOT%",
+            "index": 0
+          },
+          "region": {
+            "startLine": 246,
+            "startColumn": 44,
+            "endColumn": 86
+          }
+        },
+        "message": {
+          "text": "cryptographically secure random number"
+        }
+      }
+    ]
+  },
+  "ruleDescriptor": {
+    "id": "js/biased-cryptographic-random",
+    "name": "js/biased-cryptographic-random",
+    "shortDescription": {
+      "text": "Creating biased random numbers from a cryptographically secure source"
+    },
+    "fullDescription": {
+      "text": "Some mathematical operations on random numbers can cause bias in the results and compromise security."
+    },
+    "defaultConfiguration": {
+      "enabled": true,
+      "level": "warning"
+    },
+    "help": {
+      "text": "# Creating biased random numbers from a cryptographically secure source\nGenerating secure random numbers can be an important part of creating a secure software system. This can be done using APIs that create cryptographically secure random numbers.\n\nHowever, using some mathematical operations on these cryptographically secure random numbers can create biased results, where some outcomes are more likely than others. Such biased results can make it easier for an attacker to guess the random numbers, and thereby break the security of the software system.\n\n\n## Recommendation\nBe very careful not to introduce bias when performing mathematical operations on cryptographically secure random numbers.\n\nIf possible, avoid performing mathematical operations on cryptographically secure random numbers at all, and use a preexisting library instead.\n\n\n## Example\nThe example below uses the modulo operator to create an array of 10 random digits using random bytes as the source for randomness.\n\n\n```javascript\nconst crypto = require('crypto');\n\nconst digits = [];\nfor (let i = 0; i < 10; i++) {\n    digits.push(crypto.randomBytes(1)[0] % 10); // NOT OK\n}\n```\nThe random byte is a uniformly random value between 0 and 255, and thus the result from using the modulo operator is slightly more likely to be between 0 and 5 than between 6 and 9.\n\nThe issue has been fixed in the code below by using a library that correctly generates cryptographically secure random values.\n\n\n```javascript\nconst cryptoRandomString = require('crypto-random-string');\n\nconst digits = cryptoRandomString({length: 10, type: 'numeric'});\n```\nAlternatively, the issue can be fixed by fixing the math in the original code. In the code below the random byte is discarded if the value is greater than or equal to 250. Thus the modulo operator is used on a uniformly random number between 0 and 249, which results in a uniformly random digit between 0 and 9.\n\n\n```javascript\nconst crypto = require('crypto');\n\nconst digits = [];\nwhile (digits.length < 10) {\n    const byte = crypto.randomBytes(1)[0];\n    if (byte >= 250) {\n        continue;\n    }\n    digits.push(byte % 10); // OK\n}\n```\n\n## References\n* Stack Overflow: [Understanding \u201crandomness\u201d](https://stackoverflow.com/questions/3956478/understanding-randomness).\n* OWASP: [Insecure Randomness](https://owasp.org/www-community/vulnerabilities/Insecure_Randomness).\n* OWASP: [Rule - Use strong approved cryptographic algorithms](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#rule---use-strong-approved-authenticated-encryption).\n* Common Weakness Enumeration: [CWE-327](https://cwe.mitre.org/data/definitions/327.html).\n",
+      "markdown": "# Creating biased random numbers from a cryptographically secure source\nGenerating secure random numbers can be an important part of creating a secure software system. This can be done using APIs that create cryptographically secure random numbers.\n\nHowever, using some mathematical operations on these cryptographically secure random numbers can create biased results, where some outcomes are more likely than others. Such biased results can make it easier for an attacker to guess the random numbers, and thereby break the security of the software system.\n\n\n## Recommendation\nBe very careful not to introduce bias when performing mathematical operations on cryptographically secure random numbers.\n\nIf possible, avoid performing mathematical operations on cryptographically secure random numbers at all, and use a preexisting library instead.\n\n\n## Example\nThe example below uses the modulo operator to create an array of 10 random digits using random bytes as the source for randomness.\n\n\n```javascript\nconst crypto = require('crypto');\n\nconst digits = [];\nfor (let i = 0; i < 10; i++) {\n    digits.push(crypto.randomBytes(1)[0] % 10); // NOT OK\n}\n```\nThe random byte is a uniformly random value between 0 and 255, and thus the result from using the modulo operator is slightly more likely to be between 0 and 5 than between 6 and 9.\n\nThe issue has been fixed in the code below by using a library that correctly generates cryptographically secure random values.\n\n\n```javascript\nconst cryptoRandomString = require('crypto-random-string');\n\nconst digits = cryptoRandomString({length: 10, type: 'numeric'});\n```\nAlternatively, the issue can be fixed by fixing the math in the original code. In the code below the random byte is discarded if the value is greater than or equal to 250. Thus the modulo operator is used on a uniformly random number between 0 and 249, which results in a uniformly random digit between 0 and 9.\n\n\n```javascript\nconst crypto = require('crypto');\n\nconst digits = [];\nwhile (digits.length < 10) {\n    const byte = crypto.randomBytes(1)[0];\n    if (byte >= 250) {\n        continue;\n    }\n    digits.push(byte % 10); // OK\n}\n```\n\n## References\n* Stack Overflow: [Understanding \u201crandomness\u201d](https://stackoverflow.com/questions/3956478/understanding-randomness).\n* OWASP: [Insecure Randomness](https://owasp.org/www-community/vulnerabilities/Insecure_Randomness).\n* OWASP: [Rule - Use strong approved cryptographic algorithms](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#rule---use-strong-approved-authenticated-encryption).\n* Common Weakness Enumeration: [CWE-327](https://cwe.mitre.org/data/definitions/327.html).\n"
+    },
+    "properties": {
+      "tags": [
+        "security",
+        "external/cwe/cwe-327"
+      ],
+      "description": "Some mathematical operations on random numbers can cause bias in\n              the results and compromise security.",
+      "id": "js/biased-cryptographic-random",
+      "kind": "problem",
+      "name": "Creating biased random numbers from a cryptographically secure source",
+      "precision": "high",
+      "problem.severity": "warning",
+      "security-severity": "7.5"
+    }
+  }
+}

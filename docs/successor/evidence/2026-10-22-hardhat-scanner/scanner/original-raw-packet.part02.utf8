@@ -1,0 +1,1543 @@
+eir cookie values to match those of any user. To prevent this, the server can cryptographically sign the security critical cookie values:\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.signedCookies.loggedInUserId !== req.params.userId) {\n        // GOOD: login decision made based on server controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\n\n## References\n* Common Weakness Enumeration: [CWE-807](https://cwe.mitre.org/data/definitions/807.html).\n* Common Weakness Enumeration: [CWE-290](https://cwe.mitre.org/data/definitions/290.html).\n",
+          "markdown": "# User-controlled bypass of security check\nUsing user-controlled data in a permissions check may allow a user to gain unauthorized access to protected functionality or data.\n\n\n## Recommendation\nWhen checking whether a user is authorized for a particular activity, do not use data that is entirely controlled by that user in the permissions check. If necessary, always validate the input, ideally against a fixed list of expected values.\n\nSimilarly, do not decide which permission to check for, based on user data. In particular, avoid using computation to decide which permissions to check for. Use fixed permissions for particular actions, rather than generating the permission to check for.\n\n\n## Example\nIn this example, we have a server that shows private information for a user, based on the request parameter `userId`. For privacy reasons, users may only view their own private information, so the server checks that the request parameter `userId` matches a cookie value for the user who is logged in.\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.cookies.loggedInUserId !== req.params.userId) {\n        // BAD: login decision made based on user controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\nThis security check is, however, insufficient since an attacker can craft their cookie values to match those of any user. To prevent this, the server can cryptographically sign the security critical cookie values:\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.signedCookies.loggedInUserId !== req.params.userId) {\n        // GOOD: login decision made based on server controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\n\n## References\n* Common Weakness Enumeration: [CWE-807](https://cwe.mitre.org/data/definitions/807.html).\n* Common Weakness Enumeration: [CWE-290](https://cwe.mitre.org/data/definitions/290.html).\n"
+        },
+        "properties": {
+          "tags": [
+            "security",
+            "external/cwe/cwe-807",
+            "external/cwe/cwe-290"
+          ],
+          "description": "Conditions that the user controls are not suited for making security-related decisions.",
+          "id": "js/user-controlled-bypass",
+          "kind": "path-problem",
+          "name": "User-controlled bypass of security check",
+          "precision": "medium",
+          "problem.severity": "error",
+          "security-severity": "7.8"
+        }
+      }
+    },
+    {
+      "index": 5,
+      "ruleId": "js/user-controlled-bypass",
+      "completeCanonicalResultSha256": "28ee86fcab1b3643708dc409b766d7a86bc2ac24a1357e94eadbf2056b554c3e",
+      "completeRuleDescriptorSha256": "419035758102ffd1040d1d3e82d59c044405b6c0e802c80b10650b533f915707",
+      "toolComponent": "codeql/javascript-queries",
+      "sourcePaths": [
+        "agent-gateway/routes.ts"
+      ],
+      "assessment": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW",
+      "rawResult": {
+        "ruleId": "js/user-controlled-bypass",
+        "rule": {
+          "id": "js/user-controlled-bypass",
+          "index": 88,
+          "toolComponent": {
+            "index": 1
+          }
+        },
+        "message": {
+          "text": "This condition guards a sensitive [action](1), but a [user-provided value](2) controls it."
+        },
+        "locations": [
+          {
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/routes.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 2
+              },
+              "region": {
+                "startLine": 200,
+                "startColumn": 7,
+                "endColumn": 16
+              }
+            }
+          }
+        ],
+        "partialFingerprints": {
+          "primaryLocationLineHash": "3abebee5996c2dd8:1",
+          "primaryLocationStartColumnFingerprint": "4"
+        },
+        "codeFlows": [
+          {
+            "threadFlows": [
+              {
+                "locations": [
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 198,
+                          "startColumn": 21,
+                          "endColumn": 46
+                        }
+                      },
+                      "message": {
+                        "text": "req.hea ... ature')"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 198,
+                          "startColumn": 9,
+                          "endColumn": 18
+                        }
+                      },
+                      "message": {
+                        "text": "signature"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 200,
+                          "startColumn": 7,
+                          "endColumn": 16
+                        }
+                      },
+                      "message": {
+                        "text": "signature"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "relatedLocations": [
+          {
+            "id": 1,
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/routes.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 2
+              },
+              "region": {
+                "startLine": 206,
+                "startColumn": 25,
+                "endLine": 207,
+                "endColumn": 56
+              }
+            },
+            "message": {
+              "text": "action"
+            }
+          },
+          {
+            "id": 2,
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/routes.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 2
+              },
+              "region": {
+                "startLine": 198,
+                "startColumn": 21,
+                "endColumn": 46
+              }
+            },
+            "message": {
+              "text": "user-provided value"
+            }
+          },
+          {
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/routes.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 2
+              },
+              "region": {
+                "startLine": 198,
+                "startColumn": 21,
+                "endColumn": 46
+              }
+            }
+          }
+        ]
+      },
+      "ruleDescriptor": {
+        "id": "js/user-controlled-bypass",
+        "name": "js/user-controlled-bypass",
+        "shortDescription": {
+          "text": "User-controlled bypass of security check"
+        },
+        "fullDescription": {
+          "text": "Conditions that the user controls are not suited for making security-related decisions."
+        },
+        "defaultConfiguration": {
+          "enabled": true,
+          "level": "error"
+        },
+        "help": {
+          "text": "# User-controlled bypass of security check\nUsing user-controlled data in a permissions check may allow a user to gain unauthorized access to protected functionality or data.\n\n\n## Recommendation\nWhen checking whether a user is authorized for a particular activity, do not use data that is entirely controlled by that user in the permissions check. If necessary, always validate the input, ideally against a fixed list of expected values.\n\nSimilarly, do not decide which permission to check for, based on user data. In particular, avoid using computation to decide which permissions to check for. Use fixed permissions for particular actions, rather than generating the permission to check for.\n\n\n## Example\nIn this example, we have a server that shows private information for a user, based on the request parameter `userId`. For privacy reasons, users may only view their own private information, so the server checks that the request parameter `userId` matches a cookie value for the user who is logged in.\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.cookies.loggedInUserId !== req.params.userId) {\n        // BAD: login decision made based on user controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\nThis security check is, however, insufficient since an attacker can craft their cookie values to match those of any user. To prevent this, the server can cryptographically sign the security critical cookie values:\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.signedCookies.loggedInUserId !== req.params.userId) {\n        // GOOD: login decision made based on server controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\n\n## References\n* Common Weakness Enumeration: [CWE-807](https://cwe.mitre.org/data/definitions/807.html).\n* Common Weakness Enumeration: [CWE-290](https://cwe.mitre.org/data/definitions/290.html).\n",
+          "markdown": "# User-controlled bypass of security check\nUsing user-controlled data in a permissions check may allow a user to gain unauthorized access to protected functionality or data.\n\n\n## Recommendation\nWhen checking whether a user is authorized for a particular activity, do not use data that is entirely controlled by that user in the permissions check. If necessary, always validate the input, ideally against a fixed list of expected values.\n\nSimilarly, do not decide which permission to check for, based on user data. In particular, avoid using computation to decide which permissions to check for. Use fixed permissions for particular actions, rather than generating the permission to check for.\n\n\n## Example\nIn this example, we have a server that shows private information for a user, based on the request parameter `userId`. For privacy reasons, users may only view their own private information, so the server checks that the request parameter `userId` matches a cookie value for the user who is logged in.\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.cookies.loggedInUserId !== req.params.userId) {\n        // BAD: login decision made based on user controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\nThis security check is, however, insufficient since an attacker can craft their cookie values to match those of any user. To prevent this, the server can cryptographically sign the security critical cookie values:\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.signedCookies.loggedInUserId !== req.params.userId) {\n        // GOOD: login decision made based on server controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\n\n## References\n* Common Weakness Enumeration: [CWE-807](https://cwe.mitre.org/data/definitions/807.html).\n* Common Weakness Enumeration: [CWE-290](https://cwe.mitre.org/data/definitions/290.html).\n"
+        },
+        "properties": {
+          "tags": [
+            "security",
+            "external/cwe/cwe-807",
+            "external/cwe/cwe-290"
+          ],
+          "description": "Conditions that the user controls are not suited for making security-related decisions.",
+          "id": "js/user-controlled-bypass",
+          "kind": "path-problem",
+          "name": "User-controlled bypass of security check",
+          "precision": "medium",
+          "problem.severity": "error",
+          "security-severity": "7.8"
+        }
+      }
+    },
+    {
+      "index": 6,
+      "ruleId": "js/user-controlled-bypass",
+      "completeCanonicalResultSha256": "b50f1b8b090e280ce7c2cb87d948a45903608aa9a3df701f4e0f200794858202",
+      "completeRuleDescriptorSha256": "419035758102ffd1040d1d3e82d59c044405b6c0e802c80b10650b533f915707",
+      "toolComponent": "codeql/javascript-queries",
+      "sourcePaths": [
+        "agent-gateway/routes.ts"
+      ],
+      "assessment": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW",
+      "rawResult": {
+        "ruleId": "js/user-controlled-bypass",
+        "rule": {
+          "id": "js/user-controlled-bypass",
+          "index": 88,
+          "toolComponent": {
+            "index": 1
+          }
+        },
+        "message": {
+          "text": "This condition guards a sensitive [action](1), but a [user-provided value](2) controls it."
+        },
+        "locations": [
+          {
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/routes.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 2
+              },
+              "region": {
+                "startLine": 200,
+                "startColumn": 20,
+                "endColumn": 27
+              }
+            }
+          }
+        ],
+        "partialFingerprints": {
+          "primaryLocationLineHash": "3abebee5996c2dd8:1",
+          "primaryLocationStartColumnFingerprint": "17"
+        },
+        "codeFlows": [
+          {
+            "threadFlows": [
+              {
+                "locations": [
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 199,
+                          "startColumn": 19,
+                          "endColumn": 42
+                        }
+                      },
+                      "message": {
+                        "text": "req.hea ... dress')"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 199,
+                          "startColumn": 9,
+                          "endColumn": 16
+                        }
+                      },
+                      "message": {
+                        "text": "address"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "agent-gateway/routes.ts",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 2
+                        },
+                        "region": {
+                          "startLine": 200,
+                          "startColumn": 20,
+                          "endColumn": 27
+                        }
+                      },
+                      "message": {
+                        "text": "address"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "relatedLocations": [
+          {
+            "id": 1,
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/routes.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 2
+              },
+              "region": {
+                "startLine": 206,
+                "startColumn": 25,
+                "endLine": 207,
+                "endColumn": 56
+              }
+            },
+            "message": {
+              "text": "action"
+            }
+          },
+          {
+            "id": 2,
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/routes.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 2
+              },
+              "region": {
+                "startLine": 199,
+                "startColumn": 19,
+                "endColumn": 42
+              }
+            },
+            "message": {
+              "text": "user-provided value"
+            }
+          },
+          {
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "agent-gateway/routes.ts",
+                "uriBaseId": "%SRCROOT%",
+                "index": 2
+              },
+              "region": {
+                "startLine": 199,
+                "startColumn": 19,
+                "endColumn": 42
+              }
+            }
+          }
+        ]
+      },
+      "ruleDescriptor": {
+        "id": "js/user-controlled-bypass",
+        "name": "js/user-controlled-bypass",
+        "shortDescription": {
+          "text": "User-controlled bypass of security check"
+        },
+        "fullDescription": {
+          "text": "Conditions that the user controls are not suited for making security-related decisions."
+        },
+        "defaultConfiguration": {
+          "enabled": true,
+          "level": "error"
+        },
+        "help": {
+          "text": "# User-controlled bypass of security check\nUsing user-controlled data in a permissions check may allow a user to gain unauthorized access to protected functionality or data.\n\n\n## Recommendation\nWhen checking whether a user is authorized for a particular activity, do not use data that is entirely controlled by that user in the permissions check. If necessary, always validate the input, ideally against a fixed list of expected values.\n\nSimilarly, do not decide which permission to check for, based on user data. In particular, avoid using computation to decide which permissions to check for. Use fixed permissions for particular actions, rather than generating the permission to check for.\n\n\n## Example\nIn this example, we have a server that shows private information for a user, based on the request parameter `userId`. For privacy reasons, users may only view their own private information, so the server checks that the request parameter `userId` matches a cookie value for the user who is logged in.\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.cookies.loggedInUserId !== req.params.userId) {\n        // BAD: login decision made based on user controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\nThis security check is, however, insufficient since an attacker can craft their cookie values to match those of any user. To prevent this, the server can cryptographically sign the security critical cookie values:\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.signedCookies.loggedInUserId !== req.params.userId) {\n        // GOOD: login decision made based on server controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\n\n## References\n* Common Weakness Enumeration: [CWE-807](https://cwe.mitre.org/data/definitions/807.html).\n* Common Weakness Enumeration: [CWE-290](https://cwe.mitre.org/data/definitions/290.html).\n",
+          "markdown": "# User-controlled bypass of security check\nUsing user-controlled data in a permissions check may allow a user to gain unauthorized access to protected functionality or data.\n\n\n## Recommendation\nWhen checking whether a user is authorized for a particular activity, do not use data that is entirely controlled by that user in the permissions check. If necessary, always validate the input, ideally against a fixed list of expected values.\n\nSimilarly, do not decide which permission to check for, based on user data. In particular, avoid using computation to decide which permissions to check for. Use fixed permissions for particular actions, rather than generating the permission to check for.\n\n\n## Example\nIn this example, we have a server that shows private information for a user, based on the request parameter `userId`. For privacy reasons, users may only view their own private information, so the server checks that the request parameter `userId` matches a cookie value for the user who is logged in.\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.cookies.loggedInUserId !== req.params.userId) {\n        // BAD: login decision made based on user controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\nThis security check is, however, insufficient since an attacker can craft their cookie values to match those of any user. To prevent this, the server can cryptographically sign the security critical cookie values:\n\n\n```javascript\nvar express = require('express');\nvar app = express();\n// ...\napp.get('/full-profile/:userId', function(req, res) {\n\n    if (req.signedCookies.loggedInUserId !== req.params.userId) {\n        // GOOD: login decision made based on server controlled data\n        requireLogin();\n    } else {\n        // ... show private information\n    }\n\n});\n\n```\n\n## References\n* Common Weakness Enumeration: [CWE-807](https://cwe.mitre.org/data/definitions/807.html).\n* Common Weakness Enumeration: [CWE-290](https://cwe.mitre.org/data/definitions/290.html).\n"
+        },
+        "properties": {
+          "tags": [
+            "security",
+            "external/cwe/cwe-807",
+            "external/cwe/cwe-290"
+          ],
+          "description": "Conditions that the user controls are not suited for making security-related decisions.",
+          "id": "js/user-controlled-bypass",
+          "kind": "path-problem",
+          "name": "User-controlled bypass of security check",
+          "precision": "medium",
+          "problem.severity": "error",
+          "security-severity": "7.8"
+        }
+      }
+    },
+    {
+      "index": 7,
+      "ruleId": "js/user-controlled-bypass",
+      "completeCanonicalResultSha256": "809b937e9d730f80bfa0b1350bdb713a6d9081ad5b0ba992cb13b3635d597076",
+      "completeRuleDescriptorSha256": "419035758102ffd1040d1d3e82d59c044405b6c0e802c80b10650b533f915707",
+      "toolComponent": "codeql/javascript-queries",
+      "sourcePaths": [
+        "apps/onebox-static/app.mjs"
+      ],
+      "assessment": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW",
+      "rawResult": {
+        "ruleId": "js/user-controlled-bypass",
+        "rule": {
+          "id": "js/user-controlled-bypass",
+          "index": 88,
+          "toolComponent": {
+            "index": 1
+          }
+        },
+        "message": {
+          "text": "This condition guards a sensitive [action](1), but a [user-provided value](2) controls it."
+        },
+        "locations": [
+          {
+            "physicalLocation": {
+              "artifactLocation": {
+                "uri": "apps/onebox-static/app.mjs",
+                "uriBaseId": "%SRCROOT%",
+                "index": 3
+              },
+              "region": {
+                "startLine": 1482,
+                "startColumn": 8,
+                "endColumn": 15
+              }
+            }
+          }
+        ],
+        "partialFingerprints": {
+          "primaryLocationLineHash": "56ed5a835e67d820:1",
+          "primaryLocationStartColumnFingerprint": "5"
+        },
+        "codeFlows": [
+          {
+            "threadFlows": [
+              {
+                "locations": [
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 491,
+                          "startColumn": 25,
+                          "endColumn": 45
+                        }
+                      },
+                      "message": {
+                        "text": "window.location.href"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 491,
+                          "startColumn": 17,
+                          "endColumn": 46
+                        }
+                      },
+                      "message": {
+                        "text": "new URL ... n.href) [searchParams, MapValue]"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 491,
+                          "startColumn": 11,
+                          "endColumn": 14
+                        }
+                      },
+                      "message": {
+                        "text": "url [searchParams, MapValue]"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 508,
+                          "startColumn": 27,
+                          "endColumn": 30
+                        }
+                      },
+                      "message": {
+                        "text": "url [searchParams, MapValue]"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 508,
+                          "startColumn": 27,
+                          "endColumn": 43
+                        }
+                      },
+                      "message": {
+                        "text": "url.searchParams [MapValue]"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 508,
+                          "startColumn": 27,
+                          "endColumn": 66
+                        }
+                      },
+                      "message": {
+                        "text": "url.sea ... prefix)"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 508,
+                          "startColumn": 13,
+                          "endColumn": 24
+                        }
+                      },
+                      "message": {
+                        "text": "prefixValue"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 509,
+                          "startColumn": 23,
+                          "endColumn": 34
+                        }
+                      },
+                      "message": {
+                        "text": "prefixValue"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 509,
+                          "startColumn": 23,
+                          "endColumn": 40
+                        }
+                      },
+                      "message": {
+                        "text": "prefixValue || \"\""
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 349,
+                          "startColumn": 26,
+                          "endColumn": 31
+                        }
+                      },
+                      "message": {
+                        "text": "value"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 350,
+                          "startColumn": 43,
+                          "endColumn": 48
+                        }
+                      },
+                      "message": {
+                        "text": "value"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 201,
+                          "startColumn": 32,
+                          "endColumn": 37
+                        }
+                      },
+                      "message": {
+                        "text": "value"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 203,
+                          "startColumn": 19,
+                          "endColumn": 24
+                        }
+                      },
+                      "message": {
+                        "text": "value"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 203,
+                          "startColumn": 19,
+                          "endColumn": 31
+                        }
+                      },
+                      "message": {
+                        "text": "value.trim()"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 203,
+                          "startColumn": 9,
+                          "endColumn": 16
+                        }
+                      },
+                      "message": {
+                        "text": "trimmed"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 205,
+                          "startColumn": 10,
+                          "endColumn": 17
+                        }
+                      },
+                      "message": {
+                        "text": "trimmed"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 205,
+                          "startColumn": 10,
+                          "endColumn": 43
+                        }
+                      },
+                      "message": {
+                        "text": "trimmed ... /g, \"\")"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 350,
+                          "startColumn": 21,
+                          "endColumn": 49
+                        }
+                      },
+                      "message": {
+                        "text": "sanitiz ... (value)"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 350,
+                          "startColumn": 9,
+                          "endColumn": 18
+                        }
+                      },
+                      "message": {
+                        "text": "sanitized"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 351,
+                          "startColumn": 24,
+                          "endColumn": 33
+                        }
+                      },
+                      "message": {
+                        "text": "sanitized"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 351,
+                          "startColumn": 3,
+                          "endColumn": 21
+                        }
+                      },
+                      "message": {
+                        "text": "pagePrefixOverride"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 329,
+                          "startColumn": 43,
+                          "endColumn": 61
+                        }
+                      },
+                      "message": {
+                        "text": "pagePrefixOverride"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 475,
+                          "startColumn": 26,
+                          "endColumn": 44
+                        }
+                      },
+                      "message": {
+                        "text": "readStoredPrefix()"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 475,
+                          "startColumn": 9,
+                          "endColumn": 23
+                        }
+                      },
+                      "message": {
+                        "text": "prefixOverride"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 477,
+                          "startColumn": 44,
+                          "endColumn": 58
+                        }
+                      },
+                      "message": {
+                        "text": "prefixOverride"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 477,
+                          "startColumn": 9,
+                          "endColumn": 15
+                        }
+                      },
+                      "message": {
+                        "text": "prefix"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 478,
+                          "startColumn": 51,
+                          "endColumn": 57
+                        }
+                      },
+                      "message": {
+                        "text": "prefix"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 449,
+                          "startColumn": 41,
+                          "endColumn": 47
+                        }
+                      },
+                      "message": {
+                        "text": "prefix"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 451,
+                          "startColumn": 49,
+                          "endColumn": 55
+                        }
+                      },
+                      "message": {
+                        "text": "prefix"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 201,
+                          "startColumn": 32,
+                          "endColumn": 37
+                        }
+                      },
+                      "message": {
+                        "text": "value"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 203,
+                          "startColumn": 19,
+                          "endColumn": 24
+                        }
+                      },
+                      "message": {
+                        "text": "value"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 203,
+                          "startColumn": 19,
+                          "endColumn": 31
+                        }
+                      },
+                      "message": {
+                        "text": "value.trim()"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 203,
+                          "startColumn": 9,
+                          "endColumn": 16
+                        }
+                      },
+                      "message": {
+                        "text": "trimmed"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 205,
+                          "startColumn": 10,
+                          "endColumn": 17
+                        }
+                      },
+                      "message": {
+                        "text": "trimmed"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 205,
+                          "startColumn": 10,
+                          "endColumn": 43
+                        }
+                      },
+                      "message": {
+                        "text": "trimmed ... /g, \"\")"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 451,
+                          "startColumn": 27,
+                          "endColumn": 56
+                        }
+                      },
+                      "message": {
+                        "text": "sanitiz ... prefix)"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 451,
+                          "startColumn": 9,
+                          "endColumn": 24
+                        }
+                      },
+                      "message": {
+                        "text": "sanitizedPrefix"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 462,
+                          "startColumn": 51,
+                          "endColumn": 66
+                        }
+                      },
+                      "message": {
+                        "text": "sanitizedPrefix"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 298,
+                          "startColumn": 35,
+                          "endColumn": 43
+                        }
+                      },
+                      "message": {
+                        "text": "segments [0]"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 301,
+                          "startColumn": 25,
+                          "endColumn": 33
+                        }
+                      },
+                      "message": {
+                        "text": "segments [0]"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 301,
+                          "startColumn": 14,
+                          "endColumn": 21
+                        }
+                      },
+                      "message": {
+                        "text": "segment"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 303,
+                          "startColumn": 21,
+                          "endColumn": 28
+                        }
+                      },
+                      "message": {
+                        "text": "segment"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 303,
+                          "startColumn": 21,
+                          "endColumn": 54
+                        }
+                      },
+                      "message": {
+                        "text": "segment ... /g, \"\")"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 303,
+                          "startColumn": 11,
+                          "endColumn": 18
+                        }
+                      },
+                      "message": {
+                        "text": "trimmed"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 305,
+                          "startColumn": 23,
+                          "endColumn": 30
+                        }
+                      },
+                      "message": {
+                        "text": "trimmed"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 305,
+                          "startColumn": 5,
+                          "endColumn": 15
+                        }
+                      },
+                      "message": {
+                        "text": "normalized"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 307,
+                          "startColumn": 10,
+                          "endColumn": 20
+                        }
+                      },
+                      "message": {
+                        "text": "normalized"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 462,
+                          "startColumn": 16,
+                          "endColumn": 67
+                        }
+                      },
+                      "message": {
+                        "text": "joinUrl ... Prefix)"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 462,
+                          "startColumn": 9,
+                          "endColumn": 13
+                        }
+                      },
+                      "message": {
+                        "text": "root"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 467,
+                          "startColumn": 27,
+                          "endColumn": 31
+                        }
+                      },
+                      "message": {
+                        "text": "root"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 298,
+                          "startColumn": 26,
+                          "endColumn": 30
+                        }
+                      },
+                      "message": {
+                        "text": "base"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 300,
+                          "startColumn": 20,
+                          "endColumn": 24
+                        }
+                      },
+                      "message": {
+                        "text": "base"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 300,
+                          "startColumn": 20,
+                          "endColumn": 44
+                        }
+                      },
+                      "message": {
+                        "text": "base.re ... $/, \"\")"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 300,
+                          "startColumn": 7,
+                          "endColumn": 17
+                        }
+                      },
+                      "message": {
+                        "text": "normalized"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 307,
+                          "startColumn": 10,
+                          "endColumn": 20
+                        }
+                      },
+                      "message": {
+                        "text": "normalized"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 467,
+                          "startColumn": 11,
+                          "endColumn": 43
+                        }
+                      },
+                      "message": {
+                        "text": "joinUrl ... ecute\")"
+                      }
+                    }
+                  },
+                  {
+                    "location": {
+                      "physicalLocation": {
+                        "artifactLocation": {
+                          "uri": "apps/onebox-static/app.mjs",
+                          "uriBaseId": "%SRCROOT%",
+                          "index": 3
+                        },
+                        "region": {
+                          "startLine": 463,
+                          "startColumn": 10,
+                          "endLine": 469,
+                          "endColumn": 4
+                        }
+                      },
+                      "message": {
+                        "text": "{\\n    b ... \"),\\n  } [exec]"
+                      }
+                    }
+                  },
+        

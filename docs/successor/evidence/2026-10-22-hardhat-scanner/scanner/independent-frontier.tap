@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: business and mathematics are useful prepared research programmes, never simulated completed results
+ok 1 - business and mathematics are useful prepared research programmes, never simulated completed results
+  ---
+  duration_ms: 10.062343
+  type: 'test'
+  ...
+# Subtest: default presets do not silently attest rights for a new owner
+ok 2 - default presets do not silently attest rights for a new owner
+  ---
+  duration_ms: 1.060587
+  type: 'test'
+  ...
+# Subtest: exact credential-free public source permissions exclude ambiguous destinations
+ok 3 - exact credential-free public source permissions exclude ambiguous destinations
+  ---
+  duration_ms: 5.121783
+  type: 'test'
+  ...
+# Subtest: source IDs, duplicate permissions and size bounds fail before a task can be prepared
+ok 4 - source IDs, duplicate permissions and size bounds fail before a task can be prepared
+  ---
+  duration_ms: 1.963888
+  type: 'test'
+  ...
+# Subtest: every mission requires a true outcome, credible alternative and explicit immutable requirements
+ok 5 - every mission requires a true outcome, credible alternative and explicit immutable requirements
+  ---
+  duration_ms: 1.16185
+  type: 'test'
+  ...
+# Subtest: native runtime budgets enforce exact integer admission limits
+ok 6 - native runtime budgets enforce exact integer admission limits
+  ---
+  duration_ms: 0.534935
+  type: 'test'
+  ...
+# Subtest: mission replay rejects edited claims, altered hard requirements, invented source retrieval and proof flags
+ok 7 - mission replay rejects edited claims, altered hard requirements, invented source retrieval and proof flags
+  ---
+  duration_ms: 5.69013
+  type: 'test'
+  ...
+# Subtest: canonical export restores exact mission without executing embedded source text
+ok 8 - canonical export restores exact mission without executing embedded source text
+  ---
+  duration_ms: 5.73088
+  type: 'test'
+  ...
+# Subtest: ledger templates are reusable prompts with no fabricated research, execution or mathematical certification
+ok 9 - ledger templates are reusable prompts with no fabricated research, execution or mathematical certification
+  ---
+  duration_ms: 3.446781
+  type: 'test'
+  ...
+# Subtest: a recorded strategy revision can be preserved without turning a user statement into proof
+ok 10 - a recorded strategy revision can be preserved without turning a user statement into proof
+  ---
+  duration_ms: 7.063087
+  type: 'test'
+  ...
+# Subtest: the native Alpha70 HTML boundary remains exactly 200000 characters
+ok 11 - the native Alpha70 HTML boundary remains exactly 200000 characters
+  ---
+  duration_ms: 3.848606
+  type: 'test'
+  ...
+# Subtest: maximum source and ledger records remain portable and immutable when native HTML exceeds its separate limit
+ok 12 - maximum source and ledger records remain portable and immutable when native HTML exceeds its separate limit
+  ---
+  duration_ms: 216.989853
+  type: 'test'
+  ...
+# Subtest: all field maxima round-trip within a derived portable bound for Unicode and worst JSON escaping
+ok 13 - all field maxima round-trip within a derived portable bound for Unicode and worst JSON escaping
+  ---
+  duration_ms: 965.900947
+  type: 'test'
+  ...
+# Subtest: portable restore enforces the shared UTF8 byte cap before parsing or replay
+ok 14 - portable restore enforces the shared UTF8 byte cap before parsing or replay
+  ---
+  duration_ms: 29.612625
+  type: 'test'
+  ...
+# Subtest: L4 requires a complete hard-requirement mapping and explicit attributable experiment approval
+ok 15 - L4 requires a complete hard-requirement mapping and explicit attributable experiment approval
+  ---
+  duration_ms: 7.83505
+  type: 'test'
+  ...
+# Subtest: workspace import refuses mission substitution, privileged provenance and ledger tampering
+ok 16 - workspace import refuses mission substitution, privileged provenance and ledger tampering
+  ---
+  duration_ms: 4.715181
+  type: 'test'
+  ...
+# Subtest: actual desk result import is bound and remains an unverified, unapproved draft
+ok 17 - actual desk result import is bound and remains an unverified, unapproved draft
+  ---
+  duration_ms: 3.182683
+  type: 'test'
+  ...
+# Subtest: exported ComputerTask uses the exact Alpha70 native schema and source allowlist, not a simulation claim
+ok 18 - exported ComputerTask uses the exact Alpha70 native schema and source allowlist, not a simulation claim
+  ---
+  duration_ms: 1.592769
+  type: 'test'
+  ...
+# Subtest: Work prompt binds a shared desk to the exact sealed mission and rejects a different mission fragment
+ok 19 - Work prompt binds a shared desk to the exact sealed mission and rejects a different mission fragment
+  ---
+  duration_ms: 8.741289
+  type: 'test'
+  ...
+# Subtest: mathematical research supports actual bounded computational experiments while retaining proof gaps
+ok 20 - mathematical research supports actual bounded computational experiments while retaining proof gaps
+  ---
+  duration_ms: 1.989937
+  type: 'test'
+  ...
+# Subtest: readable brief exposes hypotheses, unretrieved sources, complete cost bounds and retained incumbent
+ok 21 - readable brief exposes hypotheses, unretrieved sources, complete cost bounds and retained incumbent
+  ---
+  duration_ms: 1.133868
+  type: 'test'
+  ...
+# Subtest: native four-job research graph preserves every actual requirement and requests separate independent proof
+ok 22 - native four-job research graph preserves every actual requirement and requests separate independent proof
+  ---
+  duration_ms: 10.527004
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1393.45493

@@ -1,0 +1,62 @@
+TAP version 13
+# (node:51) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: actual aggregate discovery excludes every node:test suite and retains native Mocha files
+ok 1 - actual aggregate discovery excludes every node:test suite and retains native Mocha files
+  ---
+  duration_ms: 72.149982
+  type: 'test'
+  ...
+# Subtest: explicit native JavaScript and TypeScript selections survive the registered override
+ok 2 - explicit native JavaScript and TypeScript selections survive the registered override
+  ---
+  duration_ms: 2.70555
+  type: 'test'
+  ...
+# Subtest: receiver suites stay outside native contract discovery
+ok 3 - receiver suites stay outside native contract discovery
+  ---
+  duration_ms: 24.911302
+  type: 'test'
+  ...
+# Subtest: documented project npm command runs all relocated receiver suites
+ok 4 - documented project npm command runs all relocated receiver suites
+  ---
+  duration_ms: 0.840096
+  type: 'test'
+  ...
+# Subtest: isolated suites retain mandatory fresh-process CI registrations
+ok 5 - isolated suites retain mandatory fresh-process CI registrations
+  ---
+  duration_ms: 10.528967
+  type: 'test'
+  ...
+# Subtest: security regressions stay isolated and mandatory in their source-bound workflow
+not ok 6 - security regressions stay isolated and mandatory in their source-bound workflow
+  ---
+  duration_ms: 17.378003
+  type: 'test'
+  location: '/workspace/scratch/32717074a7f1/jobs-hardhat-isolation/test/scripts/hardhat-test-discovery.test.cjs:248:1'
+  failureType: 'testCodeFailure'
+  error: 'the native Node runtime must be installed before regressions'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/workspace/scratch/32717074a7f1/jobs-hardhat-isolation/test/scripts/hardhat-test-discovery.test.cjs:351:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 5
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 216.842717
+(node:44) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)

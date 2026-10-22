@@ -1,0 +1,50 @@
+(node:6) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+TAP version 13
+# (node:13) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: actual aggregate discovery excludes every node:test suite and retains native Mocha files
+ok 1 - actual aggregate discovery excludes every node:test suite and retains native Mocha files
+  ---
+  duration_ms: 121.335496
+  type: 'test'
+  ...
+# Subtest: explicit native JavaScript and TypeScript selections survive the registered override
+ok 2 - explicit native JavaScript and TypeScript selections survive the registered override
+  ---
+  duration_ms: 3.894102
+  type: 'test'
+  ...
+# Subtest: receiver suites stay outside native contract discovery
+ok 3 - receiver suites stay outside native contract discovery
+  ---
+  duration_ms: 42.462409
+  type: 'test'
+  ...
+# Subtest: documented project npm command runs all relocated receiver suites
+ok 4 - documented project npm command runs all relocated receiver suites
+  ---
+  duration_ms: 0.880608
+  type: 'test'
+  ...
+# Subtest: isolated suites retain mandatory fresh-process CI registrations
+ok 5 - isolated suites retain mandatory fresh-process CI registrations
+  ---
+  duration_ms: 13.254979
+  type: 'test'
+  ...
+# Subtest: security regressions stay isolated and mandatory in their source-bound workflow
+ok 6 - security regressions stay isolated and mandatory in their source-bound workflow
+  ---
+  duration_ms: 25.203779
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 319.156996

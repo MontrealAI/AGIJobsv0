@@ -1,0 +1,1295 @@
+Config.sol/KernelConfig.json",
+          "bytes": 16763,
+          "crc32": "a5e32a54"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/kernel/EscrowVault.sol/EscrowVault.json",
+          "bytes": 16835,
+          "crc32": "cb747a65"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/kernel/JobRegistry.sol/KernelJobRegistry.json",
+          "bytes": 52231,
+          "crc32": "e7da6ec6"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/kernel/RewardEngine.sol/RewardEngine.json",
+          "bytes": 12961,
+          "crc32": "2c634e16"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/kernel/StakeManager.sol/KernelStakeManager.json",
+          "bytes": 29552,
+          "crc32": "1168f1be"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/kernel/ValidationModule.sol/ValidationModule.json",
+          "bytes": 27501,
+          "crc32": "924a749f"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/libraries/ThermoMath.sol/ThermoMath.json",
+          "bytes": 708,
+          "crc32": "5502a86d"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/CertificateNFT.sol/CertificateNFT.json",
+          "bytes": 43914,
+          "crc32": "5f498527"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/DayOneUtilityController.sol/DayOneUtilityController.json",
+          "bytes": 25506,
+          "crc32": "f9d28750"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/DiscoveryModule.sol/DiscoveryModule.json",
+          "bytes": 22632,
+          "crc32": "41f25202"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/ENSOwnershipVerifier.sol/ENSOwnershipVerifier.json",
+          "bytes": 26930,
+          "crc32": "d05e268c"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/JobEscrow.sol/JobEscrow.json",
+          "bytes": 31291,
+          "crc32": "746a2676"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/DisputeModule.sol/DisputeModule.json",
+          "bytes": 66799,
+          "crc32": "132dd627"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/JobRouter.sol/JobRouter.json",
+          "bytes": 25943,
+          "crc32": "e614dba4"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/KlerosDisputeModule.sol/KlerosDisputeModule.json",
+          "bytes": 23096,
+          "crc32": "0868103e"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/OracleValidationModule.sol/OracleValidationModule.json",
+          "bytes": 33713,
+          "crc32": "4a821f19"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/NoValidationModule.sol/NoValidationModule.json",
+          "bytes": 31397,
+          "crc32": "0ed080aa"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/RevenueDistributor.sol/RevenueDistributor.json",
+          "bytes": 20456,
+          "crc32": "9d06d3f3"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/RoutingModule.sol/RoutingModule.json",
+          "bytes": 31895,
+          "crc32": "df2366c2"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/ShardJobQueue.sol/ShardJobQueue.json",
+          "bytes": 31495,
+          "crc32": "b3741b09"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/ShardRegistry.sol/ShardRegistry.json",
+          "bytes": 53842,
+          "crc32": "9d1e7340"
+        },
+        {
+          "path": "verification/artifacts/contracts/v2/modules/VerifyOwnership.sol/VerifyOwnership.json",
+          "bytes": 535,
+          "crc32": "1f4ac657"
+        },
+        {
+          "path": "verification/build-info/4b480a63780a84184a34139dfef893d9db73b3efddacc23a9660b198e05ab084.json",
+          "bytes": 48247740,
+          "crc32": "191a79b6"
+        },
+        {
+          "path": "verification/index.json",
+          "bytes": 43205,
+          "crc32": "9b3439ca"
+        },
+        {
+          "path": "verification/standard-input/4b480a63780a84184a34139dfef893d9db73b3efddacc23a9660b198e05ab084.json",
+          "bytes": 1869318,
+          "crc32": "e5df4716"
+        }
+      ]
+    },
+    {
+      "artifactId": 12391407878,
+      "runId": 39694681528,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "omega-business-3-evidence",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12391407878.zip",
+      "bytes": 2085351,
+      "sha256": "2150b044c6db927c9f52eecc5ac7e2f4e7c71051d0177c813af9cf038cd5dbc1",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": "browser/custom-run/arctic/input.json",
+          "bytes": 562,
+          "crc32": "8319744f"
+        },
+        {
+          "path": "browser/custom-run/mission-summary.md",
+          "bytes": 755,
+          "crc32": "2083cf0f"
+        },
+        {
+          "path": "browser/custom-capacity.png",
+          "bytes": 633811,
+          "crc32": "ddfb9433"
+        },
+        {
+          "path": "browser/custom-run/arctic/task.json",
+          "bytes": 2606,
+          "crc32": "9bb47ebc"
+        },
+        {
+          "path": "browser/custom-run/report.json",
+          "bytes": 8964,
+          "crc32": "1e6dcd21"
+        },
+        {
+          "path": "browser/custom-run/scenario.json",
+          "bytes": 2647,
+          "crc32": "c3c12253"
+        },
+        {
+          "path": "browser/custom-run/silkroad/input.json",
+          "bytes": 609,
+          "crc32": "e74d1e92"
+        },
+        {
+          "path": "browser/custom-run/silkroad/task.json",
+          "bytes": 2628,
+          "crc32": "da2561ff"
+        },
+        {
+          "path": "browser/custom-run/simulation-ledger.ndjson",
+          "bytes": 3694,
+          "crc32": "f1dfddb3"
+        },
+        {
+          "path": "browser/custom-run/solaris/input.json",
+          "bytes": 467,
+          "crc32": "5c3dd2ce"
+        },
+        {
+          "path": "browser/custom-run/solaris/task.json",
+          "bytes": 2508,
+          "crc32": "0d60a713"
+        },
+        {
+          "path": "browser/custom-run/workloads.json",
+          "bytes": 1819,
+          "crc32": "77902afa"
+        },
+        {
+          "path": "browser/custom-scenario.json",
+          "bytes": 2647,
+          "crc32": "c3c12253"
+        },
+        {
+          "path": "browser/desktop.png",
+          "bytes": 798843,
+          "crc32": "7ce387dd"
+        },
+        {
+          "path": "browser/mobile.png",
+          "bytes": 626016,
+          "crc32": "4dc32fa5"
+        },
+        {
+          "path": "browser/run/arctic/candidate.json",
+          "bytes": 591,
+          "crc32": "36093b15"
+        },
+        {
+          "path": "browser/run/arctic/checker.json",
+          "bytes": 388,
+          "crc32": "ed9992ec"
+        },
+        {
+          "path": "browser/run/arctic/dossier.md",
+          "bytes": 671,
+          "crc32": "037bd96a"
+        },
+        {
+          "path": "browser/run/arctic/input.json",
+          "bytes": 562,
+          "crc32": "8319744f"
+        },
+        {
+          "path": "browser/run/arctic/task.json",
+          "bytes": 2606,
+          "crc32": "9bb47ebc"
+        },
+        {
+          "path": "browser/run/mission-summary.md",
+          "bytes": 757,
+          "crc32": "8e0041a3"
+        },
+        {
+          "path": "browser/run/report.json",
+          "bytes": 12950,
+          "crc32": "6ccc1e91"
+        },
+        {
+          "path": "browser/run/scenario.json",
+          "bytes": 3179,
+          "crc32": "da7e1fb8"
+        },
+        {
+          "path": "browser/run/silkroad/candidate.json",
+          "bytes": 552,
+          "crc32": "9b3e7781"
+        },
+        {
+          "path": "browser/run/silkroad/checker.json",
+          "bytes": 388,
+          "crc32": "9d87312a"
+        },
+        {
+          "path": "browser/run/silkroad/dossier.md",
+          "bytes": 633,
+          "crc32": "78381e50"
+        },
+        {
+          "path": "browser/run/silkroad/input.json",
+          "bytes": 609,
+          "crc32": "e74d1e92"
+        },
+        {
+          "path": "browser/run/silkroad/task.json",
+          "bytes": 2628,
+          "crc32": "da2561ff"
+        },
+        {
+          "path": "browser/run/simulation-ledger.ndjson",
+          "bytes": 5029,
+          "crc32": "a02d15d5"
+        },
+        {
+          "path": "browser/run/solaris/candidate.json",
+          "bytes": 489,
+          "crc32": "23b94285"
+        },
+        {
+          "path": "browser/run/solaris/checker.json",
+          "bytes": 388,
+          "crc32": "5156aba1"
+        },
+        {
+          "path": "browser/run/solaris/input.json",
+          "bytes": 467,
+          "crc32": "5c3dd2ce"
+        },
+        {
+          "path": "browser/run/solaris/task.json",
+          "bytes": 2508,
+          "crc32": "0d60a713"
+        },
+        {
+          "path": "browser/run/solaris/dossier.md",
+          "bytes": 653,
+          "crc32": "02bb3a65"
+        },
+        {
+          "path": "browser/run/workloads.json",
+          "bytes": 1819,
+          "crc32": "77902afa"
+        },
+        {
+          "path": "contract-receipts.json",
+          "bytes": 2494,
+          "crc32": "64b9477f"
+        },
+        {
+          "path": "owner-diagnostics/arctic/candidate.json",
+          "bytes": 591,
+          "crc32": "36093b15"
+        },
+        {
+          "path": "owner-diagnostics/arctic/checker.json",
+          "bytes": 388,
+          "crc32": "ed9992ec"
+        },
+        {
+          "path": "owner-control-surface.json",
+          "bytes": 8867,
+          "crc32": "39d982ab"
+        },
+        {
+          "path": "owner-diagnostics/arctic/dossier.md",
+          "bytes": 671,
+          "crc32": "037bd96a"
+        },
+        {
+          "path": "owner-diagnostics/arctic/input.json",
+          "bytes": 562,
+          "crc32": "8319744f"
+        },
+        {
+          "path": "owner-diagnostics/arctic/task.json",
+          "bytes": 2604,
+          "crc32": "467bc890"
+        },
+        {
+          "path": "owner-diagnostics/mission-summary.md",
+          "bytes": 863,
+          "crc32": "dfd1a267"
+        },
+        {
+          "path": "owner-diagnostics/owner-command-center.log",
+          "bytes": 287,
+          "crc32": "0a75375f"
+        },
+        {
+          "path": "owner-diagnostics/owner-command-center.md",
+          "bytes": 12780,
+          "crc32": "a656a8b2"
+        },
+        {
+          "path": "owner-diagnostics/owner-parameter-matrix.log",
+          "bytes": 565,
+          "crc32": "2964a488"
+        },
+        {
+          "path": "owner-diagnostics/owner-quickstart.log",
+          "bytes": 422,
+          "crc32": "44cb4bb0"
+        },
+        {
+          "path": "owner-diagnostics/owner-quickstart.md",
+          "bytes": 5801,
+          "crc32": "c508e053"
+        },
+        {
+          "path": "owner-diagnostics/parameter-matrix.json",
+          "bytes": 16831,
+          "crc32": "b6b26c8a"
+        },
+        {
+          "path": "owner-diagnostics/report.json",
+          "bytes": 15202,
+          "crc32": "6e4a38ae"
+        },
+        {
+          "path": "owner-diagnostics/scenario.json",
+          "bytes": 3179,
+          "crc32": "da7e1fb8"
+        },
+        {
+          "path": "owner-diagnostics/silkroad/checker.json",
+          "bytes": 388,
+          "crc32": "9d87312a"
+        },
+        {
+          "path": "owner-diagnostics/silkroad/candidate.json",
+          "bytes": 552,
+          "crc32": "9b3e7781"
+        },
+        {
+          "path": "owner-diagnostics/silkroad/dossier.md",
+          "bytes": 633,
+          "crc32": "78381e50"
+        },
+        {
+          "path": "owner-diagnostics/silkroad/input.json",
+          "bytes": 609,
+          "crc32": "e74d1e92"
+        },
+        {
+          "path": "owner-diagnostics/silkroad/task.json",
+          "bytes": 2626,
+          "crc32": "29dd155b"
+        },
+        {
+          "path": "owner-diagnostics/simulation-ledger.ndjson",
+          "bytes": 5029,
+          "crc32": "a02d15d5"
+        },
+        {
+          "path": "owner-diagnostics/solaris/candidate.json",
+          "bytes": 489,
+          "crc32": "23b94285"
+        },
+        {
+          "path": "owner-diagnostics/solaris/checker.json",
+          "bytes": 388,
+          "crc32": "5156aba1"
+        },
+        {
+          "path": "owner-diagnostics/solaris/dossier.md",
+          "bytes": 653,
+          "crc32": "02bb3a65"
+        },
+        {
+          "path": "owner-diagnostics/solaris/input.json",
+          "bytes": 467,
+          "crc32": "5c3dd2ce"
+        },
+        {
+          "path": "owner-diagnostics/solaris/task.json",
+          "bytes": 2506,
+          "crc32": "c956f2ca"
+        },
+        {
+          "path": "owner-diagnostics/workloads.json",
+          "bytes": 1819,
+          "crc32": "77902afa"
+        }
+      ]
+    },
+    {
+      "artifactId": 12391461542,
+      "runId": 39694681444,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "python-coverage-unit",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12391461542.zip",
+      "bytes": 39112,
+      "sha256": "8fe6033e8350636f318ee52d2589248bc46f08a9951450d58780e34c68f64205",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": ".coverage.unit",
+          "bytes": 114688,
+          "crc32": "d2ec2fba"
+        },
+        {
+          "path": "reports/python-coverage/unit.xml",
+          "bytes": 65565,
+          "crc32": "9d339708"
+        }
+      ]
+    },
+    {
+      "artifactId": 12391525665,
+      "runId": 39694681645,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "inherited-security-regressions",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/inherited-security-original.zip",
+      "bytes": 9223,
+      "sha256": "30cb02686e871fdec975faff21898a7cf1f3b4b4e1abd7207d8a35f9ffebaa7f",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": "remediation/authorization-tests.log",
+          "bytes": 10177,
+          "crc32": "9d67c20c"
+        },
+        {
+          "path": "remediation/browser-tests.log",
+          "bytes": 506,
+          "crc32": "b4573346"
+        },
+        {
+          "path": "remediation/security-tests.log",
+          "bytes": 20000,
+          "crc32": "60f3b1f0"
+        },
+        {
+          "path": "remediation/ledger-validation.json",
+          "bytes": 1193,
+          "crc32": "d9fa4bc4"
+        },
+        {
+          "path": "remediation/source.json",
+          "bytes": 182,
+          "crc32": "9403dc0b"
+        },
+        {
+          "path": "remediation-browser/result.json",
+          "bytes": 2772,
+          "crc32": "a2f0ea12"
+        }
+      ]
+    },
+    {
+      "artifactId": 12391565906,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~0SD2KS.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12391565906.zip",
+      "bytes": 52521,
+      "sha256": "03078e844e5d49e9d631f60fd14598bdc07ed5d8716f17602db242f00555527f",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 779776,
+      "decodedSha256": "b7d9693d85ed2b5108c5000b6233d6438855f4705a3c206e8de9a0e87c4c37c5"
+    },
+    {
+      "artifactId": 12391631835,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~OHXQFJ.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12391631835.zip",
+      "bytes": 59722,
+      "sha256": "6bc7721b2103fa499c56423b5eefd261568674161ed7d567ad321096342c84b7",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 1011200,
+      "decodedSha256": "9793165493d4f175d1fb2c496072200018e478d68db4e886cce62403bd9ca92c"
+    },
+    {
+      "artifactId": 12391679781,
+      "runId": 39694681444,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "python-coverage-integration",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12391679781.zip",
+      "bytes": 17453,
+      "sha256": "6b1af4828805c3ce58ee7244d6479e1ef70c7058905aca4d24075996e841eb88",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": ".coverage.integration",
+          "bytes": 73728,
+          "crc32": "8ef3895a"
+        },
+        {
+          "path": "reports/python-coverage/integration.xml",
+          "bytes": 67503,
+          "crc32": "6f69b79f"
+        }
+      ]
+    },
+    {
+      "artifactId": 12391890635,
+      "runId": 39694682284,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~RPE9FE.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12391890635.zip",
+      "bytes": 44356,
+      "sha256": "651bbadd92535fdd68d2271327b92c2172160802346d80f72f4334acadeaed6c",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 531456,
+      "decodedSha256": "e891fcde004676e73dffd30bcacb8a9f5c22544901acd4f494706a0c4dd42a6b"
+    },
+    {
+      "artifactId": 12392105437,
+      "runId": 39694681412,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "culture-service-coverage",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392105437.zip",
+      "bytes": 172895,
+      "sha256": "58621c5bce04f1c3f78634d12fefb56106a965146d9f0eaa2d0bbfce1b4b9354",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": "backend/arena-orchestrator/coverage/coverage-summary.json",
+          "bytes": 2681,
+          "crc32": "7918dc62"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/async-handler.ts.html",
+          "bytes": 4473,
+          "crc32": "d64bf515"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/auth.ts.html",
+          "bytes": 6275,
+          "crc32": "4e03e466"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/base.css",
+          "bytes": 5394,
+          "crc32": "db57257d"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/block-navigation.js",
+          "bytes": 2655,
+          "crc32": "290c11fa"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/difficulty.ts.html",
+          "bytes": 13833,
+          "crc32": "7d7eb3fd"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/elo.ts.html",
+          "bytes": 19735,
+          "crc32": "d5961b5c"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/env.ts.html",
+          "bytes": 25164,
+          "crc32": "acc61338"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/favicon.png",
+          "bytes": 445,
+          "crc32": "c5fde164"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/index.html",
+          "bytes": 8458,
+          "crc32": "82139350"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/persistence.ts.html",
+          "bytes": 10892,
+          "crc32": "3d03465a"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/prettify.css",
+          "bytes": 676,
+          "crc32": "76072b43"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/prettify.js",
+          "bytes": 17590,
+          "crc32": "c0383832"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/router.ts.html",
+          "bytes": 24980,
+          "crc32": "4db2191d"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/sort-arrow-sprite.png",
+          "bytes": 138,
+          "crc32": "cbdbe41e"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov-report/sorter.js",
+          "bytes": 6731,
+          "crc32": "026ddb47"
+        },
+        {
+          "path": "backend/arena-orchestrator/coverage/lcov.info",
+          "bytes": 5449,
+          "crc32": "a21e38c5"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/coverage-summary.json",
+          "bytes": 6598,
+          "crc32": "83520889"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/base.css",
+          "bytes": 5394,
+          "crc32": "db57257d"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/block-navigation.js",
+          "bytes": 2655,
+          "crc32": "290c11fa"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/favicon.png",
+          "bytes": 445,
+          "crc32": "c5fde164"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/index.html",
+          "bytes": 7764,
+          "crc32": "71eb7ac5"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/prettify.css",
+          "bytes": 676,
+          "crc32": "76072b43"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/prettify.js",
+          "bytes": 17590,
+          "crc32": "c0383832"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/scripts/database-url.mjs.html",
+          "bytes": 5487,
+          "crc32": "80527324"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/scripts/ensure-prisma-client.mjs.html",
+          "bytes": 12207,
+          "crc32": "a5463d6c"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/scripts/healthcheck.mjs.html",
+          "bytes": 6269,
+          "crc32": "35658866"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/scripts/start.mjs.html",
+          "bytes": 8395,
+          "crc32": "3ecc6984"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/scripts/index.html",
+          "bytes": 6347,
+          "crc32": "b6449ab4"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/sort-arrow-sprite.png",
+          "bytes": 138,
+          "crc32": "cbdbe41e"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/sorter.js",
+          "bytes": 6731,
+          "crc32": "026ddb47"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/cli/generate-weekly-metrics.ts.html",
+          "bytes": 27461,
+          "crc32": "87a41e6d"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/cli/index.html",
+          "bytes": 4515,
+          "crc32": "481f2aac"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/config.ts.html",
+          "bytes": 16873,
+          "crc32": "dbad8e43"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/contracts.ts.html",
+          "bytes": 4288,
+          "crc32": "04c5497c"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/db/index.html",
+          "bytes": 4431,
+          "crc32": "332211cf"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/db/prisma.ts.html",
+          "bytes": 5245,
+          "crc32": "5ce30944"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/graphql/index.html",
+          "bytes": 5145,
+          "crc32": "802f78f7"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/graphql/resolvers.ts.html",
+          "bytes": 58828,
+          "crc32": "b6819a78"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/graphql/schema.ts.html",
+          "bytes": 12470,
+          "crc32": "9dacda9f"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/index.html",
+          "bytes": 6443,
+          "crc32": "41165187"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/index.ts.html",
+          "bytes": 11050,
+          "crc32": "9ce89ab4"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/server.ts.html",
+          "bytes": 12330,
+          "crc32": "773295ff"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/services/checksum-service.ts.html",
+          "bytes": 14261,
+          "crc32": "121d0b65"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/services/data-integrity-service.ts.html",
+          "bytes": 17439,
+          "crc32": "90bce1aa"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/services/event-ingestion-service.ts.html",
+          "bytes": 53829,
+          "crc32": "6de061c9"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/services/index.html",
+          "bytes": 8040,
+          "crc32": "002327c2"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/services/influence-service.ts.html",
+          "bytes": 36878,
+          "crc32": "bff48904"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/services/networkx-validator.ts.html",
+          "bytes": 39692,
+          "crc32": "d59a6fc5"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov-report/src/services/types.ts.html",
+          "bytes": 6674,
+          "crc32": "6c527e04"
+        },
+        {
+          "path": "indexers/culture-graph-indexer/coverage/lcov.info",
+          "bytes": 27100,
+          "crc32": "b835fb13"
+        },
+        {
+          "path": "apps/culture-studio/coverage/coverage-summary.json",
+          "bytes": 1003,
+          "crc32": "aaf70f51"
+        },
+        {
+          "path": "apps/culture-studio/coverage/lcov-report/api.ts.html",
+          "bytes": 48906,
+          "crc32": "b59214d4"
+        },
+        {
+          "path": "apps/culture-studio/coverage/lcov-report/base.css",
+          "bytes": 5394,
+          "crc32": "db57257d"
+        },
+        {
+          "path": "apps/culture-studio/coverage/lcov-report/block-navigation.js",
+          "bytes": 2655,
+          "crc32": "290c11fa"
+        },
+        {
+          "path": "apps/culture-studio/coverage/lcov-report/favicon.png",
+          "bytes": 445,
+          "crc32": "c5fde164"
+        },
+        {
+          "path": "apps/culture-studio/coverage/lcov-report/index.html",
+          "bytes": 5072,
+          "crc32": "18f7c848"
+        },
+        {
+          "path": "apps/culture-studio/coverage/lcov-report/prettify.css",
+          "bytes": 676,
+          "crc32": "76072b43"
+        },
+        {
+          "path": "apps/culture-studio/coverage/lcov-report/prettify.js",
+          "bytes": 17590,
+          "crc32": "c0383832"
+        },
+        {
+          "path": "apps/culture-studio/coverage/lcov-report/preview.ts.html",
+          "bytes": 41864,
+          "crc32": "0a4b03aa"
+        },
+        {
+          "path": "apps/culture-studio/coverage/lcov-report/sort-arrow-sprite.png",
+          "bytes": 138,
+          "crc32": "cbdbe41e"
+        },
+        {
+          "path": "apps/culture-studio/coverage/lcov-report/sorter.js",
+          "bytes": 6731,
+          "crc32": "026ddb47"
+        },
+        {
+          "path": "apps/culture-studio/coverage/lcov.info",
+          "bytes": 9497,
+          "crc32": "3ed4db23"
+        }
+      ]
+    },
+    {
+      "artifactId": 12392133968,
+      "runId": 39694681444,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "coverage-lcov",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392133968.zip",
+      "bytes": 587,
+      "sha256": "e895f3c2f2e41b59cd5f24a58d4d45c838dbc0ff82a9676ed7d8fada67764ff6",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": "lcov.info",
+          "bytes": 2168,
+          "crc32": "1df6bf98"
+        }
+      ]
+    },
+    {
+      "artifactId": 12392180011,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~YWVIE7.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392180011.zip",
+      "bytes": 44787,
+      "sha256": "391175d68ef83036733134566b1d87c4ad9d030e570fe91375c20516ba1e6297",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 605184,
+      "decodedSha256": "3cc867a1c235624a776a4d466aa3303262bbd1d7424014736b7f3df78f04cfa2"
+    },
+    {
+      "artifactId": 12392214921,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~IQL4GM.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392214921.zip",
+      "bytes": 42651,
+      "sha256": "99cd1eb211a4ab991b30affcb73f54588142173bbe82a7e2d66693d05759d3c2",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 517632,
+      "decodedSha256": "ead5bb7ea46721c9c63b01e9fe717f20d09cd31180b1d1f0769dedcf7cb9611a"
+    },
+    {
+      "artifactId": 12392231496,
+      "runId": 39694681287,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "owner-console-dist",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392231496.zip",
+      "bytes": 62228,
+      "sha256": "233350511515ee5ea018c59b0b82d962d538942dc3aa7ed3e1190850131d4bb6",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": "assets/index-DA7JeVyd.css",
+          "bytes": 4039,
+          "crc32": "3f738389"
+        },
+        {
+          "path": "assets/index-DdMYbtaf.js",
+          "bytes": 187582,
+          "crc32": "f663d0cd"
+        },
+        {
+          "path": "index.html",
+          "bytes": 474,
+          "crc32": "064bdac5"
+        }
+      ]
+    },
+    {
+      "artifactId": 12392235707,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~WFMYVI.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392235707.zip",
+      "bytes": 52274,
+      "sha256": "a62857a9726f1059791a36b70a955d7d93142ad1252a4e2d6ef2807e1bac266d",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 812032,
+      "decodedSha256": "6fafc39e4d09572e87d36750fbba51dc1dbf37b5b4da35b882b06fcf754212dc"
+    },
+    {
+      "artifactId": 12392246217,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~WRYW6K.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392246217.zip",
+      "bytes": 59136,
+      "sha256": "702f0e5428da9b28599f629f60096cce9c09b0839262826112bee44b04ff45d5",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 1015296,
+      "decodedSha256": "35ad2dcdce478b5b42856b171a8271fb0a8dc2af1ea7fa2c801a4785cfa6b242"
+    },
+    {
+      "artifactId": 12392288446,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~UUXIDY.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392288446.zip",
+      "bytes": 53503,
+      "sha256": "e99b7b4fcda727156e4a082c8a714eeb068dba59234a0391dc98bad2097e7d71",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 560640,
+      "decodedSha256": "bf624cf266019d76c9545b76107df50dbce70016c413c04cc00732bf287a8fb8"
+    },
+    {
+      "artifactId": 12392296385,
+      "runId": 39694681287,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "portal-publication-evidence",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392296385.zip",
+      "bytes": 209633,
+      "sha256": "d0377fdebd56292bd2e819e554f0488fc8eceeb72544e265a50886ed2b2c38a9",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": "conversation-spec.json",
+          "bytes": 174,
+          "crc32": "175b51d2"
+        },
+        {
+          "path": "governance-updated-spec.json",
+          "bytes": 331,
+          "crc32": "f6197e5e"
+        },
+        {
+          "path": "governance-spec.json",
+          "bytes": 359,
+          "crc32": "0b689c2d"
+        },
+        {
+          "path": "publication-desktop.png",
+          "bytes": 120663,
+          "crc32": "5e93de42"
+        },
+        {
+          "path": "publication-mobile.png",
+          "bytes": 93613,
+          "crc32": "95f6646d"
+        },
+        {
+          "path": "result.json",
+          "bytes": 209,
+          "crc32": "dbb552d6"
+        }
+      ]
+    },
+    {
+      "artifactId": 12392341026,
+      "runId": 39694681444,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "owner-control-ci",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392341026.zip",
+      "bytes": 8759,
+      "sha256": "3e7deaf817c31af6d518dd4cad643c5150c31a8e711d41265b38796eb05f7f90",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": "authority-matrix.json",
+          "bytes": 8016,
+          "crc32": "8a1e03a6"
+        },
+        {
+          "path": "command-center.md",
+          "bytes": 7988,
+          "crc32": "8a77de2b"
+        },
+        {
+          "path": "authority-matrix.md",
+          "bytes": 4670,
+          "crc32": "7571d4a7"
+        },
+        {
+          "path": "doctor.json",
+          "bytes": 1867,
+          "crc32": "e7df62a5"
+        },
+        {
+          "path": "parameter-matrix.json",
+          "bytes": 24079,
+          "crc32": "5c708b20"
+        }
+      ]
+    },
+    {
+      "artifactId": 12392467211,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~U037LI.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392467211.zip",
+      "bytes": 38031,
+      "sha256": "dea604bed7fae41d05987613292770166f21d7e005122e8521f58e5b78bc104c",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 448000,
+      "decodedSha256": "acffeb1df7059912576389354e5825db86e84858aff0af4deab2f0e51f6770d9"
+    },
+    {
+      "artifactId": 12392565904,
+      "runId": 39694681444,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "python-coverage-combined",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392565904.zip",
+      "bytes": 39777,
+      "sha256": "d127667f701f93d177e82aee0c846c4180e04bd56b03f14216316f87401732b8",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": ".coverage",
+          "bytes": 118784,
+          "crc32": "c812559c"
+        },
+        {
+          "path": "reports/python-coverage/combined.xml",
+          "bytes": 65426,
+          "crc32": "56e3933f"
+        }
+      ]
+    },
+    {
+      "artifactId": 12392637158,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~4TCG5G.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392637158.zip",
+      "bytes": 55269,
+      "sha256": "ef29c54736b5675a2dc329e79698f98f89dba1d04baae8dac65a7d99d367dd80",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 783360,
+      "decodedSha256": "92ed2b40e858165f8f925e9f4cb34459114f3508ab98763ad5873f18bdb886d5"
+    },
+    {
+      "artifactId": 12392696706,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~AIGI7R.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392696706.zip",
+      "bytes": 51863,
+      "sha256": "c07273318ae30c05d8c0a40fab2d193f2488be3437b6e7eae3b47819dae45bb7",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 572416,
+      "decodedSha256": "27a0f2d53be7a822c3aee73fb61718d0d9aa6c007712cf2a57e0939a5ef78a8d"
+    },
+    {
+      "artifactId": 12392747271,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~WTM971.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392747271.zip",
+      "bytes": 60286,
+      "sha256": "493f52d13a2c9eedd54d72259e77ff8b17216c961107aef905e0dc085b168d9b",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 918016,
+      "decodedSha256": "cf1b5b847c23a363c52d58014afae7e0e432ca1f3252eb1a62b6ae28e9106970"
+    },
+    {
+      "artifactId": 12392867611,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~ZEWXSC.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392867611.zip",
+      "bytes": 42667,
+      "sha256": "2fc789b2e0204edbf0e3dc8baabeee5e1494b052f72a8841805132955cec92bc",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 594944,
+      "decodedSha256": "dd9509bdc58a49b38dbb9dd0578b46a26759e665aa73de013ab9edbde6190a45"
+    },
+    {
+      "artifactId": 12392873706,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~AKUDF3.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12392873706.zip",
+      "bytes": 50128,
+      "sha256": "064080557630c1101d608fae40adbb31c579b7ce08fa26351e3f560b8f98dd4a",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 536064,
+      "decodedSha256": "e462817cf8c2fcb7cdb58204565106da0c2bc1b59b63a60d9b8ff449d0618085"
+    },
+    {
+      "artifactId": 12393033034,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~C2YZAW.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12393033034.zip",
+      "bytes": 63341,
+      "sha256": "8b81ccac7c66b6305265882a8b37b4d33ae1da3243f4a028e65909b837cbd395",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 695808,
+      "decodedSha256": "389008408bacfcfb0a537550f7bca4e4893173128fd9d6cb2752833b43b1c51f"
+    },
+    {
+      "artifactId": 12393155641,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~J9ASX5.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12393155641.zip",
+      "bytes": 37875,
+      "sha256": "d79a520e965c1b7d4fb329dc7e6f5ecd058d1768cdbaace97b8aba2478af45f6",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 447488,
+      "decodedSha256": "bf32e98452bdcb245e989c1258ee76c23872e275a824d9fa872da596939fbb64"
+    },
+    {
+      "artifactId": 12393231270,
+      "runId": 39694681352,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "MontrealAI~AGIJobsv0~E2JZJJ.dockerbuild",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12393231270.zip",
+      "bytes": 50428,
+      "sha256": "b31d523baa1cfa8b26c68671c7f15be30a8b0b5faac4c52a822af7315f33c6c4",
+      "hostedDigestMatches": true,
+      "format": "gzip-dockerbuild",
+      "gzipCrcVerified": true,
+      "decodedBytes": 600064,
+      "decodedSha256": "d8b21b63bc5d6c33e492f55863a723cce1cefd97481fd417277706efd1098f33"
+    },
+    {
+      "artifactId": 12393251276,
+      "runId": 39694681444,
+      "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+      "name": "ci-summary",
+      "path": "/workspace/scratch/32717074a7f1/jobs-hosted-evidence-852/original-archives/12393251276.zip",
+      "bytes": 1449,
+      "sha256": "3f9a799cc367d06321a9e45c58d8e423cf3599553c6ae687b073e9e7709692ad",
+      "hostedDigestMatches": true,
+      "format": "zip",
+      "crcVerified": true,
+      "members": [
+        {
+          "path": "status.json",
+          "bytes": 4442,
+          "crc32": "1576b285"
+        },
+        {
+          "path": "status.md",
+          "bytes": 1252,
+          "crc32": "c7b2aee3"
+        }
+      ]
+    }
+  ]
+}

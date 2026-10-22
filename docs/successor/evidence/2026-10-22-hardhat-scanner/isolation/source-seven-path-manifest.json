@@ -1,0 +1,80 @@
+{
+  "schema": "successor/jobs-isolation-public-source-custody/v1",
+  "publicPr": 4012,
+  "publicHead": "5b85af62078d415c9ced2dd7aa959a0783c19d27",
+  "publicTree": "a2aa0593cdc7b4800ddd81638357665c9e941195",
+  "parent": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+  "independentLocalReviewHead": "72917c80b36bf1e938d693a1d36bd07972414e1d",
+  "sourceTreeIdentical": true,
+  "treeEntryCount": 6304,
+  "treeTruncated": false,
+  "rawFiles": [
+    {
+      "path": "config/discovery-lab-source-candidate-v1.json",
+      "mode": "100644",
+      "blob": "938036d9d93a2204b758fc5800a5e767777dfb1c",
+      "size": 5513,
+      "sha256": "ebee1b8c2bbdf2d7084d433296d6a4e1fe7bf54b9809e24b75947980e0b7550d"
+    },
+    {
+      "path": "docs/successor/DISCOVERY_LAB.md",
+      "mode": "100644",
+      "blob": "bf86ef6c313e8a647726dd9e79c210a4db9dd37a",
+      "size": 18694,
+      "sha256": "55e75ea1f35de29b2486d819c56e04ac042c6397225a3fbccb74f5435186dc4b"
+    },
+    {
+      "path": "hardhat.config.js",
+      "mode": "100644",
+      "blob": "15e6761b211becadac0f76d058b50d728045b7f2",
+      "size": 7328,
+      "sha256": "738518441596cb1e6a9c691fa2c2ca68fc158a96f8856ab71f0ebc70ad0590b6"
+    },
+    {
+      "path": "scripts/release/discovery-lab-profile.py",
+      "mode": "100644",
+      "blob": "feee1782afe7c91ffe8e0d67380dc4b0df157e69",
+      "size": 10213,
+      "sha256": "4da6958cd88f4e596aaa5947f398d2367009bb9bfe487fcfa1d0bf17b4cd348b"
+    },
+    {
+      "path": "scripts/release/test-discovery-lab-profile.py",
+      "mode": "100644",
+      "blob": "76026cdc336fe9a1b258279f389cbc6034dc1afa",
+      "size": 7786,
+      "sha256": "603f6f26515803bde617f977a2a1cbd9c48e09fafc9b77dcc9f61eb18ca7728f"
+    },
+    {
+      "path": "test/scripts/hardhat-test-discovery.test.cjs",
+      "mode": "100644",
+      "blob": "3b22f8f7694ed9ce3f2a6ee7a0c2fce6e6f21313",
+      "size": 11148,
+      "sha256": "9887b51bbc81599ff9a725b0f81747c8f9b1f3de3219015d789125216438b7dd"
+    },
+    {
+      "path": "tools/security/discovery-protected-scope.mjs",
+      "mode": "100644",
+      "blob": "0f9be921f42ff54f2175228e9224e93d3282acb7",
+      "size": 6075,
+      "sha256": "f27bea8586e5d6d11047cb2daa832b618cd186b115525d96da38e9aa4d90d765"
+    }
+  ],
+  "exactRawBlobContentReadback": true,
+  "gitAuthorVerification": "unsigned",
+  "baseOwnerRefPreserved": true,
+  "baseOwnerRefObservedHead": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+  "configuredReviewRequest": 6330061593,
+  "configuredReviewSummary": 6330064545,
+  "configuredReviewStatus": "running",
+  "independentTechnicalReviewSha256": "028f8364c8168cdc46888cc75ee72adf57b1a8aeb31e78c7d3e5505a40a4785e",
+  "original852Archives": {
+    "count": 47,
+    "bytes": 133906009,
+    "custodySha256": "992b39d70c78271b993e789d16ea40ef7aea231c8c2c744214c4d1bbda8cb528"
+  },
+  "publicStrictLedgerLogSha256": "cf0968a1ac30e83f3ebc0c525fbd925569e261991898a9573633907ecccb40d6",
+  "freshPublicHostedQualification": "PENDING",
+  "releaseQualified": false,
+  "publicationApproved": false,
+  "executionApproved": false
+}

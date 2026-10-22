@@ -1,0 +1,394 @@
+TAP version 13
+# (node:12) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: capabilities distinguish synthetic inspection from unsupported submission and unprovisioned execution
+ok 1 - capabilities distinguish synthetic inspection from unsupported submission and unprovisioned execution
+  ---
+  duration_ms: 1.832874
+  type: 'test'
+  ...
+# Subtest: all six discriminators receive an actual current checker call: learn
+ok 2 - all six discriminators receive an actual current checker call: learn
+  ---
+  duration_ms: 19.766188
+  type: 'test'
+  ...
+# Subtest: all six discriminators receive an actual current checker call: think
+ok 3 - all six discriminators receive an actual current checker call: think
+  ---
+  duration_ms: 3.278053
+  type: 'test'
+  ...
+# Subtest: all six discriminators receive an actual current checker call: design
+ok 4 - all six discriminators receive an actual current checker call: design
+  ---
+  duration_ms: 3.210812
+  type: 'test'
+  ...
+# Subtest: all six discriminators receive an actual current checker call: strategise
+ok 5 - all six discriminators receive an actual current checker call: strategise
+  ---
+  duration_ms: 11.016974
+  type: 'test'
+  ...
+# Subtest: all six discriminators receive an actual current checker call: execute
+ok 6 - all six discriminators receive an actual current checker call: execute
+  ---
+  duration_ms: 7.052255
+  type: 'test'
+  ...
+# Subtest: all six discriminators receive an actual current checker call: evolve
+ok 7 - all six discriminators receive an actual current checker call: evolve
+  ---
+  duration_ms: 4.655551
+  type: 'test'
+  ...
+# Subtest: stale independently frozen missionId rejects before checker
+ok 8 - stale independently frozen missionId rejects before checker
+  ---
+  duration_ms: 2.490506
+  type: 'test'
+  ...
+# Subtest: stale independently frozen revision rejects before checker
+ok 9 - stale independently frozen revision rejects before checker
+  ---
+  duration_ms: 2.8052
+  type: 'test'
+  ...
+# Subtest: stale independently frozen purposeDigest rejects before checker
+ok 10 - stale independently frozen purposeDigest rejects before checker
+  ---
+  duration_ms: 1.864362
+  type: 'test'
+  ...
+# Subtest: stale independently frozen charterDigest rejects before checker
+ok 11 - stale independently frozen charterDigest rejects before checker
+  ---
+  duration_ms: 1.443567
+  type: 'test'
+  ...
+# Subtest: stale independently frozen modelDigest rejects before checker
+ok 12 - stale independently frozen modelDigest rejects before checker
+  ---
+  duration_ms: 2.223042
+  type: 'test'
+  ...
+# Subtest: stale independently frozen sourceDigest rejects before checker
+ok 13 - stale independently frozen sourceDigest rejects before checker
+  ---
+  duration_ms: 1.145768
+  type: 'test'
+  ...
+# Subtest: stale independently frozen evaluatorDigest rejects before checker
+ok 14 - stale independently frozen evaluatorDigest rejects before checker
+  ---
+  duration_ms: 1.170645
+  type: 'test'
+  ...
+# Subtest: import cannot choose its trusted expected bindings or checker
+ok 15 - import cannot choose its trusted expected bindings or checker
+  ---
+  duration_ms: 8.495712
+  type: 'test'
+  ...
+# Subtest: logical commission id binds the separately selected branch
+ok 16 - logical commission id binds the separately selected branch
+  ---
+  duration_ms: 1.526853
+  type: 'test'
+  ...
+# Subtest: logical commission branch binds the separately selected branch
+ok 17 - logical commission branch binds the separately selected branch
+  ---
+  duration_ms: 1.234482
+  type: 'test'
+  ...
+# Subtest: the other currency route is rejected without conversion
+ok 18 - the other currency route is rejected without conversion
+  ---
+  duration_ms: 1.982324
+  type: 'test'
+  ...
+# Subtest: no shared commission branch can silently select a second route
+ok 19 - no shared commission branch can silently select a second route
+  ---
+  duration_ms: 2.235642
+  type: 'test'
+  ...
+# Subtest: money or submission cannot be imported: capBaseUnits
+ok 20 - money or submission cannot be imported: capBaseUnits
+  ---
+  duration_ms: 0.733537
+  type: 'test'
+  ...
+# Subtest: money or submission cannot be imported: status
+ok 21 - money or submission cannot be imported: status
+  ---
+  duration_ms: 0.522448
+  type: 'test'
+  ...
+# Subtest: money or submission cannot be imported: currency
+ok 22 - money or submission cannot be imported: currency
+  ---
+  duration_ms: 1.686704
+  type: 'test'
+  ...
+# Subtest: outer payload digest changes do not establish semantic acceptance
+ok 23 - outer payload digest changes do not establish semantic acceptance
+  ---
+  duration_ms: 2.537107
+  type: 'test'
+  ...
+# Subtest: a semantic checker result still grants no imported capability or operational authority
+ok 24 - a semantic checker result still grants no imported capability or operational authority
+  ---
+  duration_ms: 1.477529
+  type: 'test'
+  ...
+# Subtest: checker work beyond a resource limit remains charged and inconclusive
+ok 25 - checker work beyond a resource limit remains charged and inconclusive
+  ---
+  duration_ms: 1.668687
+  type: 'test'
+  ...
+# Subtest: incomplete, unsafe or authority-bearing checker reports are rejected
+ok 26 - incomplete, unsafe or authority-bearing checker reports are rejected
+  ---
+  duration_ms: 8.524024
+  type: 'test'
+  ...
+# Subtest: checker mutation cannot rewrite the request being inspected
+ok 27 - checker mutation cannot rewrite the request being inspected
+  ---
+  duration_ms: 1.14719
+  type: 'test'
+  ...
+# Subtest: unsupported schemas and external modes stay explicit without invoking a checker
+ok 28 - unsupported schemas and external modes stay explicit without invoking a checker
+  ---
+  duration_ms: 0.766286
+  type: 'test'
+  ...
+# Subtest: duplicate keys, unsafe numbers, payload tampering and unknown envelope fields reject
+ok 29 - duplicate keys, unsafe numbers, payload tampering and unknown envelope fields reject
+  ---
+  duration_ms: 5.269216
+  type: 'test'
+  ...
+# Subtest: direct-object data never invokes getters or hides symbol, non-enumerable or array-extra data
+ok 30 - direct-object data never invokes getters or hides symbol, non-enumerable or array-extra data
+  ---
+  duration_ms: 0.568807
+  type: 'test'
+  ...
+# Subtest: incomplete checking at the resource cap remains inconclusive: BUDGET_EXHAUSTED
+ok 31 - incomplete checking at the resource cap remains inconclusive: BUDGET_EXHAUSTED
+  ---
+  duration_ms: 1.820966
+  type: 'test'
+  ...
+# Subtest: incomplete checking at the resource cap remains inconclusive: stage:SEARCH_TRUNCATED
+ok 32 - incomplete checking at the resource cap remains inconclusive: stage:SEARCH_TRUNCATED
+  ---
+  duration_ms: 1.486221
+  type: 'test'
+  ...
+# Subtest: incomplete checking at the resource cap remains inconclusive: CHECK_INCOMPLETE
+ok 33 - incomplete checking at the resource cap remains inconclusive: CHECK_INCOMPLETE
+  ---
+  duration_ms: 1.317506
+  type: 'test'
+  ...
+# Subtest: trusted context cannot change while the installed checker is suspended: expectedBindings
+ok 34 - trusted context cannot change while the installed checker is suspended: expectedBindings
+  ---
+  duration_ms: 1.365699
+  type: 'test'
+  ...
+# Subtest: trusted context cannot change while the installed checker is suspended: expectedCommission
+ok 35 - trusted context cannot change while the installed checker is suspended: expectedCommission
+  ---
+  duration_ms: 1.446141
+  type: 'test'
+  ...
+# Subtest: checker receives a deeply frozen request, payload and limits
+ok 36 - checker receives a deeply frozen request, payload and limits
+  ---
+  duration_ms: 1.734095
+  type: 'test'
+  ...
+# Subtest: direct binding and resource validators reject getters before reading values
+ok 37 - direct binding and resource validators reject getters before reading values
+  ---
+  duration_ms: 0.312892
+  type: 'test'
+  ...
+# Subtest: input/copy/receipt bytes and declared admission units are charged before checker work
+ok 38 - input/copy/receipt bytes and declared admission units are charged before checker work
+  ---
+  duration_ms: 2.970069
+  type: 'test'
+  ...
+# Subtest: insufficient receiver reservation stops before native work and remains inconclusive
+ok 39 - insufficient receiver reservation stops before native work and remains inconclusive
+  ---
+  duration_ms: 2.180318
+  type: 'test'
+  ...
+# Subtest: failed trusted-context admission retains current receiver charges
+ok 40 - failed trusted-context admission retains current receiver charges
+  ---
+  duration_ms: 1.703579
+  type: 'test'
+  ...
+# Subtest: an inspector exception retains its unresolved native resource reservation
+ok 41 - an inspector exception retains its unresolved native resource reservation
+  ---
+  duration_ms: 1.224587
+  type: 'test'
+  ...
+# Subtest: unused receiver reserve cannot enlarge the inspector allowance: memoryBytes
+ok 42 - unused receiver reserve cannot enlarge the inspector allowance: memoryBytes
+  ---
+  duration_ms: 1.101161
+  type: 'test'
+  ...
+# Subtest: unused receiver reserve cannot enlarge the inspector allowance: storageBytes
+ok 43 - unused receiver reserve cannot enlarge the inspector allowance: storageBytes
+  ---
+  duration_ms: 0.804884
+  type: 'test'
+  ...
+# (node:34) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: resource sums cannot overflow the strict safe-integer vector or discard component costs
+ok 44 - resource sums cannot overflow the strict safe-integer vector or discard component costs
+  ---
+  duration_ms: 7.051524
+  type: 'test'
+  ...
+# Subtest: unsupported and unprovisioned probes retain their admission costs
+ok 45 - unsupported and unprovisioned probes retain their admission costs
+  ---
+  duration_ms: 0.400654
+  type: 'test'
+  ...
+# Subtest: malformed receiver probes retain current failed-attempt charges
+ok 46 - malformed receiver probes retain current failed-attempt charges
+  ---
+  duration_ms: 0.176156
+  type: 'test'
+  ...
+# Subtest: native helper exports can be imported from a stdin module without executing its CLI
+ok 47 - native helper exports can be imported from a stdin module without executing its CLI
+  ---
+  duration_ms: 62.460223
+  type: 'test'
+  ...
+# Subtest: final receipt serialization is included in measured elapsed cost: supported
+ok 48 - final receipt serialization is included in measured elapsed cost: supported
+  ---
+  duration_ms: 8.972852
+  type: 'test'
+  ...
+# Subtest: final receipt serialization is included in measured elapsed cost: unsupported
+ok 49 - final receipt serialization is included in measured elapsed cost: unsupported
+  ---
+  duration_ms: 2.505879
+  type: 'test'
+  ...
+# Subtest: shared-workspace evidence requires a source-bound monotone successor and preserved purpose
+ok 50 - shared-workspace evidence requires a source-bound monotone successor and preserved purpose
+  ---
+  duration_ms: 8.877378
+  type: 'test'
+  ...
+# Subtest: hardened inspector failures retain receiver-owned accounting and the original cause
+ok 51 - hardened inspector failures retain receiver-owned accounting and the original cause
+  ---
+  duration_ms: 3.420849
+  type: 'test'
+  ...
+# Subtest: oversized raw input is refused before any UTF8 accounting scan or native call
+ok 52 - oversized raw input is refused before any UTF8 accounting scan or native call
+  ---
+  duration_ms: 0.435757
+  type: 'test'
+  ...
+# Subtest: trusted context acquisition failures also retain receiver-owned failed-attempt accounting
+ok 53 - trusted context acquisition failures also retain receiver-owned failed-attempt accounting
+  ---
+  duration_ms: 0.274164
+  type: 'test'
+  ...
+# Subtest: checker report validation uses captured fields without original property reads
+ok 54 - checker report validation uses captured fields without original property reads
+  ---
+  duration_ms: 1.331589
+  type: 'test'
+  ...
+# Subtest: checker report retains the resource snapshot that passed validation
+ok 55 - checker report retains the resource snapshot that passed validation
+  ---
+  duration_ms: 1.038186
+  type: 'test'
+  ...
+# Subtest: unknown checker-report fields captured first cannot disappear before exact validation
+ok 56 - unknown checker-report fields captured first cannot disappear before exact validation
+  ---
+  duration_ms: 2.185546
+  type: 'test'
+  ...
+# (node:13) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: exactly the three additive regular configuration inputs receive finite admission
+ok 57 - exactly the three additive regular configuration inputs receive finite admission
+  ---
+  duration_ms: 1.429276
+  type: 'test'
+  ...
+# Subtest: additional contracts, old deployments and arbitrary configuration remain protected
+ok 58 - additional contracts, old deployments and arbitrary configuration remain protected
+  ---
+  duration_ms: 1.828748
+  type: 'test'
+  ...
+# Subtest: missing, duplicate and substituted change inventories cannot qualify
+ok 59 - missing, duplicate and substituted change inventories cannot qualify
+  ---
+  duration_ms: 0.819176
+  type: 'test'
+  ...
+# Subtest: a preexisting protected path cannot be recast as an addition
+ok 60 - a preexisting protected path cannot be recast as an addition
+  ---
+  duration_ms: 0.603009
+  type: 'test'
+  ...
+# Subtest: symlinks, executable modes, absent blobs and malformed identities are refused
+ok 61 - symlinks, executable modes, absent blobs and malformed identities are refused
+  ---
+  duration_ms: 0.523069
+  type: 'test'
+  ...
+# Subtest: fixed reviewed policy pins reject rehashed descendant manifest and verifier substitutions
+ok 62 - fixed reviewed policy pins reject rehashed descendant manifest and verifier substitutions
+  ---
+  duration_ms: 0.549579
+  type: 'test'
+  ...
+# Subtest: empty protected delta cannot bypass required Discovery configuration presence
+ok 63 - empty protected delta cannot bypass required Discovery configuration presence
+  ---
+  duration_ms: 67.992046
+  type: 'test'
+  ...
+1..63
+# tests 63
+# suites 0
+# pass 63
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 331.421871

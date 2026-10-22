@@ -1,0 +1,83 @@
+{
+  "schema": "local/jobs-codeql-current-raw-review-packet/v1",
+  "repository": "MontrealAI/AGIJobsv0",
+  "head": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+  "executedSource": "afa1d740b68f34a8823f7c331cf8c12fc317dbb2",
+  "tree": "cb29f676e1e6d43f0d19ed72b34c248bca9a3af1",
+  "run": 39694681348,
+  "artifactId": 12390791531,
+  "archiveSha256": "85ac690f505c36b8fed8a0030226b41da125c748e378cc00cc97658f6dc661b7",
+  "rawSarifSha256": "d4eaceee885ed5dfba4db9ff01bc6b10caf7742c69002d9d836a30409a863b4c",
+  "recordCount": 19,
+  "completeToolMetadataSha256": "df928d57cbdb52f60ca2715fbdf7826cacb6c6d85b1b0ca8f5abb4d41945041c",
+  "sourceLocationCustody": [
+    {
+      "path": "agent-gateway/apiHelpers.ts",
+      "sha256": "7d6d7b765c5c6dd3a30ef8cd3df4643e6d64da7aaa9099dbc84723792ed0aafe",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "agent-gateway/routes.ts",
+      "sha256": "c920b58d89d30847bad909a3d390ff33a1cf9893fee2f558db8dc5291646bbd5",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "apps/onebox-static/app.mjs",
+      "sha256": "25a7f48dbeef5400a75d13e335d24d65de9c990b8d1fc00d6cca61ff86e09121",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "integrations/alpha-agent/four-repo-computer-lifecycle.cjs",
+      "sha256": "582bfd92eb01ca2c1a5ee3ab65371f0d45a936cba0ecbe08076a838dc09a4658",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "integrations/alpha-agent/pinned-alpha-checkout.cjs",
+      "sha256": "75b111f5732423063ef50fa9bf3f33bc035f19060ddd7270c80d35e9091c4eff",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "integrations/alpha-agent/vendor/alpha-computer/examples/successor-alpha/research.mjs",
+      "sha256": "cac318319051de4dc1fdbe2d8a148416b3ceffe206d7fc64f111f2fe6f099c8a",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "packages/successor-core/src/frontier-mission.mjs",
+      "sha256": "b32457b69332641865115a43949ab5a67ac5340edf92703c67ecd141e89409c1",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "scripts/release/publish-source-release-rc16.cjs",
+      "sha256": "9fa3d04c2490ddb713fe8aef5dcd2ffabb4e61de73903b2bb05ac9b7478940e7",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "scripts/release/source-native-gates-rc16.cjs",
+      "sha256": "4fc84995239318a797af13ffad915bf0a1197d31670c369b8d517ee6437479a7",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "scripts/release/source-scanner-gates-rc16.cjs",
+      "sha256": "2890b3ee716f9cb54e1d004819c9d9a0b379325861ec27ec86ba78a1afd21c3d",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    },
+    {
+      "path": "website/assets/frontier-mission.js",
+      "sha256": "8f9202b8e65d2048311c4f2c09961fad2dc2b35d89a08b13ef2effbacff611bb",
+      "sameBytesAsFeaturePredecessor": true,
+      "sameBytesAsMainBaseline": true
+    }
+  ],
+  "meaning": "All complete results retained for independent case review. Every primary/related/codeflow source path is byte-identical to feature predecessor and fixed main baseline. This establishes narrow-delta custody, not finding dispositions or release acceptance.",
+  "allFindingsDisposition": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW"
+}

@@ -1,0 +1,123 @@
+{
+  "schema": "local/jobs-hardhat-isolation-independent-review/v1",
+  "head": "72917c80b36bf1e938d693a1d36bd07972414e1d",
+  "tree": "a2aa0593cdc7b4800ddd81638357665c9e941195",
+  "basePublicHead": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+  "assessment": "NO_REMAINING_SCOPED_FINDING",
+  "sourceHashes": {
+    "hardhat.config.js": "738518441596cb1e6a9c691fa2c2ca68fc158a96f8856ab71f0ebc70ad0590b6",
+    "test/scripts/hardhat-test-discovery.test.cjs": "9887b51bbc81599ff9a725b0f81747c8f9b1f3de3219015d789125216438b7dd",
+    "config/discovery-lab-source-candidate-v1.json": "ebee1b8c2bbdf2d7084d433296d6a4e1fe7bf54b9809e24b75947980e0b7550d",
+    "scripts/release/discovery-lab-profile.py": "4da6958cd88f4e596aaa5947f398d2367009bb9bfe487fcfa1d0bf17b4cd348b",
+    "tools/security/discovery-protected-scope.mjs": "f27bea8586e5d6d11047cb2daa832b618cd186b115525d96da38e9aa4d90d765"
+  },
+  "scope": "Exact new Discovery node:test path excluded from Hardhat/Mocha; all native Mocha selections and dedicated exact-source Node execution retained. Three finite baseline transitions total: original validator plus two reviewed isolation inputs.",
+  "closedFinding": "The first a507 test accepted YAML if:false as mandatory;729 now checks own-property absence and rejects job/invocation/runtime/checkout mutants. Actual workflow was unchanged and mandatory throughout.",
+  "tests": {
+    "discoveryFinalPass": 6,
+    "transportAndScopeFinalPass": 63,
+    "profileFinalPass": 17,
+    "actualTrackedSourceInputs": 5199,
+    "baselineSourceInputs": 5185,
+    "original852DiscoveryPass": 5,
+    "original852DiscoveryFail": 1,
+    "fourFalseIfMutantsRefused": true,
+    "sixActualGitDescendantsRefused": [
+      {
+        "case": "alpha-config-and-repinned-manifest",
+        "commit": "f398b5170295473bcc82b51a944d597e243f976c",
+        "reason": "manifest differs",
+        "status": "REFUSED",
+        "tree": "f994e044a5159a24cae0a77618a362baab36692d"
+      },
+      {
+        "case": "hardhat-config-and-repinned-manifest",
+        "commit": "ec636d999845129c57244b1977c73f4c1c6e0f10",
+        "reason": "manifest differs",
+        "status": "REFUSED",
+        "tree": "f9db9f0a1c51a69bb7bcb7c3827e9c10d365c8bb"
+      },
+      {
+        "case": "regression-and-repinned-manifest",
+        "commit": "4e31e7e8700bb1d33ae317bd91654499deabd573",
+        "reason": "manifest differs",
+        "status": "REFUSED",
+        "tree": "4697f4eb3bf31dd44c9fc62dd25b3e2d1a05afc2"
+      },
+      {
+        "case": "verifier-substitution",
+        "commit": "e72bab26aa3f9039a1b7d13173530fb774026848",
+        "reason": "verifier differs",
+        "status": "REFUSED",
+        "tree": "972acabc95b9d5ee15f2a1ec8f4ebd01cd56d0a2"
+      },
+      {
+        "case": "all-three-config-deletion",
+        "commit": "a05f93d10b5da5f0e23ce1a0e28a29fd36fa5dbe",
+        "reason": "Only the three",
+        "status": "REFUSED",
+        "tree": "b6167eda9c2a262f205111d9d1d111b0f27344f6"
+      },
+      {
+        "case": "extra-protected-contract",
+        "commit": "b703402d2eb29cb54ee479141804d933df2649d3",
+        "reason": "Only the three",
+        "status": "REFUSED",
+        "tree": "3ff61d93e805d6ca79653cd3093779fbe1de1598"
+      }
+    ]
+  },
+  "preserved": "Historical96finding ledger and original/fresh scanner archives, query policy, baseline inventory, rc16 release profile, receiver runtime and dedicated Discovery workflow unchanged. New profile before blobs and after byte hashes verified.",
+  "sourcePackageOnly": true,
+  "releaseQualified": false,
+  "publicationApproved": false,
+  "executionApproved": false,
+  "limitations": [
+    "This is engineering review of the exact local source, not maintainer approval or hosted-CI qualification.",
+    "Independent fixed pins prevent descendant config/test/manifest/verifier drift without changing the installed gate code; installed gate changes remain an exact-source review boundary.",
+    "Separate rc16 validation, current CodeQL dispositions and upstream Alpha findings remain outside this runner correction."
+  ],
+  "publicMutation": false,
+  "artifacts": [
+    {
+      "path": "/workspace/scratch/32717074a7f1/jobs-hardhat-isolation-evidence/jobs-a507-independent-original852.tap",
+      "sha256": "25d1b2ec9996132b2b58ff443ef51016002b80979842f05d1c34d9cd7ee11447"
+    },
+    {
+      "path": "/workspace/scratch/32717074a7f1/jobs-hardhat-isolation-evidence/jobs-a507-independent-newtest-oldconfig.tap",
+      "sha256": "cbed9848e49acafd476230e0e8c7393619afa169ea1cc2be276a984899b632c8"
+    },
+    {
+      "path": "/workspace/scratch/32717074a7f1/jobs-hardhat-isolation-evidence/jobs-729-independent-discovery-after.tap",
+      "sha256": "29ecbcd2a63ff6da7092ac31e4a0b55d82f64f5ec515fd9a6adb76ea2ae8a025"
+    },
+    {
+      "path": "/workspace/scratch/32717074a7f1/jobs-hardhat-isolation-evidence/jobs-729-independent-policy.tap",
+      "sha256": "891707e090f598a806dbd6fe4ceb9bc3dea0a70d50631a2dac4749997b4e51b0"
+    },
+    {
+      "path": "/workspace/scratch/32717074a7f1/jobs-hardhat-isolation-evidence/jobs-729-independent-profile.txt",
+      "sha256": "928213d781dcddb03131b42d14e7eb251da80c9915e31e420719a1deb1a39950"
+    },
+    {
+      "path": "/workspace/scratch/32717074a7f1/jobs-hardhat-isolation-evidence/jobs-729-independent-descendant-refusals.json",
+      "sha256": "404a48396402afccb7eac241ee0f55c33b144afb556462e43d3430c2dda8bf6a"
+    },
+    {
+      "path": "/workspace/scratch/32717074a7f1/jobs-hardhat-isolation-evidence/jobs-729-independent-false-if-job.tap",
+      "sha256": "28fe63cbc7440b6c1fbd43250970259713b746b7d428e626aa14c76709418e30"
+    },
+    {
+      "path": "/workspace/scratch/32717074a7f1/jobs-hardhat-isolation-evidence/jobs-729-independent-false-if-invocation.tap",
+      "sha256": "d64479f268e422c780f0a5cea1327cdfcecb5da2298f579b9b5db17030bb5099"
+    },
+    {
+      "path": "/workspace/scratch/32717074a7f1/jobs-hardhat-isolation-evidence/jobs-729-independent-false-if-setup.tap",
+      "sha256": "e43e6881b24d84202dd722f0080604e582591ac79f9eaf90d3d71328fe95bb57"
+    },
+    {
+      "path": "/workspace/scratch/32717074a7f1/jobs-hardhat-isolation-evidence/jobs-729-independent-false-if-checkout.tap",
+      "sha256": "08da06faa2e8057a8dd3413237e578cc2d86a0fcce361a2cc6f17da0264effd8"
+    }
+  ]
+}

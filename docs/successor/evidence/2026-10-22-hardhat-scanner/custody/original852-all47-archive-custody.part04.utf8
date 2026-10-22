@@ -1,0 +1,2142 @@
+316,
+          "crc32": "40abfed1"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v3/ui/index.html",
+          "bytes": 7563,
+          "crc32": "be3f8764"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v4/ui/dashboard-data-v4.json",
+          "bytes": 15454,
+          "crc32": "865569c7"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v3/ui/styles.css",
+          "bytes": 3699,
+          "crc32": "c5d1bdf4"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v4/ui/dashboard.js",
+          "bytes": 6569,
+          "crc32": "473b373b"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v4/ui/index.html",
+          "bytes": 5020,
+          "crc32": "93aad26f"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v4/ui/styles.css",
+          "bytes": 3683,
+          "crc32": "940203d9"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v5/ui/dashboard-data-v5.json",
+          "bytes": 9440,
+          "crc32": "ffa490d8"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v5/ui/dashboard.js",
+          "bytes": 6748,
+          "crc32": "831fe48a"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v5/ui/index.html",
+          "bytes": 2990,
+          "crc32": "4db3a203"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v5/ui/styles.css",
+          "bytes": 2157,
+          "crc32": "288bba17"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v6/ui/dashboard-data-v6.json",
+          "bytes": 12617,
+          "crc32": "3091b939"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v6/ui/dashboard.js",
+          "bytes": 8282,
+          "crc32": "81c6eb76"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v6/ui/index.html",
+          "bytes": 3429,
+          "crc32": "0cbde43d"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v6/ui/styles.css",
+          "bytes": 2491,
+          "crc32": "2017936e"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v7/ui/dashboard-data-v7.json",
+          "bytes": 16550,
+          "crc32": "198d2325"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v7/ui/dashboard.js",
+          "bytes": 9335,
+          "crc32": "aa21b5c1"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v7/ui/index.html",
+          "bytes": 3983,
+          "crc32": "8c1ebddd"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v7/ui/styles.css",
+          "bytes": 2896,
+          "crc32": "ed4ea314"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v8/ui/dashboard.js",
+          "bytes": 9815,
+          "crc32": "9beeed46"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v8/ui/dashboard-data-v8.json",
+          "bytes": 17646,
+          "crc32": "c77bebc2"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v8/ui/index.html",
+          "bytes": 4385,
+          "crc32": "2d922a88"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v8/ui/styles.css",
+          "bytes": 2896,
+          "crc32": "ed4ea314"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v9/ui/dashboard-data-v9.json",
+          "bytes": 27692,
+          "crc32": "94e99c28"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v9/ui/dashboard.js",
+          "bytes": 11916,
+          "crc32": "08be7c4f"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v9/ui/index.html",
+          "bytes": 4575,
+          "crc32": "b58db7dd"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/meta_agentic_alpha_v9/ui/styles.css",
+          "bytes": 3209,
+          "crc32": "d74aca4e"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/prime.html",
+          "bytes": 6660,
+          "crc32": "78a2c4c3"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/records/v2.md",
+          "bytes": 5535,
+          "crc32": "da8e7883"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/records/v4.md",
+          "bytes": 6888,
+          "crc32": "f9c210db"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/records/v3.md",
+          "bytes": 7731,
+          "crc32": "edcd3481"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/reports/architecture.mmd",
+          "bytes": 2330,
+          "crc32": "14a3643b"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/reports/ci-status.json",
+          "bytes": 267,
+          "crc32": "e33f6834"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/reports/coordination.mmd",
+          "bytes": 1727,
+          "crc32": "603c5e6a"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/reports/dashboard.json",
+          "bytes": 6149,
+          "crc32": "390c925e"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/reports/evidence-boundary.json",
+          "bytes": 206,
+          "crc32": "b15faa73"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/reports/execution-ledger.json",
+          "bytes": 1889,
+          "crc32": "20bcca9e"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/reports/knowledge-base.json",
+          "bytes": 7673,
+          "crc32": "e39f19d8"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/reports/phase-flow.mmd",
+          "bytes": 697,
+          "crc32": "107e8514"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/reports/owner-control.json",
+          "bytes": 2849,
+          "crc32": "33c5a612"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/reports/owner-playbook.md",
+          "bytes": 2981,
+          "crc32": "39968a36"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/reports/phase-matrix.json",
+          "bytes": 1917,
+          "crc32": "752978be"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/reports/summary.json",
+          "bytes": 617,
+          "crc32": "39c3c8a2"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/reports/world-model.json",
+          "bytes": 584,
+          "crc32": "1ca408ae"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/reports/timeline.mmd",
+          "bytes": 429,
+          "crc32": "7eba66e2"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/ui/app.js",
+          "bytes": 7832,
+          "crc32": "7b29c8bc"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/ui/index.html",
+          "bytes": 4925,
+          "crc32": "fec96ad7"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/v1.html",
+          "bytes": 10373,
+          "crc32": "2e2003d4"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/archive/ui/styles.css",
+          "bytes": 2966,
+          "crc32": "d7071d55"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/execute.mjs",
+          "bytes": 5023,
+          "crc32": "e9a23dc1"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/model.mjs",
+          "bytes": 12543,
+          "crc32": "2b051664"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/review.mjs",
+          "bytes": 9641,
+          "crc32": "4420d01d"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/index.html",
+          "bytes": 23412,
+          "crc32": "1b0f08da"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/scenario.json",
+          "bytes": 6774,
+          "crc32": "bf51cc72"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/site-assets.json",
+          "bytes": 8471,
+          "crc32": "b8a34cad"
+        },
+        {
+          "path": "experiments/meta-agentic-alpha/styles.css",
+          "bytes": 14616,
+          "crc32": "2b058661"
+        },
+        {
+          "path": "experiments/omega/app.mjs",
+          "bytes": 6485,
+          "crc32": "4414ac9a"
+        },
+        {
+          "path": "experiments/omega/engine.mjs",
+          "bytes": 19979,
+          "crc32": "9e715a82"
+        },
+        {
+          "path": "experiments/omega/fixture.json",
+          "bytes": 11505,
+          "crc32": "23acac7f"
+        },
+        {
+          "path": "experiments/omega/i18n.mjs",
+          "bytes": 5227,
+          "crc32": "c901e97d"
+        },
+        {
+          "path": "experiments/omega/index.html",
+          "bytes": 5392,
+          "crc32": "d858b39a"
+        },
+        {
+          "path": "experiments/omega/json.mjs",
+          "bytes": 2361,
+          "crc32": "43a1a86d"
+        },
+        {
+          "path": "experiments/omega/replay.mjs",
+          "bytes": 4571,
+          "crc32": "cecfc8ca"
+        },
+        {
+          "path": "experiments/omega/source-pins.json",
+          "bytes": 387,
+          "crc32": "cf26191a"
+        },
+        {
+          "path": "experiments/omega/style.css",
+          "bytes": 9472,
+          "crc32": "363325e4"
+        },
+        {
+          "path": "experiments/omniphoenix/app.mjs",
+          "bytes": 10883,
+          "crc32": "c1886894"
+        },
+        {
+          "path": "experiments/omniphoenix/engine.mjs",
+          "bytes": 22292,
+          "crc32": "69c2c224"
+        },
+        {
+          "path": "experiments/omniphoenix/i18n.mjs",
+          "bytes": 5889,
+          "crc32": "310cb5ef"
+        },
+        {
+          "path": "experiments/omniphoenix/main.mjs",
+          "bytes": 425,
+          "crc32": "ff8564cb"
+        },
+        {
+          "path": "experiments/omniphoenix/index.html",
+          "bytes": 5986,
+          "crc32": "fe54e4f4"
+        },
+        {
+          "path": "experiments/omniphoenix/plan.json",
+          "bytes": 5701,
+          "crc32": "ce115fce"
+        },
+        {
+          "path": "experiments/omniphoenix/source-pins.json",
+          "bytes": 245,
+          "crc32": "fc361799"
+        },
+        {
+          "path": "experiments/omniphoenix/style.css",
+          "bytes": 3601,
+          "crc32": "35e3b51b"
+        },
+        {
+          "path": "experiments/omnisovereign/app.mjs",
+          "bytes": 10845,
+          "crc32": "ce56ef1e"
+        },
+        {
+          "path": "experiments/omnisovereign/architecture.svg",
+          "bytes": 2082,
+          "crc32": "e4743043"
+        },
+        {
+          "path": "experiments/omnisovereign/execute.mjs",
+          "bytes": 5703,
+          "crc32": "ee860cf4"
+        },
+        {
+          "path": "experiments/omnisovereign/index.html",
+          "bytes": 18765,
+          "crc32": "681b4fcc"
+        },
+        {
+          "path": "experiments/omnisovereign/model.mjs",
+          "bytes": 9553,
+          "crc32": "d86fe528"
+        },
+        {
+          "path": "experiments/omnisovereign/project-plan.omnisovereign.json",
+          "bytes": 7446,
+          "crc32": "2b21df3b"
+        },
+        {
+          "path": "experiments/omnisovereign/review.mjs",
+          "bytes": 9710,
+          "crc32": "d97d057a"
+        },
+        {
+          "path": "experiments/omnisovereign/scenario.json",
+          "bytes": 2594,
+          "crc32": "62bb46ce"
+        },
+        {
+          "path": "experiments/omnisovereign/styles.css",
+          "bytes": 13864,
+          "crc32": "7f60e379"
+        },
+        {
+          "path": "experiments/one-box/app.H2GZ24J6.js",
+          "bytes": 70171,
+          "crc32": "6097c8b1"
+        },
+        {
+          "path": "experiments/one-box/index.html",
+          "bytes": 8721,
+          "crc32": "392cbaf7"
+        },
+        {
+          "path": "experiments/one-box/manifest.json",
+          "bytes": 572,
+          "crc32": "16a1c17e"
+        },
+        {
+          "path": "experiments/one-box/styles.5IVQWRXD.css",
+          "bytes": 20398,
+          "crc32": "0b3f117a"
+        },
+        {
+          "path": "experiments/phase6/abi/Phase6ExpansionManager.json",
+          "bytes": 44067,
+          "crc32": "80691f5f"
+        },
+        {
+          "path": "experiments/phase6/config/domains.phase6.json",
+          "bytes": 28442,
+          "crc32": "bc3d2ef9"
+        },
+        {
+          "path": "experiments/phase6/index.html",
+          "bytes": 19293,
+          "crc32": "b77b40e3"
+        },
+        {
+          "path": "experiments/phase6/ui/abnfDiagram-VCTEODGH-SH2XSVIT.js",
+          "bytes": 2379,
+          "crc32": "f2ab7ccf"
+        },
+        {
+          "path": "experiments/phase6/ui/abnfDiagram-VCTEODGH-SH2XSVIT.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/app.js",
+          "bytes": 143274,
+          "crc32": "bdbb5e93"
+        },
+        {
+          "path": "experiments/phase6/ui/app.js.LEGAL.txt",
+          "bytes": 274,
+          "crc32": "a3fa046e"
+        },
+        {
+          "path": "experiments/phase6/ui/architecture-7GRP2DOG-ZYO5DRCW.js",
+          "bytes": 254,
+          "crc32": "c9b7e77f"
+        },
+        {
+          "path": "experiments/phase6/ui/architecture-7GRP2DOG-ZYO5DRCW.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/architectureDiagram-5GKGNRK7-GPGKLNMF.js",
+          "bytes": 152929,
+          "crc32": "0638ba82"
+        },
+        {
+          "path": "experiments/phase6/ui/architectureDiagram-5GKGNRK7-GPGKLNMF.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/blockDiagram-I7D4REHJ-QPTHGQQQ.js",
+          "bytes": 40360,
+          "crc32": "f12e20f4"
+        },
+        {
+          "path": "experiments/phase6/ui/blockDiagram-I7D4REHJ-QPTHGQQQ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/c4Diagram-7LVT6UL2-LB3JE5CJ.js",
+          "bytes": 65892,
+          "crc32": "d90038ab"
+        },
+        {
+          "path": "experiments/phase6/ui/c4Diagram-7LVT6UL2-LB3JE5CJ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-273427KR.js",
+          "bytes": 38440,
+          "crc32": "944397c2"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-273427KR.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-3SVPKZZ6.js",
+          "bytes": 991,
+          "crc32": "a6804deb"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-3SVPKZZ6.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-4QGXW5PF.js",
+          "bytes": 515,
+          "crc32": "da730ed6"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-4QGXW5PF.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-7H5MY2AZ.js",
+          "bytes": 9799,
+          "crc32": "dd29befe"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-7H5MY2AZ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-ASDNBFRL.js",
+          "bytes": 968,
+          "crc32": "f2f140f4"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-ASDNBFRL.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-AYHUDP23.js",
+          "bytes": 3379,
+          "crc32": "c7f81a05"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-AYHUDP23.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-B2KA3H75.js",
+          "bytes": 529,
+          "crc32": "3c382946"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-B2KA3H75.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-CDENLQJG.js",
+          "bytes": 290,
+          "crc32": "eccc922b"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-CDENLQJG.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-CKDFQG6H.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-CKDFQG6H.js",
+          "bytes": 1737,
+          "crc32": "f99ceaa3"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-DBVJAZ4B.js",
+          "bytes": 1965,
+          "crc32": "94aa6ab6"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-DBVJAZ4B.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-E6A4FDRT.js",
+          "bytes": 37944,
+          "crc32": "bdb9b1ff"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-E6A4FDRT.js.LEGAL.txt",
+          "bytes": 497,
+          "crc32": "63eded37"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-EK7ODJWE.js",
+          "bytes": 614,
+          "crc32": "d274e7ce"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-EK7ODJWE.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-F4BBQJTO.js.LEGAL.txt",
+          "bytes": 417,
+          "crc32": "ba29e17b"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-F4BBQJTO.js",
+          "bytes": 239155,
+          "crc32": "fabd4870"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-GCAI6FJD.js",
+          "bytes": 665,
+          "crc32": "9b9502d5"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-GCAI6FJD.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-GR5KKMWI.js",
+          "bytes": 18295,
+          "crc32": "81c906c5"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-HCCIF5CK.js",
+          "bytes": 1118,
+          "crc32": "4d6bc264"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-GR5KKMWI.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-HCCIF5CK.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-HDKR6WI7.js",
+          "bytes": 258,
+          "crc32": "a51e83ab"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-HDKR6WI7.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-HKCW6QSP.js",
+          "bytes": 528,
+          "crc32": "80d239a9"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-HKCW6QSP.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-ILWHMMZO.js",
+          "bytes": 521,
+          "crc32": "331b03b7"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-IQV2XDVJ.js",
+          "bytes": 1101,
+          "crc32": "8f412703"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-ILWHMMZO.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-JOCH74N7.js",
+          "bytes": 108613,
+          "crc32": "083241e2"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-IQV2XDVJ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-JVPCJFW5.js",
+          "bytes": 443184,
+          "crc32": "25dada8a"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-JOCH74N7.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-JVPCJFW5.js.LEGAL.txt",
+          "bytes": 760,
+          "crc32": "56c475d1"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-KBRWM4UA.js",
+          "bytes": 562,
+          "crc32": "79aa573b"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-KBRWM4UA.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-KCVQZIOU.js",
+          "bytes": 105633,
+          "crc32": "3571c90a"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-KCVQZIOU.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-KJKMEI5I.js",
+          "bytes": 627,
+          "crc32": "f7732dd7"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-KJKMEI5I.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-KQU7NLJQ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-KQU7NLJQ.js",
+          "bytes": 25715,
+          "crc32": "4a82067e"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-KX3EGZMC.js",
+          "bytes": 1649,
+          "crc32": "52508d27"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-KX3EGZMC.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-LA75VNST.js",
+          "bytes": 1482,
+          "crc32": "9cf1b7a4"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-LA75VNST.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-LRL54S5S.js",
+          "bytes": 36790,
+          "crc32": "cd2d49d5"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-LRL54S5S.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-M5F6T2EP.js",
+          "bytes": 331,
+          "crc32": "246fcbf7"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-M5F6T2EP.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-MCDBOARF.js",
+          "bytes": 899,
+          "crc32": "a786854f"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-MCDBOARF.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-MQ7BSTJL.js",
+          "bytes": 2012,
+          "crc32": "da1b9b12"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-MQ7BSTJL.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-N4ZME724.js",
+          "bytes": 523,
+          "crc32": "bc60d841"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-N4ZME724.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-NCAANADB.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-NCAANADB.js",
+          "bytes": 1188,
+          "crc32": "3e682cc4"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-O7Q6YJHV.js",
+          "bytes": 378,
+          "crc32": "953c9e6e"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-O7Q6YJHV.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-QP3MATMC.js",
+          "bytes": 429,
+          "crc32": "cae0cae5"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-QP3MATMC.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-QSZ4V74H.js",
+          "bytes": 10167,
+          "crc32": "23213b30"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-QSZ4V74H.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-ROCT4D7J.js",
+          "bytes": 52463,
+          "crc32": "afc86890"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-ROCT4D7J.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-SGQVVFSA.js",
+          "bytes": 47194,
+          "crc32": "9301af04"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-SGQVVFSA.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-SYH6UEJH.js",
+          "bytes": 667672,
+          "crc32": "8af7787e"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-SYH6UEJH.js.LEGAL.txt",
+          "bytes": 603,
+          "crc32": "94051512"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-VXMEK6XQ.js",
+          "bytes": 15795,
+          "crc32": "e90addce"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-VXMEK6XQ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-WML6JNW6.js",
+          "bytes": 5964,
+          "crc32": "bcc23630"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-WML6JNW6.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-Y32BBXU3.js",
+          "bytes": 27399,
+          "crc32": "1cd38a1f"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-YUSHYV7C.js",
+          "bytes": 226,
+          "crc32": "2c90d2bc"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-Y32BBXU3.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-YUSHYV7C.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-ZBWFZPUQ.js",
+          "bytes": 2090,
+          "crc32": "c7bb51c8"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-ZBWFZPUQ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-ZHNJHWQC.js",
+          "bytes": 49324,
+          "crc32": "5966e959"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-ZHNJHWQC.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-ZONL7OHP.js",
+          "bytes": 62101,
+          "crc32": "c19f1f5f"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-ZONL7OHP.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-ZXVJ3GL2.js",
+          "bytes": 2597,
+          "crc32": "b97c6fe6"
+        },
+        {
+          "path": "experiments/phase6/ui/chunk-ZXVJ3GL2.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/classDiagram-ZZMXUADV-7JJLO2P4.js",
+          "bytes": 865,
+          "crc32": "b4add085"
+        },
+        {
+          "path": "experiments/phase6/ui/classDiagram-ZZMXUADV-7JJLO2P4.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/classDiagram-v2-VYDZK3BY-HG77PDMX.js",
+          "bytes": 868,
+          "crc32": "0e135264"
+        },
+        {
+          "path": "experiments/phase6/ui/classDiagram-v2-VYDZK3BY-HG77PDMX.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/cose-bilkent-JH36ORCC-UNLMUIH5.js",
+          "bytes": 82448,
+          "crc32": "bf13e668"
+        },
+        {
+          "path": "experiments/phase6/ui/cose-bilkent-JH36ORCC-UNLMUIH5.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/cynefin-OW5HDTMX-UCV2YMID.js",
+          "bytes": 239,
+          "crc32": "7c496029"
+        },
+        {
+          "path": "experiments/phase6/ui/cynefin-OW5HDTMX-UCV2YMID.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/cynefinDiagram-5FMLGOSQ-3DXMC5Z5.js",
+          "bytes": 10680,
+          "crc32": "4446b72d"
+        },
+        {
+          "path": "experiments/phase6/ui/dagre-GXQ25YYZ-XDWZFRFM.js",
+          "bytes": 11107,
+          "crc32": "29a6af93"
+        },
+        {
+          "path": "experiments/phase6/ui/cynefinDiagram-5FMLGOSQ-3DXMC5Z5.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/dagre-GXQ25YYZ-XDWZFRFM.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/diagram-S7CK7UJ4-KTELGNEN.js",
+          "bytes": 8798,
+          "crc32": "b6207a08"
+        },
+        {
+          "path": "experiments/phase6/ui/diagram-S7CK7UJ4-KTELGNEN.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/diagram-UQ7AKVKN-6MVVV6E5.js",
+          "bytes": 6682,
+          "crc32": "05c77efb"
+        },
+        {
+          "path": "experiments/phase6/ui/diagram-VSXAHHWV-GUTY5OT4.js",
+          "bytes": 11303,
+          "crc32": "9396e299"
+        },
+        {
+          "path": "experiments/phase6/ui/diagram-UQ7AKVKN-6MVVV6E5.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/diagram-VSXAHHWV-GUTY5OT4.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/diagram-VX7I27RA-7TVGHJ4C.js",
+          "bytes": 11692,
+          "crc32": "f1563708"
+        },
+        {
+          "path": "experiments/phase6/ui/diagram-Z3DM3KII-RQY74LB7.js",
+          "bytes": 4843,
+          "crc32": "47529c6b"
+        },
+        {
+          "path": "experiments/phase6/ui/diagram-VX7I27RA-7TVGHJ4C.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/diagram-Z3DM3KII-RQY74LB7.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/ebnfDiagram-PWID7BFC-DMCOAVR2.js",
+          "bytes": 2593,
+          "crc32": "5bb7a408"
+        },
+        {
+          "path": "experiments/phase6/ui/ebnfDiagram-PWID7BFC-DMCOAVR2.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/erDiagram-RLTQ6QDP-7QTIQLHX.js",
+          "bytes": 31187,
+          "crc32": "a258c25c"
+        },
+        {
+          "path": "experiments/phase6/ui/eventmodeling-NTZA5JFV-2UDDIPGT.js",
+          "bytes": 257,
+          "crc32": "40aa84af"
+        },
+        {
+          "path": "experiments/phase6/ui/erDiagram-RLTQ6QDP-7QTIQLHX.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/eventmodeling-NTZA5JFV-2UDDIPGT.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/flowDiagram-HODETNUW-IK43NTAJ.js",
+          "bytes": 737,
+          "crc32": "24edd73b"
+        },
+        {
+          "path": "experiments/phase6/ui/ganttDiagram-EL5Y4UJY-WOKOF22J.js",
+          "bytes": 50415,
+          "crc32": "1e8d4961"
+        },
+        {
+          "path": "experiments/phase6/ui/flowDiagram-HODETNUW-IK43NTAJ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/ganttDiagram-EL5Y4UJY-WOKOF22J.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/gitGraph-4MIJSDKK-TH2AZEJS.js",
+          "bytes": 242,
+          "crc32": "b4549450"
+        },
+        {
+          "path": "experiments/phase6/ui/gitGraph-4MIJSDKK-TH2AZEJS.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/gitGraphDiagram-WWUBYQGX-A44FVI4W.js",
+          "bytes": 29792,
+          "crc32": "579a56e9"
+        },
+        {
+          "path": "experiments/phase6/ui/gitGraphDiagram-WWUBYQGX-A44FVI4W.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/info-A6RAGUB7-3WGH3O7U.js",
+          "bytes": 230,
+          "crc32": "74101133"
+        },
+        {
+          "path": "experiments/phase6/ui/infoDiagram-27XIBGKW-VV2UK5WQ.js",
+          "bytes": 1197,
+          "crc32": "a7413981"
+        },
+        {
+          "path": "experiments/phase6/ui/info-A6RAGUB7-3WGH3O7U.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/infoDiagram-27XIBGKW-VV2UK5WQ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/ishikawaDiagram-5VMMS53U-676AV7L7.js",
+          "bytes": 17691,
+          "crc32": "0fdf4841"
+        },
+        {
+          "path": "experiments/phase6/ui/ishikawaDiagram-5VMMS53U-676AV7L7.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/journeyDiagram-3NMN7TZE-7IZVKZWG.js",
+          "bytes": 23645,
+          "crc32": "14d3d576"
+        },
+        {
+          "path": "experiments/phase6/ui/journeyDiagram-3NMN7TZE-7IZVKZWG.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/kanban-definition-UXKFOSKX-7PXMI7YN.js",
+          "bytes": 20867,
+          "crc32": "d0b95e02"
+        },
+        {
+          "path": "experiments/phase6/ui/kanban-definition-UXKFOSKX-7PXMI7YN.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/katex-HDQRHQ2F.js",
+          "bytes": 267780,
+          "crc32": "412f42ba"
+        },
+        {
+          "path": "experiments/phase6/ui/katex-HDQRHQ2F.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/mindmap-definition-YA3MSWOX-BR2KBPCD.js",
+          "bytes": 23913,
+          "crc32": "a639bb31"
+        },
+        {
+          "path": "experiments/phase6/ui/mindmap-definition-YA3MSWOX-BR2KBPCD.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/packet-AYTQ26CC-WSM2R5QY.js",
+          "bytes": 236,
+          "crc32": "649aebc4"
+        },
+        {
+          "path": "experiments/phase6/ui/packet-AYTQ26CC-WSM2R5QY.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/pegDiagram-XKGWAZYB-4TKPBU3Y.js",
+          "bytes": 2534,
+          "crc32": "93990a07"
+        },
+        {
+          "path": "experiments/phase6/ui/pegDiagram-XKGWAZYB-4TKPBU3Y.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/pie-WAS4IAKB-KLFZZGVC.js",
+          "bytes": 227,
+          "crc32": "65b3e10b"
+        },
+        {
+          "path": "experiments/phase6/ui/pieDiagram-E7YTZNPT-ISLSO2UK.js",
+          "bytes": 5693,
+          "crc32": "bd7de533"
+        },
+        {
+          "path": "experiments/phase6/ui/pie-WAS4IAKB-KLFZZGVC.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/pieDiagram-E7YTZNPT-ISLSO2UK.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/quadrantDiagram-AXDQQJYC-JGAISM75.js",
+          "bytes": 34131,
+          "crc32": "faf1801c"
+        },
+        {
+          "path": "experiments/phase6/ui/radar-RG4KPBEZ-OQ2KSEXM.js",
+          "bytes": 233,
+          "crc32": "32437631"
+        },
+        {
+          "path": "experiments/phase6/ui/quadrantDiagram-AXDQQJYC-JGAISM75.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/radar-RG4KPBEZ-OQ2KSEXM.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/railroad-74A4TZTK-JWE5UZ4M.js",
+          "bytes": 242,
+          "crc32": "195f9f16"
+        },
+        {
+          "path": "experiments/phase6/ui/railroad-74A4TZTK-JWE5UZ4M.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/railroad-abnf-HS5TGJTU-32ROWTU7.js",
+          "bytes": 255,
+          "crc32": "86690b46"
+        },
+        {
+          "path": "experiments/phase6/ui/railroad-abnf-HS5TGJTU-32ROWTU7.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/railroad-ebnf-LZEXJU2U-FPOIL43N.js",
+          "bytes": 255,
+          "crc32": "cf065b6e"
+        },
+        {
+          "path": "experiments/phase6/ui/railroad-peg-WCYAUIDC-GSLLSWNG.js",
+          "bytes": 252,
+          "crc32": "3acf8604"
+        },
+        {
+          "path": "experiments/phase6/ui/railroad-ebnf-LZEXJU2U-FPOIL43N.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/railroad-peg-WCYAUIDC-GSLLSWNG.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/railroadDiagram-O6MQD6OU-Q2BX4G3S.js",
+          "bytes": 2205,
+          "crc32": "f0ee6b8e"
+        },
+        {
+          "path": "experiments/phase6/ui/railroadDiagram-O6MQD6OU-Q2BX4G3S.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/requirementDiagram-BXWQKSXE-5YFF7URN.js",
+          "bytes": 31501,
+          "crc32": "09630f92"
+        },
+        {
+          "path": "experiments/phase6/ui/requirementDiagram-BXWQKSXE-5YFF7URN.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/sankeyDiagram-P5KCCOFB-X6MRE3JY.js",
+          "bytes": 23084,
+          "crc32": "6976088a"
+        },
+        {
+          "path": "experiments/phase6/ui/sankeyDiagram-P5KCCOFB-X6MRE3JY.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/sequenceDiagram-WJ2MYXX4-ZJ7TZYCL.js",
+          "bytes": 117019,
+          "crc32": "4f5d7281"
+        },
+        {
+          "path": "experiments/phase6/ui/sequenceDiagram-WJ2MYXX4-ZJ7TZYCL.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/sizeCapture-INFHLROL-445D5VLJ.js",
+          "bytes": 1004,
+          "crc32": "f3cd257e"
+        },
+        {
+          "path": "experiments/phase6/ui/sizeCapture-INFHLROL-445D5VLJ.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/stateDiagram-D77RDMKH-YQENNL56.js",
+          "bytes": 10766,
+          "crc32": "660f0b42"
+        },
+        {
+          "path": "experiments/phase6/ui/stateDiagram-D77RDMKH-YQENNL56.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/stateDiagram-v2-MP3YSRHH-NYONJHZS.js",
+          "bytes": 843,
+          "crc32": "6c1533e8"
+        },
+        {
+          "path": "experiments/phase6/ui/styles.css",
+          "bytes": 10868,
+          "crc32": "b0c76b9b"
+        },
+        {
+          "path": "experiments/phase6/ui/stateDiagram-v2-MP3YSRHH-NYONJHZS.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/swimlanes-42K2YHIH-FBW5K3KO.js",
+          "bytes": 113600,
+          "crc32": "3b39a98a"
+        },
+        {
+          "path": "experiments/phase6/ui/swimlanes-42K2YHIH-FBW5K3KO.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/swimlanesDiagram-VR7AAH4N-WYBYENWN.js",
+          "bytes": 942,
+          "crc32": "ed427edd"
+        },
+        {
+          "path": "experiments/phase6/ui/swimlanesDiagram-VR7AAH4N-WYBYENWN.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/timeline-definition-24CTP7MA-W722HQ27.js",
+          "bytes": 30914,
+          "crc32": "d255f20f"
+        },
+        {
+          "path": "experiments/phase6/ui/timeline-definition-24CTP7MA-W722HQ27.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/treeView-Q6P3EWNA-K4JUKRIE.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/treeView-Q6P3EWNA-K4JUKRIE.js",
+          "bytes": 242,
+          "crc32": "7053fade"
+        },
+        {
+          "path": "experiments/phase6/ui/treemap-WGGIJYW6-VLPIT4NN.js",
+          "bytes": 239,
+          "crc32": "3425bcd7"
+        },
+        {
+          "path": "experiments/phase6/ui/treemap-WGGIJYW6-VLPIT4NN.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/vennDiagram-4TSXK5OY-H55P4EP4.js",
+          "bytes": 41772,
+          "crc32": "cc5de9a0"
+        },
+        {
+          "path": "experiments/phase6/ui/vennDiagram-4TSXK5OY-H55P4EP4.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/wardley-WFR3VGLG-QJCRKMG6.js",
+          "bytes": 239,
+          "crc32": "2087af92"
+        },
+        {
+          "path": "experiments/phase6/ui/wardley-WFR3VGLG-QJCRKMG6.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/wardleyDiagram-VM6X3IG4-CXNX4S5W.js",
+          "bytes": 25981,
+          "crc32": "63cab4cf"
+        },
+        {
+          "path": "experiments/phase6/ui/wardleyDiagram-VM6X3IG4-CXNX4S5W.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase6/ui/xychartDiagram-S5SC5T6Z-DAZTT2UL.js",
+          "bytes": 43392,
+          "crc32": "1066dd2e"
+        },
+        {
+          "path": "experiments/phase6/ui/xychartDiagram-S5SC5T6Z-DAZTT2UL.js.LEGAL.txt",
+          "bytes": 0,
+          "crc32": "00000000"
+        },
+        {
+          "path": "experiments/phase8/assets/contract-extensions.mmd",
+          "bytes": 663,
+          "crc32": "b30c0ad8"
+        },
+        {
+          "path": "experiments/phase8/assets/mermaid.min.js",
+          "bytes": 3338725,
+          "crc32": "f77e8317"
+        },
+        {
+          "path": "experiments/phase8/assets/orchestration-flow.mmd",
+          "bytes": 958,
+          "crc32": "63fe0f28"
+        },
+        {
+          "path": "experiments/phase8/config/universal.value.manifest.json",
+          "bytes": 24616,
+          "crc32": "ccc8c181"
+        },
+        {
+          "path": "experiments/phase8/configs/contract-extensions.json",
+          "bytes": 3893,
+          "crc32": "82c2d986"
+        },
+        {
+          "path": "experiments/phase8/configs/governance-policies.json",
+          "bytes": 950,
+          "crc32": "d0bcd3b5"
+        },
+        {
+          "path": "experiments/phase8/configs/model-adapters.json",
+          "bytes": 897,
+          "crc32": "0d399d08"
+        },
+        {
+          "path": "experiments/phase8/configs/job.multi-agent.json",
+          "bytes": 2242,
+          "crc32": "8454de6b"
+        },
+        {
+          "path": "experiments/phase8/configs/owner-directives.json",
+          "bytes": 6273,
+          "crc32": "c16df7d9"
+        },
+        {
+          "path": "experiments/phase8/index.html",
+          "bytes": 161306,
+          "crc32": "820f5ab5"
+        },
+        {
+          "path": "experiments/phase8/output/phase8-ai-team-matrix.json",
+          "bytes": 3996,
+          "crc32": "ceb3d1c3"
+        },
+        {
+          "path": "experiments/phase8/output/phase8-cycle-report.csv",
+          "bytes": 776,
+          "crc32": "6a322dfe"
+        },
+        {
+          "path": "experiments/phase8/output/phase8-dominance-scorecard.json",
+          "bytes": 21184,
+          "crc32": "d15c1a50"
+        },
+        {
+          "path": "experiments/phase8/output/phase8-emergency-overrides.json",
+          "bytes": 2854,
+          "crc32": "7352f2ca"
+        },
+        {
+          "path": "experiments/phase8/output/phase8-governance-calldata.json",
+          "bytes": 21216,
+          "crc32": "13ef4030"
+        },
+        {
+          "path": "experiments/phase8/output/phase8-governance-checklist.md",
+          "bytes": 7357,
+          "crc32": "666ade39"
+        },
+        {
+          "path": "experiments/phase8/output/phase8-governance-directives.md",
+          "bytes": 3609,
+          "crc32": "18db9b1c"
+        },
+        {
+          "path": "experiments/phase8/output/phase8-guardian-response-playbook.md",
+          "bytes": 4276,
+          "crc32": "9f494b70"
+        },
+        {
+          "path": "experiments/phase8/output/phase8-mermaid-diagram.mmd",
+          "bytes": 805,
+          "crc32": "b9660112"
+        },
+        {
+          "path": "experiments/phase8/output/phase8-orchestration-report.txt",
+          "bytes": 3989,
+          "crc32": "b8e7890a"
+        },
+        {
+          "path": "experiments/phase8/output/phase8-safe-transaction-batch.json",
+          "bytes": 26593,
+          "crc32": "331e83eb"
+        },
+        {
+          "path": "experiments/phase8/output/phase8-self-improvement-plan.json",
+          "bytes": 1951,
+          "crc32": "e6e82d24"
+        },
+        {
+          "path": "experiments/phase8/output/phase8-telemetry-report.md",
+          "bytes": 12861,
+          "crc32": "62ebba64"
+        },
+        {
+          "path": "experiments/phase8/ui/index.html",
+          "bytes": 18706,
+          "crc32": "ed3a0ebf"
+        },
+        {
+          "path": "experiments/phase8/ui/styles.css",
+          "bytes": 4313,
+          "crc32": "2c95769b"
+        },
+        {
+          "path": "experiments/phase8/workbench/app.mjs",
+          "bytes": 7599,
+          "crc32": "751c7559"
+        },
+        {
+          "path": "experiments/phase8/workbench/index.html",
+          "bytes": 10533,
+          "crc32": "a2852848"
+        },
+        {
+          "path": "experiments/phase8/workbench/model.mjs",
+          "bytes": 5200,
+          "crc32": "a2cc3fdf"
+        },
+        {
+          "path": "experiments/phase8/workbench/styles.css",
+          "bytes": 10858,
+          "crc32": "650cfc08"
+        },
+        {
+          "path": "experiments/phase8/workbench/tasks.json",
+          "bytes": 5250,
+          "crc32": "59d12f97"
+        },
+        {
+          "path": "experiments/polaris/calculator.mjs",
+          "bytes": 802,
+          "crc32": "642dc760"
+        },
+        {
+          "path": "experiments/polaris/fixture.json",
+          "bytes": 25465,
+          "crc32": "9e3690fb"
+        },
+        {
+          "path": "experiments/polaris/i18n.mjs",
+          "bytes": 6318,
+          "crc32": "645fec7a"
+        },
+        {
+          "path": "experiments/polaris/index.html",
+          "bytes": 7683,
+          "crc32": "cecea604"
+        },
+        {
+          "path": "experiments/polaris/json.mjs",
+          "bytes": 2429,
+          "crc32": "ba773cfd"
+        },
+        {
+          "path": "experiments/polaris/polaris.mjs",
+          "bytes": 7430,
+          "crc32": "55a2883c"
+        },
+        {
+          "path": "experiments/polaris/reviewer.mjs",
+          "bytes": 514374,
+          "crc32": "bfb31ac0"
+        },
+        {
+          "path": "experiments/polaris/style.css",
+          "bytes": 9472,
+          "crc32": "363325e4"
+        },
+        {
+          "path": "experiments/program-synthesis/app.mjs",
+          "bytes": 9873,
+          "crc32": "3d2b72f9"
+        },
+        {
+          "path": "experiments/program-synthesis/build.json",
+          "bytes": 383,
+          "crc32": "d0a3de4d"
+        },
+        {
+          "path": "experiments/program-synthesis/cases.json",
+          "bytes": 1023,
+          "crc32": "8dcbe9d4"
+        },
+        {
+          "path": "experiments/program-synthesis/index.html",
+          "bytes": 22399,
+          "crc32": "df1b2f13"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/python/alpha/report.html",
+          "bytes": 3359393,
+          "crc32": "eb23437d"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/python/alpha/report.json",
+          "bytes": 23464,
+          "crc32": "b20d1547"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/python/atlas/report.html",
+          "bytes": 3359393,
+          "crc32": "8967960b"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/python/atlas/report.json",
+          "bytes": 23430,
+          "crc32": "634d1e48"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/python/batch.html",
+          "bytes": 3341446,
+          "crc32": "e1d6261c"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/python/batch.json",
+          "bytes": 114595,
+          "crc32": "e0e46cee"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/python/imperium/report.html",
+          "bytes": 3359407,
+          "crc32": "e8f9bfcb"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/python/imperium/report.json",
+          "bytes": 23441,
+          "crc32": "b6c02be7"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/python/index.html",
+          "bytes": 3349602,
+          "crc32": "1ce19bab"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/python/index.json",
+          "bytes": 12828,
+          "crc32": "ff8617a0"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/python/sovereign/report.html",
+          "bytes": 3359404,
+          "crc32": "75a11b37"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/python/sovereign/report.json",
+          "bytes": 23450,
+          "crc32": "20b7bd45"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/typescript/mermaid.min.js",
+          "bytes": 3336822,
+          "crc32": "87f2e1cb"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/typescript/meta-agentic-program-synthesis-briefing.md",
+          "bytes": 4164,
+          "crc32": "0a366909"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/typescript/meta-agentic-program-synthesis-dashboard.html",
+          "bytes": 62803,
+          "crc32": "de5574ef"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/typescript/meta-agentic-program-synthesis-manifest.json",
+          "bytes": 1240,
+          "crc32": "991fb72e"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/typescript/meta-agentic-program-synthesis-report.md",
+          "bytes": 13938,
+          "crc32": "8ba75776"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/typescript/meta-agentic-program-synthesis-summary.json",
+          "bytes": 37442,
+          "crc32": "f9ff34a0"
+        },
+        {
+          "path": "experiments/program-synthesis/legacy/typescript/meta-agentic-program-synthesis-triangulation.json",
+          "bytes": 5041,
+          "crc32": "39ca7241"
+        },
+        {
+          "path": "experiments/program-synthesis/model.mjs",
+          "bytes": 4205,
+          "crc32": "31bf5dd8"
+        },
+        {
+          "path": "experiments/program-synthesis/styles.css",
+          "bytes": 12439,
+          "crc32": "3112a001"
+        },
+        {
+          "path": "experiments/zenith/app.mjs",
+          "bytes": 10388,
+          "crc32": "f52f5ead"
+        },
+        {
+          "path": "experiments/zenith/engine.mjs",
+          "bytes": 8323,
+          "crc32": "d47654f5"
+        },
+        {
+          "path": "experiments/zenith/i18n.mjs",
+          "bytes": 4837,
+          "crc32": "56f9b4e2"
+        },
+        {
+          "path": "experiments/zenith/index.html",
+          "bytes": 6214,
+          "crc32": "4329314a"
+        },
+        {
+          "path": "experiments/zenith/scenario.json",
+          "bytes": 928,
+          "crc32": "7c6eb2b6"
+        },
+        {
+          "path": "experiments/zenith/style.css",
+          "bytes": 9811,
+          "crc32": "43265be5"
+        },
+        {
+          "path": "experiments/zenith-hypernova/app.mjs",
+          "bytes": 11530,
+          "crc32": "e327492d"
+        },
+        {
+          "path": "experiments/zenith-hypernova/core.mjs",
+          "bytes": 18744,
+          "crc32": "b704cb03"
+        },
+        {
+          "path": "experiments/zenith-hypernova/architecture.svg",
+          "bytes": 1979,
+          "crc32": "416525c3"
+        },
+        {
+          "path": "experiments/zenith-hypernova/index.html",
+          "bytes": 23006,
+          "crc32": "9d95f020"
+        },
+        {
+          "path": "experiments/zenith-hypernova/legacy-project-plan.json",
+          "bytes": 13140,
+          "crc32": "f9b59dba"
+        },
+        {
+          "path": "experiments/zenith-hypernova/project-plan.json",
+          "bytes": 13470,
+          "crc32": "bb327142"
+        },
+        {
+          "path": "experiments/zenith-hypernova/review.mjs",
+          "bytes": 5363,
+          "crc32": "a0a16666"
+        },
+        {
+          "path": "experiments/zenith-hypernova/styles.css",
+          "bytes": 13618,
+          "crc32": "09996da5"
+        },
+        {
+          "path": "guides/apps-validator-readme-3a1c1b7e.html",
+          "bytes": 17299,
+          "crc32": "31ac994c"
+        },
+        {
+          "path": "guides/demo-absolute-zero-reasoner-v0-readme-8a46c069.html",
+          "bytes": 9777,
+          "crc32": "3b825b0e"
+        },
+        {
+          "path": "guides/demo-absolute-zero-reasoner-v0-reports-absolute-zero-reasoner-report-1a8cb095.html",
+          "bytes": 5841,
+          "crc32": "72f6a9a5"
+        },
+        {
+          "path": "guides/demo-absolute-zero-reasoner-v0-runbook-b59e6cc3.html",
+          "bytes": 8846,
+          "crc32": "e767920c"
+        },
+        {
+          "path": "guides/demo-agi-alpha-node-v0-grand-demo-readme-3f54d30f.html",
+          "bytes": 9887,
+          "crc32": "9d1814eb"
+        },
+        {
+          "path": "guides/demo-agi-alpha-node-v0-grandiose-alpha-demo-readme-7f7155b9.html",
+          "bytes": 9306,
+          "crc32": "3e3cd61c"
+        },
+        {
+          "path": "guides/demo-agi-alpha-node-v0-readme-53d7b6c2.html",
+          "bytes": 10186,
+          "crc32": "38f8aa7d"
+        },
+        {
+          "path": "guides/demo-agi-governance-alpha-v13-readme-016c687f.html",
+          "bytes": 9064,
+          "crc32": "9e5df475"
+        },
+        {
+          "path": "guides/demo-agi-governance-alpha-v13-runbook-7379dca9.html",
+          "bytes": 10663,
+          "crc32": "9ebfcefe"
+        },
+        {
+          "path": "guides/demo-agi-governance-alpha-v14-readme-6b790c26.html",
+          "bytes": 9064,
+          "crc32": "ff183dd9"
+        },
+        {
+          "path": "guides/demo-agi-governance-alpha-v14-runbook-4d645d17.html",
+          "bytes": 13004,
+          "crc32": "c41decec"
+        },
+        {
+          "path": "guides/demo-agi-governance-alpha-v15-runbook-95e54b39.html",
+          "bytes": 13466,
+          "crc32": "e932eecc"
+        },
+        {
+          "path": "guides/demo-agi-governance-alpha-v15-readme-ec30806b.html",
+          "bytes": 9064,
+          "crc32": "4ce44e1d"
+        },
+        {
+          "path": "guides/demo-agi-governance-alpha-v16-readme-c4b1f78d.html",
+          "bytes": 9064,
+          "crc32": "c91a1854"
+        },
+        {
+          "path": "guides/demo-agi-governance-alpha-v16-runbook-cacf2968.html",
+          "bytes": 12581,
+          "crc32": "f8e46add"
+        },
+        {
+          "path": "guides/demo-agi-governance-alpha-v17-readme-e26374e3.html",
+          "bytes": 9064,
+          "crc32": "4daec447"
+        },
+        {
+          "path": "guides/demo-agi-governance-alpha-v17-runbook-dadff14a.html",
+          "bytes": 12656,
+          "crc32": "a940ac0a"
+        },
+        {
+          "path": "guides/demo-agi-governance-readme-6a24bbae.html",
+          "bytes": 10772,
+          "crc32": "36e7a506"
+        },
+        {
+          "path": "guides/demo-agi-governance-reports-governance-demo-full-run-4d5ac420.html",
+          "bytes": 8968,
+          "crc32": "944dbfcb"
+        },
+        {
+          "path": "guides/demo-agi-governance-reports-governance-demo-report-cf7404dd.html",
+          "bytes": 31943,
+          "crc32": "722c5548"
+        },
+        {
+          "path": "guides/demo-agi-governance-reports-governance-demo-owner-matrix-ebb28c4b.html",
+          "bytes": 6576,
+          "crc32": "76b74b47"
+        },
+        {
+          "path": "guides/demo-agi-governance-reports-governance-demo-validation-4fdde518.html",
+          "bytes": 13733,
+          "crc32": "02920b7c"
+        },
+        {
+          "path": "guides/demo-agi-governance-reports-owner-diagnostics-3fbcf99c.html",
+          "bytes": 7054,
+          "crc32": "71f31aa6"
+        },
+        {
+          "path": "guides/demo-agi-governance-runbook-b7cd0f0d.html",
+          "bytes": 21187,
+          "crc32": "6e241b85"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-computer-work-c62ce73d.html",
+          "bytes": 20479,
+          "crc32": "9120dc29"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-k2-stellar-demo-output-readme-e4fa9d04.html",
+          "bytes": 16137,
+          "crc32": "7e3b9e16"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-k2-stellar-demo-output-computer-work-2fc54e3c.html",
+          "bytes": 20546,
+          "crc32": "03dfdaab"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-k2-stellar-demo-output-stellar-dyson-mmd-86c23109.html",
+          "bytes": 4948,
+          "crc32": "e7084830"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-k2-stellar-demo-output-stellar-mermaid-mmd-08202ce2.html",
+          "bytes": 7128,
+          "crc32": "3ce5cc73"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-k2-stellar-demo-output-stellar-operator-briefing-1a6f5e56.html",
+          "bytes": 8216,
+          "crc32": "a8ef16ed"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-k2-stellar-demo-output-stellar-orchestration-report-df53a3b8.html",
+          "bytes": 7469,
+          "crc32": "bb21b23b"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-k2-stellar-demo-readme-23341809.html",
+          "bytes": 16115,
+          "crc32": "63dcac9a"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-output-computer-work-46306ea1.html",
+          "bytes": 20514,
+          "crc32": "9e89f376"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-output-governance-playbook-36c0b296.html",
+          "bytes": 5845,
+          "crc32": "b294deea"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-output-kardashev-action-path-cc731f33.html",
+          "bytes": 9138,
+          "crc32": "d96d1a9c"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-output-kardashev-dyson-mmd-c51a017e.html",
+          "bytes": 4803,
+          "crc32": "fce5b3cc"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-output-kardashev-mermaid-mmd-1892ab69.html",
+          "bytes": 5972,
+          "crc32": "9ca8c251"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-output-kardashev-operator-briefing-5a6fa45a.html",
+          "bytes": 11521,
+          "crc32": "df1f7d84"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-output-kardashev-report-21926f62.html",
+          "bytes": 11526,
+          "crc32": "1c5331bd"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-output-kardashev-orchestration-report-9f986c90.html",
+          "bytes": 17677,
+          "crc32": "f7417d1a"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-output-kardashev-task-hierarchy-mmd-76151efb.html",
+          "bytes": 11149,
+          "crc32": "00ec67a0"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-output-mermaid-dyson-hierarchy-mmd-e92a8f30.html",
+          "bytes": 5579,
+          "crc32": "f185f0eb"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-output-mermaid-interplanetary-settlement-mmd-5e2835b6.html",
+          "bytes": 5244,
+          "crc32": "c9da0c26"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-output-readme-0ed31ec6.html",
+          "bytes": 29416,
+          "crc32": "e9a0109f"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-readme-07acea35.html",
+          "bytes": 29353,
+          "crc32": "417f8489"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-stellar-civilization-lattice-output-computer-work-0bbc7f35.html",
+          "bytes": 20572,
+          "crc32": "4ab2d694"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-stellar-civilization-lattice-output-lattice-dyson-mmd-532fa0ad.html",
+          "bytes": 4849,
+          "crc32": "57da1a1c"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-stellar-civilization-lattice-output-lattice-action-path-ef8eea9e.html",
+          "bytes": 8948,
+          "crc32": "394dbf34"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-stellar-civilization-lattice-output-lattice-mermaid-mmd-2d98b5d4.html",
+          "bytes": 6267,
+          "crc32": "db86fdd6"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-stellar-civilization-lattice-output-lattice-operator-briefing-2e962171.html",
+          "bytes": 11434,
+          "crc32": "c0a71d8c"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-stellar-civilization-lattice-output-lattice-orchestration-report-48c14779.html",
+          "bytes": 18625,
+          "crc32": "320647e0"
+        },
+        {
+          "path": "guides/demo-agi-jobs-platform-at-kardashev-ii-scale-stellar-civilization-lattice-output-lattice-task-hierarchy-mmd-fdf44e3a.html",
+          "bytes": 8187,
+          "crc32": "b2899c33"

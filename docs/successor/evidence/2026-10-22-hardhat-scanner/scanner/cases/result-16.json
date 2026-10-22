@@ -1,0 +1,75 @@
+{
+  "index": 16,
+  "ruleId": "js/unused-local-variable",
+  "completeCanonicalResultSha256": "1792282aede4a74926902c5dde76a06258672bc2a2d70b87c150e9b4aa087249",
+  "completeRuleDescriptorSha256": "6dc9454a4aba05bdb4b6e0a84952160a3738cbc51c4bcdfa248b5765a705d008",
+  "toolComponent": "codeql/javascript-queries",
+  "sourcePaths": [
+    "scripts/release/source-scanner-gates-rc16.cjs"
+  ],
+  "assessment": "REQUIRES_INDEPENDENT_FINAL_SOURCE_REVIEW",
+  "rawResult": {
+    "ruleId": "js/unused-local-variable",
+    "rule": {
+      "id": "js/unused-local-variable",
+      "index": 109,
+      "toolComponent": {
+        "index": 1
+      }
+    },
+    "message": {
+      "text": "Unused variable delay."
+    },
+    "locations": [
+      {
+        "physicalLocation": {
+          "artifactLocation": {
+            "uri": "scripts/release/source-scanner-gates-rc16.cjs",
+            "uriBaseId": "%SRCROOT%",
+            "index": 595
+          },
+          "region": {
+            "startLine": 8,
+            "startColumn": 21,
+            "endColumn": 26
+          }
+        }
+      }
+    ],
+    "partialFingerprints": {
+      "primaryLocationLineHash": "e0f36545d42eaf21:1",
+      "primaryLocationStartColumnFingerprint": "20"
+    }
+  },
+  "ruleDescriptor": {
+    "id": "js/unused-local-variable",
+    "name": "js/unused-local-variable",
+    "shortDescription": {
+      "text": "Unused variable, import, function or class"
+    },
+    "fullDescription": {
+      "text": "Unused variables, imports, functions or classes may be a symptom of a bug and should be examined carefully."
+    },
+    "defaultConfiguration": {
+      "enabled": true,
+      "level": "note"
+    },
+    "help": {
+      "text": "# Unused variable, import, function or class\nUnused local variables make code hard to read and understand. Any computation used to initialize an unused variable is wasted, which may lead to performance problems.\n\nSimilarly, unused imports and unused functions or classes can be confusing. They may even be a symptom of a bug caused, for example, by an incomplete refactoring.\n\n\n## Recommendation\nRemove the unused program element.\n\n\n## Example\nIn this code, the function `f` initializes a local variable `x` with a call to the function `expensiveComputation`, but later on this variable is never read. Removing `x` would improve code quality and performance.\n\n\n```javascript\nfunction f() {\n\tvar x = expensiveComputation();\n\treturn 23;\n}\n```\nA slightly subtle case is shown below, where a function expression named `f` is assigned to a variable `f`:\n\n\n```javascript\nvar f = function f() {\n  return \"Hi!\";\n};\nf();\n```\nNote that this example involves two distinct variables, both named `f`: the global variable to which the function is assigned, and the variable implicitly declared by the function expression. The call to `f()` refers to the former variable, whereas the latter is unused. Hence the example can be rewritten as follows, eliminating the useless variable:\n\n\n```javascript\nvar f = function () {\n  return \"Hi!\";\n};\nf();\n```\nA similar situation can occur with ECMAScript 2015 module exports, as shown in the following example:\n\n\n```javascript\nexport default function f() {\n  return \"Hi!\";\n};\n```\nAgain, the named function expression implicitly declares a variable `f`, but because the export statement is a default export, this variable is unused and can be eliminated:\n\n\n```javascript\nexport default function () {\n  return \"Hi!\";\n};\n```\n\n## References\n* Coding Horror: [Code Smells](http://blog.codinghorror.com/code-smells/).\n* Mozilla Developer Network: [Named function expressions](https://developer.mozilla.org/en/docs/web/JavaScript/Reference/Operators/function#Named_function_expression).\n* Mozilla Developer Network: [Using the default export](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_the_default_export).\n",
+      "markdown": "# Unused variable, import, function or class\nUnused local variables make code hard to read and understand. Any computation used to initialize an unused variable is wasted, which may lead to performance problems.\n\nSimilarly, unused imports and unused functions or classes can be confusing. They may even be a symptom of a bug caused, for example, by an incomplete refactoring.\n\n\n## Recommendation\nRemove the unused program element.\n\n\n## Example\nIn this code, the function `f` initializes a local variable `x` with a call to the function `expensiveComputation`, but later on this variable is never read. Removing `x` would improve code quality and performance.\n\n\n```javascript\nfunction f() {\n\tvar x = expensiveComputation();\n\treturn 23;\n}\n```\nA slightly subtle case is shown below, where a function expression named `f` is assigned to a variable `f`:\n\n\n```javascript\nvar f = function f() {\n  return \"Hi!\";\n};\nf();\n```\nNote that this example involves two distinct variables, both named `f`: the global variable to which the function is assigned, and the variable implicitly declared by the function expression. The call to `f()` refers to the former variable, whereas the latter is unused. Hence the example can be rewritten as follows, eliminating the useless variable:\n\n\n```javascript\nvar f = function () {\n  return \"Hi!\";\n};\nf();\n```\nA similar situation can occur with ECMAScript 2015 module exports, as shown in the following example:\n\n\n```javascript\nexport default function f() {\n  return \"Hi!\";\n};\n```\nAgain, the named function expression implicitly declares a variable `f`, but because the export statement is a default export, this variable is unused and can be eliminated:\n\n\n```javascript\nexport default function () {\n  return \"Hi!\";\n};\n```\n\n## References\n* Coding Horror: [Code Smells](http://blog.codinghorror.com/code-smells/).\n* Mozilla Developer Network: [Named function expressions](https://developer.mozilla.org/en/docs/web/JavaScript/Reference/Operators/function#Named_function_expression).\n* Mozilla Developer Network: [Using the default export](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export#Using_the_default_export).\n"
+    },
+    "properties": {
+      "tags": [
+        "quality",
+        "maintainability",
+        "useless-code"
+      ],
+      "description": "Unused variables, imports, functions or classes may be a symptom of a bug\n              and should be examined carefully.",
+      "id": "js/unused-local-variable",
+      "kind": "problem",
+      "name": "Unused variable, import, function or class",
+      "precision": "very-high",
+      "problem.severity": "recommendation"
+    }
+  }
+}
