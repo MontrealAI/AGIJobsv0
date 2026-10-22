@@ -601,6 +601,40 @@ function assertSelectedSourceResult(root,head,result,readGit=git) {
   assert.equal(readGit(['rev-parse','HEAD'],root,GIT_SECURITY_CONTEXT.installed).trim(),head,
     'Source HEAD moved before generator selection');
 }
+function provisionGeneratorDependencies(root,worktree,head,readGit=git) {
+  for(const directory of [root,worktree])assert.equal(fs.realpathSync(directory),path.resolve(directory),
+    'Generator dependency directories must be direct');
+  assertSourceCommitAndIndex(worktree,head,readGit);
+  assert.equal(readGit(['ls-files','-z','--','node_modules'],worktree,GIT_SECURITY_CONTEXT.installed),'',
+    'Generator dependency setup must not overlap tracked source');
+  const target=path.join(root,'node_modules'),link=path.join(worktree,'node_modules');
+  const keys=['dev','ino','mode','size','mtimeNs','ctimeNs'];
+  const targetBefore=fs.lstatSync(target,{bigint:true});
+  assert.ok(targetBefore.isDirectory()&&!targetBefore.isSymbolicLink(),'Generator dependency target must be an ordinary directory');
+  assert.equal(fs.realpathSync(target),target,'Generator dependency target must be direct');
+  fs.symlinkSync(target,link,'dir'); // Exclusive creation: no existing path is removed.
+  const linkBefore=fs.lstatSync(link,{bigint:true});assert.ok(linkBefore.isSymbolicLink());
+  assert.equal(fs.readlinkSync(link),target);
+  let removed=false;
+  return ()=>{
+    assert.equal(removed,false,'Generator dependency link was already removed');
+    assert.equal(fs.realpathSync(worktree),worktree,'Generator worktree changed');
+    assertSourceCommitAndIndex(worktree,head,readGit);
+    const linkAfter=fs.lstatSync(link,{bigint:true}),targetAfter=fs.lstatSync(target,{bigint:true});
+    assert.ok(linkAfter.isSymbolicLink(),'Owned generator dependency link was replaced');
+    assert.ok(targetAfter.isDirectory()&&!targetAfter.isSymbolicLink(),'Generator dependency target was replaced');
+    for(const key of keys) {
+      assert.equal(linkAfter[key],linkBefore[key],'Owned generator dependency link changed: '+key);
+      assert.equal(targetAfter[key],targetBefore[key],'Generator dependency target changed: '+key);
+    }
+    assert.equal(fs.readlinkSync(link),target,'Owned generator dependency link target changed');
+    assert.equal(fs.realpathSync(target),target,'Generator dependency target redirected');
+    assert.equal(readGit(['ls-files','-z','--','node_modules'],worktree,GIT_SECURITY_CONTEXT.installed),'',
+      'Generator dependency setup became tracked source');
+    fs.unlinkSync(link);removed=true;
+    assertSourceCommitAndIndex(worktree,head,readGit);
+  };
+}
 function checkGenerated() {
   const head=git(['rev-parse','HEAD']).trim();
   const installedEdition=installedEditionForCommit(ROOT,git,head);
@@ -629,11 +663,9 @@ function checkGenerated() {
       git(['worktree','add','--quiet','--detach',worktree,result.generatedSourceBaseline]);
       ordinaryAdded=true;
     }
-    fs.symlinkSync(
-      path.join(ROOT, 'node_modules'),
-      path.join(worktree, 'node_modules'),
-      'dir'
-    );
+    const generatorHead=installedEdition?INSTALLED_GENERATOR_BASE:result.generatedSourceBaseline;
+    const dependencyPackagesBefore=JSON.parse(captureInstalledFile(ROOT,'package-lock.json').raw.toString('utf8')).packages;
+    const removeDependencyLink=provisionGeneratorDependencies(ROOT,worktree,generatorHead);
     const cli = path.join(ROOT, 'node_modules/ts-node/dist/bin.js');
     execFileSync(
       process.execPath,
@@ -666,6 +698,12 @@ function checkGenerated() {
         env: { PATH: process.env.PATH, HOME: process.env.HOME, CI: '1' },
       }
     );
+    // Tool provisioning is not generated source: remove only the exact unchanged
+    // link this invocation created, leaving the complete comparator unfiltered.
+    removeDependencyLink();
+    const dependenciesAfter=verifySelectedDependencyIdentities(dependencyPackagesBefore,
+      JSON.parse(captureInstalledFile(ROOT,'package-lock.json').raw.toString('utf8')).packages);
+    assert.deepEqual(dependenciesAfter,result.selectedDependencyIdentitiesPreserved,'Selected dependency identities changed during generation');
     const compared=compareGeneratedSources(ROOT,worktree,{
       allTracked:installedEdition,
       sourceSnapshotRoot:installedEdition?snapshot:null,
@@ -688,6 +726,7 @@ function checkGenerated() {
       ...(installedEdition?{generatedSourceBaselineTree:INSTALLED_GENERATOR_TREE}:{}),
       mode:'generated',comparedFiles:compared.files.length,
       baselineGeneratorReproduced:true,baselineEnsNormalizationReproduced:true,
+      ownedGeneratorDependencySetupRemoved:true,selectedDependencyIdentitiesRechecked:true,
       committedSourceSnapshotVerified:installedEdition,completeTrackedGeneratedComparison:installedEdition,
       workingTreeSourceVerified:false,generatedBaselineVerified:true,
       ...summarizeGeneratedTransitions(compared.generatedTransitions),
@@ -716,7 +755,7 @@ module.exports = {
     installedEdition:installedEditionForCommit,
     captureInstalledFile,independentInstalledCases,assertSourceCommitAndIndex,assertSelectedSourceResult,summarizeGeneratedTransitions,
     verifySelectedDependencyIdentities,verifyGeneratedMutationSets,verifyGeneratedFileIdentity,
-    verifyInstalledAfterGeneration,captureCommittedSource,
+    verifyInstalledAfterGeneration,captureCommittedSource,provisionGeneratorDependencies,
   },
 };
 if (require.main === module) {

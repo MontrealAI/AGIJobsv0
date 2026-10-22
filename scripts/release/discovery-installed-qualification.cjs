@@ -573,6 +573,220 @@ print(json.dumps(out,separators=(',',':')))
   assert.deepEqual(Object.keys(output).sort(),selected.sort());
   return new Map(Object.entries(output).map(([name,raw])=>[name,Buffer.from(raw,'base64')]));
 }
+// Reviewed release output profile for the selected source. Unknown source remains unaccepted.
+const ALPHA_REVIEWED_RELEASE_SOURCE={commit:'61532fb82621a065e668fd11e57289dcfb65c67b',
+  tree:'7814d1bd9dcd3845b349590e0bcac57ba93b3167',version:'1.38.0'};
+function alphaProfileFields(value,names,label) {
+  assert.ok(value&&typeof value==='object'&&!Array.isArray(value),label);
+  assert.deepEqual(Object.keys(value).sort(),[...names].sort(),label);
+}
+function alphaProfileSha(value) {return typeof value==='string'&&/^[a-f0-9]{64}$/.test(value);}
+function reviewedAlphaReleaseProfile(alpha,version) {
+  assert.equal(alpha.commit,ALPHA_REVIEWED_RELEASE_SOURCE.commit,'Alpha source requires a reviewed public release profile');
+  assert.equal(alpha.tree,ALPHA_REVIEWED_RELEASE_SOURCE.tree,'Alpha tree requires a reviewed public release profile');
+  assert.equal(version,ALPHA_REVIEWED_RELEASE_SOURCE.version,'Public Alpha version differs from reviewed source profile');
+  const prefix='alpha-agent-v'+version;
+  return {...ALPHA_REVIEWED_RELEASE_SOURCE,requiredNames:[
+    'AGI_ALPHA_Unified_Publication_Final.md',
+    'AGI_ALPHA_Unified_Publication_Final.pdf',
+    'ASCENSION_CYCLE.md',
+    'ASCENSION_CYCLE_ENGINEERING.md',
+    'ASCENSION_CYCLE_HANDOFF.md',
+    'ASCENSION_PROTOCOL.md',
+    'ASCENSION_STACK_RELEASE.md',
+    'BUSINESS3.md',
+    'CAPABILITIES.md',
+    'CAPABILITY_WORKSPACE.md',
+    'COMPOUNDING_LAB.md',
+    'CURRENT_MAINNET_DEPLOYMENT.md',
+    'CURRICULUM_LAB.md',
+    'DECISION_STUDIO.md',
+    'DEMOS.md',
+    'DEMO_AUDIT_2026-10-01.md',
+    'DEMO_VALIDATION.md',
+    'DISCOVERY.md',
+    'DISCOVERY_LAB_CONTINUATION_2026-10-21.md',
+    'DISCOVERY_LAB_DEPLOYMENT_COMPATIBILITY.json',
+    'DISCOVERY_LAB_DEPLOYMENT_COMPATIBILITY.md',
+    'DISCOVERY_LAB_EVIDENCE_DOCKET.md',
+    'DISCOVERY_LAB_FOUNDATION_REPRODUCTION.json',
+    'DISCOVERY_LAB_FUTURE_PROTOCOL.md',
+    'DISCOVERY_LAB_MODEL_REVIEW.json',
+    'DISCOVERY_LAB_PAPER_TO_CODE.md',
+    'DISCOVERY_LAB_README.md',
+    'DISCOVERY_LAB_REAL_TASK_ADAPTER.md',
+    'DISCOVERY_LAB_RELEASE_NOTES.md',
+    'DISCOVERY_LAB_SOURCES.json',
+    'DISCOVERY_LAB_SPECIFICATION.md',
+    'ECOSYSTEM_ADAPTERS.md',
+    'EXPERIENCE.md',
+    'FACTORY_GUIDE.md',
+    'GOVERNANCE.md',
+    'INSIGHT_ATLAS.md',
+    'MAINNET_DEPLOYMENT.md',
+    'MAINNET_READINESS.md',
+    'MANUSCRIPT_ALIGNMENT.md',
+    'MARK_WALLET.md',
+    'MATS.md',
+    'MUZERO.md',
+    'NATIVE_BUDGET_RESERVATIONS.md',
+    'NOVA_SEED_STUDIO.md',
+    'NOVA_SEED_STUDIO_ENGINEERING.md',
+    'ONBOARDING.md',
+    'OPERATIONS.md',
+    'OUT_EXECUTE.md',
+    'PAGES_GUIDE.md',
+    'PAPER_UPLOADS.md',
+    'PROOF_BLOOM.md',
+    'RELEASE_NOTES_1.38.0.md',
+    'RELEASE_READINESS.md',
+    'REPOSITORY_GUIDE.md',
+    'SHA256SUMS',
+    'START_HERE.md',
+    'SUCCESSOR.md',
+    'SUCCESSOR_ACCEPTANCE.md',
+    'SUCCESSOR_ALPHA.md',
+    'SUCCESSOR_ALPHA_CONTINUITY.md',
+    'SUCCESSOR_ALPHA_DEPLOYMENT.md',
+    'SUCCESSOR_ARCHITECTURE.md',
+    'SUCCESSOR_ASCENSION.md',
+    'SUCCESSOR_COMPUTER_USE.md',
+    'SUCCESSOR_OPERATIONS.md',
+    'SUCCESSOR_PACKAGING.md',
+    'SUCCESSOR_SOURCES.json',
+    'SUPPLIER_BROWSER_ADAPTER.md',
+    'TRANSFORMATIONAL_DISCOVERY.md',
+    'TRANSFORMATIONAL_IMPLEMENTATION.md',
+    'TRANSFORMATIONAL_LOCAL_MODEL.md',
+    'TRANSFORMATIONAL_MATH.md',
+    'TRANSFORMATIONAL_POLICY_STUDY.md',
+    'TRANSFORMATIONAL_PUBLIC_PILOT.md',
+    'TRANSFORMATIONAL_SOURCE_AUDIT.md',
+    'VALIDATION.md',
+    'WHITEPAPER_IMPLEMENTATION.md',
+    'alpha-agent-v1.38.0-mainnet-record.zip',
+    'alpha-agent-v1.38.0-manuscript.zip',
+    'alpha-agent-v1.38.0-operator-guide.zip',
+    'alpha-agent-v1.38.0-public-validation-packs.json',
+    'alpha-agent-v1.38.0-source.zip',
+    'alpha-agent-v1.38.0-validation.zip',
+    'alpha_factory_v1-1.38.0-py3-none-any.whl',
+    'alpha_factory_v1-1.38.0.tar.gz',
+    'browser-packs.json',
+    'computer-use-study-report-pack.zip',
+    'ethereum-mainnet-2026-10-18.json',
+    'install_agent.py',
+    'release-manifest.json',
+    'release_packs.py',
+    'requirements-agent.lock',
+    'site-packs.json',
+    'source-manifest.json',
+    'successor-alpha-workspace.html',
+    'successor-preservation.json',
+    'transformational-intelligence-workspace.html'],
+    packManifests:[{name:'browser-packs.json',prefix:'browser',distribution:'browser'},
+      {name:'site-packs.json',prefix:'site',distribution:'site'},
+      {name:prefix+'-public-validation-packs.json',prefix:prefix+'-public-validation',distribution:null}]};
+}
+function verifyAlphaProfileInventory(profile,assets) {
+  assert.ok(Array.isArray(assets));const names=new Set();
+  for(const asset of assets) {
+    assert.ok(asset&&typeof asset.name==='string'&&!names.has(asset.name),'Duplicate profile asset');
+    names.add(asset.name);
+  }
+  assert.equal(assets.filter(asset=>asset.name.startsWith('alpha_factory_v1-'+profile.version+'-')&&asset.name.endsWith('.whl')).length,1,
+    'One version-bound reviewed public Alpha wheel is required');
+  for(const name of profile.requiredNames)assert.ok(names.has(name),'Required reviewed public Alpha profile asset is absent: '+name);
+  return true;
+}
+function verifyAlphaProfilePacks(profile,manifest,receipts,packManifests) {
+  assert.ok(Array.isArray(receipts));const actual=new Map();
+  for(const row of receipts) {
+    assert.ok(row&&typeof row.name==='string'&&!actual.has(row.name)&&Number.isSafeInteger(row.bytes)&&row.bytes>=0&&alphaProfileSha(row.sha256),
+      'Malformed or duplicate observed public Alpha asset');
+    actual.set(row.name,row);
+  }
+  verifyAlphaProfileInventory(profile,receipts);
+  const controls=[];
+  for(const selected of profile.packManifests) {
+    const value=packManifests[selected.name];
+    alphaProfileFields(value,['schema','commit','version','max_asset_bytes','total_bytes','packs','files'],'Public Alpha pack manifest fields differ');
+    assert.equal(value.schema,'agialpha.release-packs.v1');assert.equal(value.commit,profile.commit);assert.equal(value.version,profile.version);
+    assert.ok(Number.isSafeInteger(value.max_asset_bytes)&&value.max_asset_bytes>0&&value.max_asset_bytes<=2**31-1);
+    assert.ok(Number.isSafeInteger(value.total_bytes)&&value.total_bytes>0,'Public Alpha logical byte total is invalid');
+    assert.ok(Array.isArray(value.files)&&value.files.length>0&&Array.isArray(value.packs)&&value.packs.length>0,
+      'Required public Alpha distribution has no files or packs');
+    const names=new Set();
+    for(const[index,row]of value.packs.entries()) {
+      alphaProfileFields(row,['name','group','bytes','sha256'],'Public Alpha pack row fields differ');
+      assert.ok(['core','models','media','research'].includes(row.group));
+      assert.equal(row.name,selected.prefix+'-'+row.group+'-'+String(index+1).padStart(3,'0')+'.zip','Public Alpha pack left its reviewed profile');
+      assert.ok(!names.has(row.name),'Duplicate public Alpha pack');names.add(row.name);
+      assert.ok(Number.isSafeInteger(row.bytes)&&row.bytes>0&&row.bytes<=value.max_asset_bytes&&alphaProfileSha(row.sha256));
+      const observed=actual.get(row.name);assert.ok(observed,'Declared reviewed public Alpha pack is absent: '+row.name);
+      assert.equal(observed.bytes,row.bytes,'Public Alpha pack byte count differs');assert.equal(observed.sha256,row.sha256,'Public Alpha pack digest differs');
+    }
+    if(selected.distribution) {
+      const declaration=manifest.distributions?.[selected.distribution];
+      alphaProfileFields(declaration,['manifest','files','packs'],'Public Alpha distribution declaration differs');
+      assert.equal(declaration.manifest,selected.name);assert.equal(declaration.files,value.files.length);assert.equal(declaration.packs,value.packs.length);
+    }
+    const observed=actual.get(selected.name);assert.ok(observed);
+    controls.push({name:selected.name,bytes:observed.bytes,sha256:observed.sha256,files:value.files.length,packs:value.packs.length,
+      logicalBytes:value.total_bytes});
+  }
+  const evidence=manifest.validation_evidence;
+  alphaProfileFields(evidence,['schema','commit','version','local','public'],'Public Alpha validation evidence fields differ');
+  assert.equal(evidence.schema,'agialpha.validation-evidence.v1');assert.equal(evidence.commit,profile.commit);assert.equal(evidence.version,profile.version);
+  alphaProfileFields(evidence.local,['name','bytes','sha256'],'Public Alpha local validation declaration differs');
+  const localName='alpha-agent-v'+profile.version+'-validation.zip',local=actual.get(localName);assert.ok(local);
+  assert.equal(evidence.local.name,localName);assert.equal(evidence.local.bytes,local.bytes);assert.equal(evidence.local.sha256,local.sha256);
+  alphaProfileFields(evidence.public,['manifest','bytes','sha256','files','packs'],'Public Alpha packed validation declaration differs');
+  const validation=controls.find(row=>row.name==='alpha-agent-v'+profile.version+'-public-validation-packs.json');assert.ok(validation);
+  assert.equal(evidence.public.manifest,validation.name);assert.equal(evidence.public.bytes,validation.bytes);assert.equal(evidence.public.sha256,validation.sha256);
+  assert.equal(evidence.public.files,validation.files);assert.equal(evidence.public.packs,validation.packs);
+  return {sourceCommit:profile.commit,sourceTree:profile.tree,version:profile.version,requiredAssetsVerified:true,
+    packManifests:controls,validationEvidence:{local:{name:localName,bytes:local.bytes,sha256:local.sha256},
+      public:{manifest:validation.name,bytes:validation.bytes,sha256:validation.sha256,files:validation.files,packs:validation.packs}}};
+}
+async function alphaReleaseAttemptJobs(api,qualification,alpha) {
+  for(const key of ['runId','runAttempt'])assert.ok(Number.isSafeInteger(qualification[key])&&qualification[key]>0);
+  assert.match(alpha.commit,/^[a-f0-9]{40}$/);
+  const inventory=[],jobs=[],seen=new Set();let total,metadataBytes=0;
+  for(let page=1;;page++) {
+    assert.ok(Number.isSafeInteger(page));
+    const value=await api('actions/runs/'+qualification.runId+'/attempts/'+qualification.runAttempt+'/jobs?per_page=100&page='+page);
+    assert.ok(value&&Array.isArray(value.jobs)&&value.jobs.length<=100&&Number.isSafeInteger(value.total_count)&&value.total_count>=0,
+      'Complete selected Alpha attempt job page required');
+    if(total===undefined)total=value.total_count;else assert.equal(value.total_count,total,'Selected Alpha attempt job total changed');
+    metadataBytes+=Buffer.byteLength(JSON.stringify(value));assert.ok(metadataBytes<=64*1024*1024,'Selected Alpha job metadata exceeds bound');
+    inventory.push(structuredClone(value));
+    for(const job of value.jobs) {
+      assert.ok(Number.isSafeInteger(job?.id)&&job.id>0&&!seen.has(job.id),'Duplicate or invalid selected Alpha job id');
+      seen.add(job.id);jobs.push(job);assert.ok(jobs.length<=total,'Selected Alpha attempt job inventory exceeds declared total');
+    }
+    if(value.jobs.length===0){assert.equal(jobs.length,total,'Selected Alpha attempt job inventory is incomplete');break;}
+  }
+  const requiredJobs=[];
+  for(const name of ['package','pages','publish']) {
+    const selected=jobs.filter(job=>job.name===name);assert.equal(selected.length,1,'Actual full Alpha release job missing or ambiguous: '+name);
+    const job=selected[0];assert.equal(job.run_id,qualification.runId);assert.equal(job.run_attempt,qualification.runAttempt);
+    assert.equal(job.head_sha,alpha.commit);assert.equal(job.head_branch,'main','Required Alpha release job branch differs');
+    assert.equal(job.status,'completed');assert.equal(job.conclusion,'success');
+    requiredJobs.push({id:job.id,name,runId:job.run_id,runAttempt:job.run_attempt,headSha:job.head_sha,headBranch:job.head_branch,status:job.status,conclusion:job.conclusion});
+  }
+  return {schema:'agijobsv0/discovery-alpha-full-release-attempt/v1',runId:qualification.runId,runAttempt:qualification.runAttempt,
+    sourceCommit:alpha.commit,completeInventory:true,inventory,requiredJobs};
+}
+function alphaReleaseJobsLease(before,after) {
+  for(const value of [before,after]) {
+    assert.equal(value.schema,'agijobsv0/discovery-alpha-full-release-attempt/v1');
+    assert.equal(value.completeInventory,true);assert.ok(Array.isArray(value.requiredJobs)&&value.requiredJobs.length===3);
+  }
+  for(const key of ['runId','runAttempt','sourceCommit'])assert.equal(after[key],before[key],'Actual full Alpha release lease changed: '+key);
+  assert.deepEqual(after.requiredJobs,before.requiredJobs,'Actual full Alpha release jobs changed during download');
+  return {before,after};
+}
 async function verifyAlphaPublicAssets(api,release,qualification,alpha,{readAsset=readPublicAlphaAsset,catalogInput}={}) {
   const assets=await alphaPublicAssetInventory(api,release.id,qualification.releaseTag),byName=new Map(assets.map(asset=>[asset.name,asset]));
   for(const asset of release.assets||[])assert.deepEqual(alphaPublicAssetIdentity(asset,qualification.releaseTag),byName.get(asset.name),
@@ -618,6 +832,7 @@ async function verifyAlphaPublicAssets(api,release,qualification,alpha,{readAsse
   const wheels=assets.filter(asset=>asset.name.startsWith('alpha_factory_v1-'+manifest.version+'-')&&asset.name.endsWith('.whl'));
   assert.equal(wheels.length,1,'One version-bound public Alpha wheel is required');
   assert.deepEqual(Object.keys(manifest.distributions||{}).sort(),['browser','site'],'Complete public Alpha distributions are required');
+  const reviewedProfile=reviewedAlphaReleaseProfile(alpha,manifest.version);verifyAlphaProfileInventory(reviewedProfile,assets);
   const operatorName='alpha-agent-v'+manifest.version+'-operator-guide.zip';
   assert.ok(byName.has(operatorName),'Required public Alpha operator guide is absent');
   const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'jobs-public-alpha-'));fs.chmodSync(temporary,0o700);
@@ -641,7 +856,7 @@ async function verifyAlphaPublicAssets(api,release,qualification,alpha,{readAsse
     assert.equal(entry.sourceSha256,expected);assert.equal(entry.packagedSha256,expected);
     assert.equal(hash(one(operator,entry.archivePath)),expected,'Public Alpha operator source input differs: '+name);
   }
-  const distributionNames=Object.values(manifest.distributions||{}).map(item=>item.manifest);
+  const distributionNames=reviewedProfile.packManifests.map(item=>item.name);
   for(const name of distributionNames)await read(name,true);
   for(const asset of assets)if(!observed.has(asset.name))await read(asset.name);
   const distributions=[];
@@ -657,6 +872,8 @@ async function verifyAlphaPublicAssets(api,release,qualification,alpha,{readAsse
     }
     distributions.push({kind,manifest:entry.manifest,manifestSha256:hash(metadata.get(entry.manifest)),packs:entry.packs,files:entry.files});
   }
+  const reviewedProfileEvidence=verifyAlphaProfilePacks(reviewedProfile,manifest,[...observed.values()],
+    Object.fromEntries(reviewedProfile.packManifests.map(item=>[item.name,publicAlphaJson(metadata.get(item.name))])));
   const finalRelease=await api('releases/tags/'+qualification.releaseTag);
   for(const key of ['id','tag_name','draft','prerelease','published_at'])assert.equal(finalRelease[key],release[key],'Public Alpha release identity changed during download');
   assert.deepEqual(await alphaPublicAssetInventory(api,release.id,qualification.releaseTag),assets,'Public Alpha assets changed during download');
@@ -666,7 +883,7 @@ async function verifyAlphaPublicAssets(api,release,qualification,alpha,{readAsse
     operatorGuide:{name:operatorName,sha256:observed.get(operatorName).sha256,sourceMapSha256:hash(one(operator,'capability/source-map.json')),
       catalogSha256:hash(publicCatalogRaw),sourceHash:alpha.sourceHash,sourceInputs:Object.keys(publicCatalog.sources).length},
     completeChecksumCoverage:true,completeManifestCoverage:true,assetCount:observed.size,
-    totalBytes:[...observed.values()].reduce((sum,item)=>sum+item.bytes,0),assets:[...observed.values()].sort((a,b)=>a.name<b.name?-1:a.name>b.name?1:0),distributions};
+    totalBytes:[...observed.values()].reduce((sum,item)=>sum+item.bytes,0),assets:[...observed.values()].sort((a,b)=>a.name<b.name?-1:a.name>b.name?1:0),distributions,reviewedProfile:reviewedProfileEvidence};
 }
 async function verifyAlphaPublication(api,qualification,alpha,catalogInput,assetOptions={}) {
   fields(qualification,['releaseTag','releaseId','runId','runAttempt'],'Exact public Alpha publication prerequisite fields differ');
@@ -688,6 +905,7 @@ async function verifyAlphaPublication(api,qualification,alpha,catalogInput,asset
   assert.equal(run.run_attempt,qualification.runAttempt);assert.equal(run.path,'.github/workflows/agent-release.yml');
   assert.equal(run.head_sha,alpha.commit);assert.equal(run.head_branch,'main');assert.equal(run.event,'push');
   assert.equal(run.status,'completed');assert.equal(run.conclusion,'success');
+  const fullProducerBefore=await alphaReleaseAttemptJobs(api,qualification,alpha);
   assert.ok(Buffer.isBuffer(catalogInput?.raw)&&catalogInput.raw.length>0&&catalogInput.raw.length<=2_000_000);
   assert.ok(digest(catalogInput.sha256));const catalogRaw=catalogInput.raw;
   assert.equal(hash(catalogRaw),catalogInput.sha256,'Reused authenticated source catalog differs from reviewed pin');
@@ -695,6 +913,8 @@ async function verifyAlphaPublication(api,qualification,alpha,catalogInput,asset
   assert.equal(catalog.schema,'successor-capability-source/v1');assert.equal(catalog.sourceHash,alpha.sourceHash);
   assert.equal(hash(canonical(catalog.sources)),alpha.sourceHash);assert.equal(Object.keys(catalog.sources).length,41);
   const publicAssets=await verifyAlphaPublicAssets(api,release,qualification,alpha,{...assetOptions,catalogInput});
+  const fullProducerAfter=await alphaReleaseAttemptJobs(api,qualification,alpha);
+  publicAssets.fullProducerJobs=alphaReleaseJobsLease(fullProducerBefore,fullProducerAfter);
   const finalRun=await api('actions/runs/'+qualification.runId);
   for(const key of ['id','run_attempt','head_sha','head_branch','event','path','status','conclusion'])
     assert.equal(finalRun[key],run[key],'Public Alpha producer changed during download');
@@ -859,7 +1079,7 @@ async function qualify(options) {
   fs.writeFileSync(path.join(output,'qualification.json'),JSON.stringify(proof,null,2)+'\n',{flag:'wx'});return proof;
 }
 module.exports={REPOSITORY,WORKFLOW,VERSION,TAG,NODES,PRODUCER,CONSUMER,INSTALLER_PATH,INSTALLER_ASSET,hash,json,canonical,fields,bounded,sourceProof,plan,
-  validateRun,validateJob,validateArtifact,validateRetainedHistory,verifyBrowserInput,verifyAlphaPublication,verifyAlphaPublicAssets,alphaPublicAssetIdentity,alphaPublicAssetInventory,readPublicAlphaAsset,ALPHA_ASSET_MAX_BYTES,reviewReferences,zipMembers,installedArchive,validateInstaller,assertProducerInventory,custodyFromProducer,validateBootstrap,validateNative,publicationRecord,scannerReview,qualify};
+  validateRun,validateJob,validateArtifact,validateRetainedHistory,verifyBrowserInput,verifyAlphaPublication,verifyAlphaPublicAssets,reviewedAlphaReleaseProfile,verifyAlphaProfileInventory,verifyAlphaProfilePacks,alphaReleaseAttemptJobs,alphaReleaseJobsLease,alphaPublicAssetIdentity,alphaPublicAssetInventory,readPublicAlphaAsset,ALPHA_ASSET_MAX_BYTES,reviewReferences,zipMembers,installedArchive,validateInstaller,assertProducerInventory,custodyFromProducer,validateBootstrap,validateNative,publicationRecord,scannerReview,qualify};
 if(require.main===module) {
   const [command,root,manifestSha256,verifierSha256,scopeVerifierSha256,runId,recordFile,recordSha256,output]=process.argv.slice(2);
   (async()=>{

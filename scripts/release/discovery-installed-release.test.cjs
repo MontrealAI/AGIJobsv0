@@ -333,9 +333,110 @@ test('rehashed docket metadata cannot hide omitted raw receiver costs',()=>{
   f.report.docket.sha256=Q.hash(raw);f.report.docket.reopenedSha256=Q.hash(raw);f.refresh();
   assert.throws(()=>Q.validateNative(f.members,{source,alpha,custody:f.custody,version:'24.21.0'}),/receiver costs/);
 });
+// Independent literal contract derived from the reviewed Alpha615 publisher recipe.
+// This is the fixed-name set, not a total release-asset count; all declared packs are additional.
+const EXPECTED_ALPHA_615_FIXED_ASSETS=[
+  'AGI_ALPHA_Unified_Publication_Final.md',
+  'AGI_ALPHA_Unified_Publication_Final.pdf',
+  'ASCENSION_CYCLE.md',
+  'ASCENSION_CYCLE_ENGINEERING.md',
+  'ASCENSION_CYCLE_HANDOFF.md',
+  'ASCENSION_PROTOCOL.md',
+  'ASCENSION_STACK_RELEASE.md',
+  'BUSINESS3.md',
+  'CAPABILITIES.md',
+  'CAPABILITY_WORKSPACE.md',
+  'COMPOUNDING_LAB.md',
+  'CURRENT_MAINNET_DEPLOYMENT.md',
+  'CURRICULUM_LAB.md',
+  'DECISION_STUDIO.md',
+  'DEMOS.md',
+  'DEMO_AUDIT_2026-10-01.md',
+  'DEMO_VALIDATION.md',
+  'DISCOVERY.md',
+  'DISCOVERY_LAB_CONTINUATION_2026-10-21.md',
+  'DISCOVERY_LAB_DEPLOYMENT_COMPATIBILITY.json',
+  'DISCOVERY_LAB_DEPLOYMENT_COMPATIBILITY.md',
+  'DISCOVERY_LAB_EVIDENCE_DOCKET.md',
+  'DISCOVERY_LAB_FOUNDATION_REPRODUCTION.json',
+  'DISCOVERY_LAB_FUTURE_PROTOCOL.md',
+  'DISCOVERY_LAB_MODEL_REVIEW.json',
+  'DISCOVERY_LAB_PAPER_TO_CODE.md',
+  'DISCOVERY_LAB_README.md',
+  'DISCOVERY_LAB_REAL_TASK_ADAPTER.md',
+  'DISCOVERY_LAB_RELEASE_NOTES.md',
+  'DISCOVERY_LAB_SOURCES.json',
+  'DISCOVERY_LAB_SPECIFICATION.md',
+  'ECOSYSTEM_ADAPTERS.md',
+  'EXPERIENCE.md',
+  'FACTORY_GUIDE.md',
+  'GOVERNANCE.md',
+  'INSIGHT_ATLAS.md',
+  'MAINNET_DEPLOYMENT.md',
+  'MAINNET_READINESS.md',
+  'MANUSCRIPT_ALIGNMENT.md',
+  'MARK_WALLET.md',
+  'MATS.md',
+  'MUZERO.md',
+  'NATIVE_BUDGET_RESERVATIONS.md',
+  'NOVA_SEED_STUDIO.md',
+  'NOVA_SEED_STUDIO_ENGINEERING.md',
+  'ONBOARDING.md',
+  'OPERATIONS.md',
+  'OUT_EXECUTE.md',
+  'PAGES_GUIDE.md',
+  'PAPER_UPLOADS.md',
+  'PROOF_BLOOM.md',
+  'RELEASE_NOTES_1.38.0.md',
+  'RELEASE_READINESS.md',
+  'REPOSITORY_GUIDE.md',
+  'SHA256SUMS',
+  'START_HERE.md',
+  'SUCCESSOR.md',
+  'SUCCESSOR_ACCEPTANCE.md',
+  'SUCCESSOR_ALPHA.md',
+  'SUCCESSOR_ALPHA_CONTINUITY.md',
+  'SUCCESSOR_ALPHA_DEPLOYMENT.md',
+  'SUCCESSOR_ARCHITECTURE.md',
+  'SUCCESSOR_ASCENSION.md',
+  'SUCCESSOR_COMPUTER_USE.md',
+  'SUCCESSOR_OPERATIONS.md',
+  'SUCCESSOR_PACKAGING.md',
+  'SUCCESSOR_SOURCES.json',
+  'SUPPLIER_BROWSER_ADAPTER.md',
+  'TRANSFORMATIONAL_DISCOVERY.md',
+  'TRANSFORMATIONAL_IMPLEMENTATION.md',
+  'TRANSFORMATIONAL_LOCAL_MODEL.md',
+  'TRANSFORMATIONAL_MATH.md',
+  'TRANSFORMATIONAL_POLICY_STUDY.md',
+  'TRANSFORMATIONAL_PUBLIC_PILOT.md',
+  'TRANSFORMATIONAL_SOURCE_AUDIT.md',
+  'VALIDATION.md',
+  'WHITEPAPER_IMPLEMENTATION.md',
+  'alpha-agent-v1.38.0-mainnet-record.zip',
+  'alpha-agent-v1.38.0-manuscript.zip',
+  'alpha-agent-v1.38.0-operator-guide.zip',
+  'alpha-agent-v1.38.0-public-validation-packs.json',
+  'alpha-agent-v1.38.0-source.zip',
+  'alpha-agent-v1.38.0-validation.zip',
+  'alpha_factory_v1-1.38.0-py3-none-any.whl',
+  'alpha_factory_v1-1.38.0.tar.gz',
+  'browser-packs.json',
+  'computer-use-study-report-pack.zip',
+  'ethereum-mainnet-2026-10-18.json',
+  'install_agent.py',
+  'release-manifest.json',
+  'release_packs.py',
+  'requirements-agent.lock',
+  'site-packs.json',
+  'source-manifest.json',
+  'successor-alpha-workspace.html',
+  'successor-preservation.json',
+  'transformational-intelligence-workspace.html'
+];
 function alphaPublicationFixture() {
   const sources=Object.fromEntries(Array.from({length:41},(_,i)=>['inert/'+i+'.json',Q.hash('{}')]));
-  const pin={...alpha,sourceHash:Q.hash(Q.canonical(sources))};
+  const pin={commit:'61532fb82621a065e668fd11e57289dcfb65c67b',tree:'7814d1bd9dcd3845b349590e0bcac57ba93b3167',sourceHash:Q.hash(Q.canonical(sources))};
   const qualification={releaseTag:'v1.38.0',releaseId:8,runId:9,runAttempt:1};
   const catalog=Buffer.from(JSON.stringify({schema:'successor-capability-source/v1',sourceHash:pin.sourceHash,sources}));
   const sourceMap={schema:'agialpha.capability-operator-guide.v1',commit:pin.commit,version:'1.38.0',sourceHash:pin.sourceHash,
@@ -347,12 +448,28 @@ function alphaPublicationFixture() {
   const payloads=new Map([['alpha-agent-v1.38.0-operator-guide.zip',zip()],['alpha_factory_v1-1.38.0-py3-none-any.whl',Buffer.from('inert wheel')],
     ['alpha-agent-v1.38.0-source.zip',Buffer.from('inert source archive')],['alpha_factory_v1-1.38.0.tar.gz',Buffer.from('inert sdist')],
     ['requirements-agent.lock',Buffer.from('inert lock')],['model.bin',Buffer.from('inert model')]]);
-  for(const kind of ['browser','site'])payloads.set(kind+'-packs.json',Buffer.from(JSON.stringify({schema:'agialpha.release-packs.v1',
-    commit:pin.commit,version:'1.38.0',files:[],packs:[{name:'model.bin',bytes:payloads.get('model.bin').length,sha256:Q.hash(payloads.get('model.bin'))}]})));
+  for(const name of EXPECTED_ALPHA_615_FIXED_ASSETS)if(!payloads.has(name)&&!['release-manifest.json','SHA256SUMS'].includes(name))
+    payloads.set(name,Buffer.from('inert fixed output '+name));
+  for(const kind of ['mainnet-record','manuscript','validation'])payloads.set('alpha-agent-v1.38.0-'+kind+'.zip',Buffer.from('inert '+kind+' archive'));
+  for(const name of ['successor-alpha-workspace.html','transformational-intelligence-workspace.html'])payloads.set(name,Buffer.from('<!doctype html><title>inert workspace</title>'));
+  for(const[name,prefix]of [['browser-packs.json','browser'],['site-packs.json','site'],
+    ['alpha-agent-v1.38.0-public-validation-packs.json','alpha-agent-v1.38.0-public-validation']]) {
+    const packName=prefix+'-core-001.zip',packRaw=Buffer.from('inert '+prefix+' transport bytes'),logical=Buffer.from('inert logical file');
+    payloads.set(packName,packRaw);
+    payloads.set(name,Buffer.from(JSON.stringify({schema:'agialpha.release-packs.v1',commit:pin.commit,version:'1.38.0',
+      max_asset_bytes:Q.ALPHA_ASSET_MAX_BYTES,total_bytes:logical.length,
+      files:[{path:'fixture.txt',group:'core',bytes:logical.length,sha256:Q.hash(logical),
+        parts:[{pack:packName,member:'fixture.txt',bytes:logical.length,sha256:Q.hash(logical)}]}],
+      packs:[{name:packName,group:'core',bytes:packRaw.length,sha256:Q.hash(packRaw)}]})));
+  }
   const manifest={repository:'MontrealAI/AGI-Alpha-Agent-v0',commit:pin.commit,version:'1.38.0',
     workflow_run:'https://github.com/MontrealAI/AGI-Alpha-Agent-v0/actions/runs/9',maximum_asset_bytes:Q.ALPHA_ASSET_MAX_BYTES,
     historical_ci:{commit:pin.commit,repository:'MontrealAI/AGI-Alpha-Agent-v0',ref:'refs/heads/main',required:true},
-    distributions:Object.fromEntries(['browser','site'].map(kind=>[kind,{manifest:kind+'-packs.json',packs:1,files:0}]))};
+    distributions:Object.fromEntries(['browser','site'].map(kind=>[kind,{manifest:kind+'-packs.json',packs:1,files:1}]))};
+  const localName='alpha-agent-v1.38.0-validation.zip',publicName='alpha-agent-v1.38.0-public-validation-packs.json';
+  manifest.validation_evidence={schema:'agialpha.validation-evidence.v1',commit:pin.commit,version:'1.38.0',
+    local:{name:localName,bytes:payloads.get(localName).length,sha256:Q.hash(payloads.get(localName))},
+    public:{manifest:publicName,bytes:payloads.get(publicName).length,sha256:Q.hash(payloads.get(publicName)),files:1,packs:1}};
   const records={
     ['git/commits/'+pin.commit]:{sha:pin.commit,tree:{sha:pin.tree}},
     'git/ref/heads/main':{object:{sha:'f'.repeat(40)}},
@@ -363,6 +480,9 @@ function alphaPublicationFixture() {
     'actions/runs/9':{id:9,run_attempt:1,repository:{full_name:'MontrealAI/AGI-Alpha-Agent-v0'},path:'.github/workflows/agent-release.yml',
       head_sha:pin.commit,head_branch:'main',event:'push',status:'completed',conclusion:'success'},
   };
+  records['actions/runs/9/attempts/1/jobs?per_page=100&page=1']={total_count:3,jobs:['package','pages','publish'].map((name,index)=>
+    ({id:1000+index,name,run_id:9,run_attempt:1,head_sha:pin.commit,head_branch:'main',status:'completed',conclusion:'success'}))};
+  records['actions/runs/9/attempts/1/jobs?per_page=100&page=2']={total_count:3,jobs:[]};
   const calls=[],apiCalls=[];
   const refresh=({manifestInventory=true,manifestRaw}={})=>{
     if(manifestInventory)manifest.assets=[...payloads].filter(([name])=>!['release-manifest.json','SHA256SUMS'].includes(name))
@@ -372,7 +492,12 @@ function alphaPublicationFixture() {
       .map(([name,raw])=>Q.hash(raw)+'  '+name).join('\n')+'\n'));
     const assets=[...payloads].sort(([a],[b])=>a.localeCompare(b)).map(([name,raw],index)=>({id:index+20,name,size:raw.length,
       state:'uploaded',digest:'sha256:'+Q.hash(raw),browser_download_url:'https://github.com/MontrealAI/AGI-Alpha-Agent-v0/releases/download/v1.38.0/'+name}));
-    records['releases/8/assets?per_page=100&page=1']=assets;records['releases/tags/v1.38.0'].assets=assets;
+    for(const key of Object.keys(records))if(key.startsWith('releases/8/assets?per_page=100&page='))delete records[key];
+    for(let offset=0;offset<=assets.length;offset+=100) {
+      records['releases/8/assets?per_page=100&page='+(offset/100+1)]=assets.slice(offset,offset+100);
+      if(assets.length-offset<100)break;
+    }
+    records['releases/tags/v1.38.0'].assets=assets;
   };
   refresh();
   const api=async route=>{apiCalls.push(route);assert.ok(!route.startsWith('contents/')&&!route.startsWith('git/blobs/'));assert.ok(records[route],route);return structuredClone(records[route]);};
@@ -474,6 +599,238 @@ test('public Alpha stream rejects truncated/overflow/HTML bytes and redirects ou
     return calls===1?new Response(null,{status:302,headers:{location:'https://release-assets.githubusercontent.com/public/file?opaque=public'}}):new Response(raw);
   });
   assert.equal(proof.authorizationHeaderSent,false);assert.equal(calls,2);
+});
+// OWNED_ALPHA_PROFILE_HELPER_CASES_BEGIN
+// Parsed inert metadata only: these cases do not execute the existing Python JSON/ZIP bridge.
+function ownedAlphaProfileFixture() {
+  const alpha={commit:'61532fb82621a065e668fd11e57289dcfb65c67b',tree:'7814d1bd9dcd3845b349590e0bcac57ba93b3167'};
+  const profile=Q.reviewedAlphaReleaseProfile(alpha,'1.38.0'),receipts=profile.requiredNames.map(name=>{
+    const raw=Buffer.from('owned inert '+name);return {name,bytes:raw.length,sha256:Q.hash(raw)};
+  });
+  // The canonical wheel already has exactly one row in the fixed source-name set.
+  receipts.push({name:'optional-extra.bin',bytes:0,sha256:Q.hash('')});
+  const packManifests=Object.create(null),manifest={distributions:{}};
+  for(const selected of profile.packManifests) {
+    const name=selected.prefix+'-core-001.zip',raw=Buffer.from('owned inert '+selected.prefix+' ZIP transport'),logical=Buffer.from('x'.repeat(101));
+    receipts.push({name,bytes:raw.length,sha256:Q.hash(raw)});
+    const value={schema:'agialpha.release-packs.v1',commit:alpha.commit,version:'1.38.0',max_asset_bytes:2**31-1,total_bytes:logical.length,
+      files:[{path:'fixture.txt',group:'core',bytes:logical.length,sha256:Q.hash(logical),
+        parts:[{pack:name,member:'fixture.txt',bytes:logical.length,sha256:Q.hash(logical)}]}],
+      packs:[{name,group:'core',bytes:raw.length,sha256:Q.hash(raw)}]};
+    packManifests[selected.name]=value;
+    const control=receipts.find(row=>row.name===selected.name),controlRaw=Buffer.from(JSON.stringify(value));
+    control.bytes=controlRaw.length;control.sha256=Q.hash(controlRaw);
+    if(selected.distribution)manifest.distributions[selected.distribution]={manifest:selected.name,files:1,packs:1};
+  }
+  const local=receipts.find(row=>row.name==='alpha-agent-v1.38.0-validation.zip');
+  const control=receipts.find(row=>row.name==='alpha-agent-v1.38.0-public-validation-packs.json');
+  manifest.validation_evidence={schema:'agialpha.validation-evidence.v1',commit:alpha.commit,version:'1.38.0',
+    local:{name:local.name,bytes:local.bytes,sha256:local.sha256},
+    public:{manifest:control.name,bytes:control.bytes,sha256:control.sha256,files:1,packs:1}};
+  return {alpha,profile,receipts,packManifests,manifest,
+    verify:()=>Q.verifyAlphaProfilePacks(profile,manifest,receipts,packManifests)};
+}
+function ownedAlphaAttemptFixture({extras=0,attempt=2}={}) {
+  const alpha={commit:'61532fb82621a065e668fd11e57289dcfb65c67b'},qualification={runId:9,runAttempt:attempt};
+  const jobs=['package','pages','publish'].map((name,index)=>({id:100+index,name,run_id:9,run_attempt:attempt,head_sha:alpha.commit,head_branch:'main',status:'completed',conclusion:'success',
+    started_at:'2026-10-22T21:00:00Z'}));
+  jobs.splice(2,0,...Array.from({length:extras},(_,index)=>({id:1000+index,name:'carried-'+index,run_id:9,run_attempt:attempt,head_sha:alpha.commit,head_branch:'main',status:'completed',conclusion:'success',
+    started_at:index<32?'2026-10-21T00:00:00Z':'2026-10-22T21:00:00Z'})));
+  const calls=[],state={jobs,reply:null},api=async route=>{
+    calls.push(route);const match=new RegExp('^actions/runs/9/attempts/'+attempt+'/jobs\\?per_page=100&page=([1-9][0-9]*)$').exec(route);
+    assert.ok(match,'Unexpected owned selected-attempt endpoint '+route);const page=Number(match[1]);
+    if(state.reply)return state.reply(page,route);
+    return {total_count:state.jobs.length,jobs:structuredClone(state.jobs.slice((page-1)*100,page*100))};
+  };
+  return {alpha,qualification,jobs,state,calls,api,verify:()=>Q.alphaReleaseAttemptJobs(api,qualification,alpha)};
+}
+test('owned Alpha profile: independently literal97 fixed source outputs equal the complete reviewed profile',()=>{
+  const f=ownedAlphaProfileFixture();assert.equal(EXPECTED_ALPHA_615_FIXED_ASSETS.length,97);
+  assert.equal(new Set(EXPECTED_ALPHA_615_FIXED_ASSETS).size,97);
+  assert.deepEqual([...f.profile.requiredNames].sort(),[...EXPECTED_ALPHA_615_FIXED_ASSETS].sort());
+  assert.equal(f.receipts.filter(row=>row.name==='alpha_factory_v1-1.38.0-py3-none-any.whl').length,1);
+});
+test('owned Alpha profile: exact reviewed source/version and extra ordinary assets are accepted as metadata only',()=>{
+  const f=ownedAlphaProfileFixture(),result=f.verify();assert.equal(result.sourceCommit,f.alpha.commit);assert.equal(result.sourceTree,f.alpha.tree);
+  assert.equal(result.requiredAssetsVerified,true);assert.equal(result.packManifests.length,3);
+  assert.ok(f.receipts.some(row=>row.name==='optional-extra.bin'));assert.equal(Object.hasOwn(result,'publicationApproved'),false);
+});
+test('owned Alpha profile: unknown commit tree and manifestversion cannot select a finite profile',()=>{
+  for(const [alpha,version]of [[{commit:'a'.repeat(40),tree:'7814d1bd9dcd3845b349590e0bcac57ba93b3167'},'1.38.0'],
+    [{commit:'61532fb82621a065e668fd11e57289dcfb65c67b',tree:'a'.repeat(40)},'1.38.0'],
+    [{commit:'61532fb82621a065e668fd11e57289dcfb65c67b',tree:'7814d1bd9dcd3845b349590e0bcac57ba93b3167'},'1.38.1']])
+    assert.throws(()=>Q.reviewedAlphaReleaseProfile(alpha,version),/reviewed/);
+});
+test('owned Alpha profile: each required asset omission refuses independently of mutually matching public controls',()=>{
+  const original=ownedAlphaProfileFixture();
+  for(const name of original.profile.requiredNames) {
+    const f=ownedAlphaProfileFixture();f.receipts.splice(f.receipts.findIndex(row=>row.name===name),1);
+    assert.throws(()=>Q.verifyAlphaProfileInventory(f.profile,f.receipts),name.endsWith('.whl')?/wheel is required/:/profile asset is absent/);
+  }
+});
+test('owned Alpha profile: absent duplicate or wrongversion wheel refuses',()=>{
+  for(const mode of ['absent','duplicate','wrongversion']) {
+    const f=ownedAlphaProfileFixture(),wheel=f.receipts.find(row=>row.name.endsWith('.whl'));
+    if(mode==='absent')f.receipts.splice(f.receipts.indexOf(wheel),1);
+    if(mode==='duplicate')f.receipts.push({...wheel,name:'alpha_factory_v1-1.38.0-another.whl'});
+    if(mode==='wrongversion')wheel.name='alpha_factory_v1-1.39.0-py3-none-any.whl';
+    assert.throws(()=>Q.verifyAlphaProfileInventory(f.profile,f.receipts),/wheel/);
+  }
+});
+test('owned Alpha profile: all three actual PACKFILE schemas and declaration counts are bound',()=>{
+  for(const name of ownedAlphaProfileFixture().profile.packManifests.map(row=>row.name))for(const key of ['schema','commit','version']) {
+    const f=ownedAlphaProfileFixture();f.packManifests[name][key]='wrong';assert.throws(f.verify);
+  }
+  for(const change of [d=>{d.manifest='site-packs.json';},d=>{d.files=0;},d=>{d.packs=true;},d=>{d.extra=1;}]) {
+    const f=ownedAlphaProfileFixture();change(f.manifest.distributions.browser);assert.throws(f.verify);
+  }
+});
+test('owned Alpha profile: files and packs must be nonempty arrays with strict rootfields and numeric types',()=>{
+  for(const change of [p=>{p.files=[];},p=>{p.packs=[];},p=>{p.files={};},p=>{p.packs=null;},p=>{p.total_bytes=true;},
+    p=>{p.total_bytes=-1;},p=>{p.max_asset_bytes=2**31;},p=>{p.max_asset_bytes=false;},p=>{p.extra=true;}]) {
+    const f=ownedAlphaProfileFixture();change(f.packManifests['browser-packs.json']);assert.throws(f.verify);
+  }
+});
+test('owned Alpha profile: borrowed duplicate or wrongprefix pack names cannot stand in for source packs',()=>{
+  for(const change of [p=>{p.packs[0].name='model.bin';},p=>{p.packs[0].name='site-core-001.zip';},
+    p=>{p.packs.push({...p.packs[0]});},p=>{p.packs[0].group='unknown';},p=>{p.packs[0].name='browser-core-002.zip';}]) {
+    const f=ownedAlphaProfileFixture();change(f.packManifests['browser-packs.json']);assert.throws(f.verify);
+  }
+});
+test('owned Alpha profile: every pack row requires actual observed name bytes and SHA',()=>{
+  for(const mode of ['absent','bytes','sha']) {
+    const f=ownedAlphaProfileFixture(),row=f.receipts.find(item=>item.name==='browser-core-001.zip');
+    if(mode==='absent')f.receipts.splice(f.receipts.indexOf(row),1);else if(mode==='bytes')row.bytes++;else row.sha256='0'.repeat(64);
+    assert.throws(f.verify);
+  }
+  for(const value of [true,-1,1.5,Infinity,Number.MAX_SAFE_INTEGER]) {
+    const f=ownedAlphaProfileFixture();f.packManifests['browser-packs.json'].packs[0].bytes=value;assert.throws(f.verify);
+  }
+  for(const value of [false,'invalid','F'.repeat(64)]) {
+    const f=ownedAlphaProfileFixture();f.packManifests['browser-packs.json'].packs[0].sha256=value;assert.throws(f.verify);
+  }
+});
+test('owned Alpha profile: logical file total intentionally differs from compressed ZIP byte total',()=>{
+  const f=ownedAlphaProfileFixture(),value=f.packManifests['browser-packs.json'];
+  assert.notEqual(value.total_bytes,value.packs.reduce((sum,row)=>sum+row.bytes,0));assert.equal(f.verify().packManifests[0].logicalBytes,101);
+});
+test('owned Alpha profile: validation evidence uses its distinct schema source and version',()=>{
+  for(const change of [v=>{v.schema='agialpha.release-packs.v1';},v=>{v.commit='a'.repeat(40);},v=>{v.version='1.38.1';},
+    v=>{v.extra=true;},v=>{delete v.local;},v=>{delete v.public;}]) {
+    const f=ownedAlphaProfileFixture();change(f.manifest.validation_evidence);assert.throws(f.verify);
+  }
+});
+test('owned Alpha profile: retained local validation ZIP name bytes and SHA are independently bound',()=>{
+  for(const [key,value]of [['name','other.zip'],['bytes',0],['bytes',true],['sha256','0'.repeat(64)]]) {
+    const f=ownedAlphaProfileFixture();f.manifest.validation_evidence.local[key]=value;assert.throws(f.verify);
+  }
+});
+test('owned Alpha profile: public validation control name bytes SHA files and packs are independently bound',()=>{
+  for(const [key,value]of [['manifest','browser-packs.json'],['bytes',0],['sha256','0'.repeat(64)],['files',0],['packs',true]]) {
+    const f=ownedAlphaProfileFixture();f.manifest.validation_evidence.public[key]=value;assert.throws(f.verify);
+  }
+});
+test('owned Alpha profile: duplicate or malformed observed asset identities refuse',()=>{
+  for(const change of [f=>{f.receipts.push({...f.receipts[0]});},f=>{f.receipts[0].bytes=true;},
+    f=>{f.receipts[0].bytes=-1;},f=>{f.receipts[0].sha256=false;}]) {
+    const f=ownedAlphaProfileFixture();change(f);assert.throws(f.verify);
+  }
+});
+test('owned Alpha jobs: genuine a2 inventory retains32 old timestamps while all38 rows bind attempt2',async()=>{
+  const f=ownedAlphaAttemptFixture({extras:35}),result=await f.verify();
+  assert.equal(result.runAttempt,2);assert.equal(result.completeInventory,true);assert.equal(result.requiredJobs.length,3);
+  assert.equal(result.inventory[0].jobs.length,38);assert.ok(result.inventory[0].jobs.every(row=>row.run_attempt===2));
+  assert.equal(result.inventory[0].jobs.filter(row=>row.started_at==='2026-10-21T00:00:00Z').length,32);
+  assert.ok(result.requiredJobs.every(row=>row.headBranch==='main'));
+  assert.deepEqual(f.calls,['actions/runs/9/attempts/2/jobs?per_page=100&page=1','actions/runs/9/attempts/2/jobs?per_page=100&page=2']);
+});
+test('owned Alpha jobs: actual pagination includes required publish on the last nonempty page',async()=>{
+  const f=ownedAlphaAttemptFixture({extras:102}),result=await f.verify();
+  assert.equal(result.inventory.length,3);assert.equal(result.inventory[1].jobs.at(-1).name,'publish');
+  assert.equal(result.requiredJobs.find(row=>row.name==='publish').id,102);
+});
+test('owned Alpha jobs: every missing skipped failed cancelled queued or neutral required job refuses',async()=>{
+  for(const name of ['package','pages','publish'])for(const mode of ['missing','skipped','failure','cancelled','queued','in_progress','neutral']) {
+    const f=ownedAlphaAttemptFixture(),row=f.state.jobs.find(item=>item.name===name);
+    if(mode==='missing')f.state.jobs.splice(f.state.jobs.indexOf(row),1);
+    else if(['queued','in_progress'].includes(mode)){row.status=mode;row.conclusion=null;}else row.conclusion=mode;
+    await assert.rejects(f.verify());
+  }
+});
+test('owned Alpha jobs: duplicate required names or ids and wrong run source or selectedattempt refuse',async()=>{
+  for(const mode of ['name','id','run','source','attempt']) {
+    const f=ownedAlphaAttemptFixture(),row=f.state.jobs[0];
+    if(mode==='name')f.state.jobs.push({...row,id:999});else if(mode==='id')f.state.jobs[1].id=row.id;
+    else if(mode==='run')row.run_id=10;else if(mode==='source')row.head_sha='a'.repeat(40);else row.run_attempt=1;
+    await assert.rejects(f.verify());
+  }
+});
+test('owned Alpha jobs: wrong or missing main branch refuses for every required release job',async()=>{
+  for(const name of ['package','pages','publish'])for(const branch of ['feature',undefined]) {
+    const f=ownedAlphaAttemptFixture(),row=f.state.jobs.find(item=>item.name===name);
+    if(branch===undefined)delete row.head_branch;else row.head_branch=branch;
+    await assert.rejects(f.verify(),/release job branch differs/);
+  }
+  const f=ownedAlphaAttemptFixture(),before=await f.verify(),after=structuredClone(before);after.requiredJobs[0].headBranch='feature';
+  assert.throws(()=>Q.alphaReleaseJobsLease(before,after),/jobs changed/);
+});
+test('owned Alpha jobs: complete totals framing and serviceerrors refuse without a fallback',async()=>{
+  for(const mode of ['total','bool','truncated','nonarray','error','duplicatepage']) {
+    const f=ownedAlphaAttemptFixture();
+    f.state.reply=page=>{
+      if(mode==='error')throw new Error('owned selected job API failure');
+      if(mode==='nonarray')return {total_count:3,jobs:{}};
+      if(mode==='bool')return {total_count:true,jobs:[]};
+      if(mode==='duplicatepage')return {total_count:6,jobs:structuredClone(f.jobs)};
+      if(mode==='truncated')return {total_count:4,jobs:page===1?structuredClone(f.jobs):[]};
+      return {total_count:page===1?3:4,jobs:page===1?structuredClone(f.jobs):[]};
+    };
+    await assert.rejects(f.verify());
+  }
+});
+test('owned Alpha jobs: actual source attempt endpoint and positive typed selectors are mandatory',async()=>{
+  for(const value of [false,0,-1,1.5,'2']) {
+    const f=ownedAlphaAttemptFixture();f.qualification.runAttempt=value;await assert.rejects(f.verify());assert.equal(f.calls.length,0);
+  }
+  const f=ownedAlphaAttemptFixture();f.qualification.runId=10;await assert.rejects(f.verify(),/Unexpected owned/);
+});
+test('owned Alpha jobs: fresh requiredjob identity movement refuses while exact repeated lease is retained',async()=>{
+  const f=ownedAlphaAttemptFixture(),before=await f.verify(),same=await f.verify();
+  assert.equal(Q.alphaReleaseJobsLease(before,same).after,same);
+  f.state.jobs[0].id=999;const moved=await f.verify();assert.throws(()=>Q.alphaReleaseJobsLease(before,moved),/jobs changed/);
+  for(const key of ['runId','runAttempt','sourceCommit']) {
+    const after=structuredClone(same);after[key]=key==='sourceCommit'?'a'.repeat(40):99;
+    assert.throws(()=>Q.alphaReleaseJobsLease(before,after),/lease changed/);
+  }
+});
+// OWNED_ALPHA_PROFILE_HELPER_CASES_END
+// These whole-publication integration fixtures remain for ordinary hosted CI.
+// Local focused verification selects only OWNED_ALPHA_PROFILE_HELPER_CASES above.
+test('public Alpha wholepublication requires the selected fullattempt jobs and retains their fresh lease',async()=>{
+  const positive=alphaPublicationFixture(),proof=await positive.verify();
+  assert.equal(proof.publicAssets.fullProducerJobs.before.requiredJobs.length,3);
+  assert.equal(proof.publicAssets.fullProducerJobs.after.completeInventory,true);
+  assert.equal(proof.publicAssets.reviewedProfile.version,'1.38.0');
+  for(const name of ['package','pages','publish']) {
+    const f=alphaPublicationFixture(),first=f.records['actions/runs/9/attempts/1/jobs?per_page=100&page=1'];
+    first.jobs=first.jobs.filter(row=>row.name!==name);first.total_count=first.jobs.length;
+    f.records['actions/runs/9/attempts/1/jobs?per_page=100&page=2'].total_count=first.jobs.length;
+    await assert.rejects(f.verify(),/full Alpha release job missing/);assert.equal(f.calls.length,0);
+  }
+  const changed=alphaPublicationFixture();changed.afterDownload=name=>{
+    if(name==='model.bin')changed.records['actions/runs/9/attempts/1/jobs?per_page=100&page=1'].jobs[0].id=9999;
+  };
+  await assert.rejects(changed.verify(),/jobs changed during download/);
+});
+test('public Alpha wholepublication refuses consistently omitted finiteoutputs and mismatched validation evidence',async()=>{
+  for(const name of ['alpha-agent-v1.38.0-mainnet-record.zip','alpha-agent-v1.38.0-manuscript.zip',
+    'alpha-agent-v1.38.0-validation.zip','alpha-agent-v1.38.0-public-validation-packs.json',
+    'successor-alpha-workspace.html','transformational-intelligence-workspace.html',
+    'install_agent.py','release_packs.py','source-manifest.json','computer-use-study-report-pack.zip',
+    'ethereum-mainnet-2026-10-18.json','successor-preservation.json','START_HERE.md']) {
+    const f=alphaPublicationFixture();f.payloads.delete(name);f.refresh();await assert.rejects(f.verify(),/reviewed public Alpha profile asset is absent/);
+  }
+  const f=alphaPublicationFixture();f.manifest.validation_evidence.public.files=0;f.refresh();await assert.rejects(f.verify());
 });
 test('rc17 and rc18 applicability retains the original suite and admits no unknown or false version',()=>{
   const dispatch=require('./discovery-installed-release-dispatch.cjs');

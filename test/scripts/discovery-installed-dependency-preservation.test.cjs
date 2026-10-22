@@ -441,3 +441,48 @@ test('matching independently reproduced protected additions retain actual captur
   fs.unlinkSync(path.join(f.baseline,f.mutation));
   assert.throws(()=>checks.compareGeneratedSources(f.root,f.baseline,f.options),/deletion differs/);
 });
+
+function ownedGeneratorLinkFixture(t) {
+  const folder=fs.mkdtempSync(path.join(os.tmpdir(),'jobs-owned-generator-link-'));
+  t.after(()=>fs.rmSync(folder,{recursive:true,force:true}));
+  const root=path.join(folder,'root'),worktree=path.join(folder,'baseline');
+  fs.mkdirSync(root);fs.mkdirSync(worktree);fs.mkdirSync(path.join(root,'node_modules'));
+  const run=(args,cwd=worktree,context=checks.GIT_SECURITY_CONTEXT.installed)=>{
+    const invocation=checks.gitInvocation(args,cwd,context);
+    return execFileSync(invocation.command,invocation.args,invocation.options);
+  };
+  run(['init','--quiet','--template=','--object-format=sha1',worktree],folder);
+  fs.writeFileSync(path.join(worktree,'.gitignore'),'node_modules/\n');
+  fs.writeFileSync(path.join(worktree,'README.md'),'owned original generator input\n');
+  run(['add','--','.gitignore','README.md']);
+  run(['-c','user.name=Owned fixture','-c','user.email=owned@example.invalid','commit','--quiet','--no-gpg-sign','-m','owned generator baseline']);
+  const head=run(['rev-parse','HEAD']).trim(),link=path.join(worktree,'node_modules'),target=path.join(root,'node_modules');
+  return {folder,root,worktree,head,link,target,run,provision:()=>checks.provisionGeneratorDependencies(root,worktree,head,run)};
+}
+test('owned generator tooling symlink is accounted for without filtering generated source',t=>{
+  const f=ownedGeneratorLinkFixture(t),remove=f.provision();
+  // Git's directory-only ignore rule does not hide this owned symlink.
+  assert.equal(f.run(['ls-files','--others','--exclude-standard','-z']),'node_modules\0');
+  fs.writeFileSync(path.join(f.worktree,'README.md'),'owned actual generated output\r\n');
+  remove();assert.equal(fs.existsSync(f.link),false);assert.ok(fs.lstatSync(f.target).isDirectory());
+  assert.equal(f.run(['ls-files','--others','--exclude-standard','-z']),'');
+  assert.equal(f.run(['diff','--name-only']).trim(),'README.md');
+  assert.equal(fs.readFileSync(path.join(f.worktree,'README.md'),'utf8'),'owned actual generated output\r\n');
+  assert.throws(remove,/already removed/);
+});
+test('owned generator setup refuses replacement target movement or staged-source drift without deleting them',t=>{
+  for(const change of ['link','file','target','index']) {
+    const f=ownedGeneratorLinkFixture(t),remove=f.provision();
+    if(change==='link'){fs.unlinkSync(f.link);fs.mkdirSync(path.join(f.root,'other'));fs.symlinkSync(path.join(f.root,'other'),f.link,'dir');}
+    if(change==='file'){fs.unlinkSync(f.link);fs.writeFileSync(f.link,'owned replacement fixture');}
+    if(change==='target'){fs.renameSync(f.target,f.target+'.before');fs.mkdirSync(f.target);}
+    if(change==='index'){fs.writeFileSync(path.join(f.worktree,'README.md'),'owned staged drift');f.run(['add','--','README.md']);}
+    assert.throws(remove);assert.ok(fs.lstatSync(f.link));
+    if(change==='file')assert.equal(fs.readFileSync(f.link,'utf8'),'owned replacement fixture');
+    if(change==='link')assert.equal(fs.readlinkSync(f.link),path.join(f.root,'other'));
+  }
+});
+test('arbitrary node_modules source changes remain inside the complete generated-source refusal',t=>{
+  const f=ownedAllTrackedComparison(t);f.writeRoot('node_modules',Buffer.from('owned unexpected source path'));
+  assert.throws(()=>checks.compareGeneratedSources(f.root,f.baseline,f.options),/nonhistorical, control or admitted/);
+});
