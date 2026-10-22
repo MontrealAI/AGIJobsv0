@@ -4,6 +4,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
 const crypto = require('node:crypto');
 const {execFileSync} = require('node:child_process');
 const {createRequire} = require('node:module');
@@ -452,7 +453,222 @@ async function verifyBrowserInput(api,browser,alpha,pin,binding,rawBody) {
   assert.ok(browser.request.equals(authenticated.request),'Primary Jobs request alias differs from original common UI export');
   return authenticated.observation;
 }
-async function verifyAlphaPublication(api,qualification,alpha,catalogInput) {
+const ALPHA_ASSET_MAX_BYTES=2**31-1; // Existing upstream GitHub release-host boundary; large assets are streamed.
+const ALPHA_METADATA_MAX_BYTES=64*1024*1024; // Existing upstream release-pack manifest bound.
+function publicAlphaJson(raw) {
+  assert.ok(Buffer.isBuffer(raw)&&raw.length<=ALPHA_METADATA_MAX_BYTES);
+  // Upstream Python JSON may use escaped Unicode. Reject duplicate decoded keys
+  // without requiring another language's spelling or changing original hashes.
+  const script=`import sys,json
+raw=sys.stdin.buffer.read(67108865);assert len(raw)<=67108864
+def unique(pairs):
+ out={}
+ for k,v in pairs:
+  if k in out:raise ValueError('Duplicate public Alpha JSON field')
+  out[k]=v
+ return out
+def invalid(value):raise ValueError('Invalid public Alpha JSON constant')
+value=json.loads(raw.decode('utf-8'),object_pairs_hook=unique,parse_constant=invalid)
+print(json.dumps(value,ensure_ascii=False,separators=(',',':'),allow_nan=False))
+`;
+  return JSON.parse(execFileSync('python3',['-I','-c',script],{input:raw,stdio:['pipe','pipe','pipe'],timeout:15_000,
+    maxBuffer:ALPHA_METADATA_MAX_BYTES+1_000_000}).toString('utf8'));
+}
+function alphaPublicAssetIdentity(asset,tag) {
+  assert.ok(positive(asset?.id));assert.ok(/^[A-Za-z0-9][A-Za-z0-9._-]{0,255}$/.test(asset.name));
+  assert.ok(Number.isSafeInteger(asset.size)&&asset.size>=0&&asset.size<=ALPHA_ASSET_MAX_BYTES);
+  assert.equal(asset.state,'uploaded');assert.match(asset.digest||'',/^sha256:[a-f0-9]{64}$/);
+  const expected='https://github.com/'+ALPHA_REPOSITORY+'/releases/download/'+encodeURIComponent(tag)+'/'+encodeURIComponent(asset.name);
+  assert.equal(asset.browser_download_url,expected,'Public Alpha asset URL differs from selected release');
+  return {id:asset.id,name:asset.name,size:asset.size,digest:asset.digest,url:expected};
+}
+async function alphaPublicAssetInventory(api,id,tag) {
+  const assets=[];
+  for(let page=1;page<=20;page++) {
+    const rows=await api('releases/'+id+'/assets?per_page=100&page='+page);
+    assert.ok(Array.isArray(rows)&&rows.length<=100,'Complete public Alpha asset page required');
+    assets.push(...rows.map(asset=>alphaPublicAssetIdentity(asset,tag)));
+    if(rows.length<100) {
+      assert.ok(assets.length>0);
+      assert.equal(new Set(assets.map(asset=>asset.id)).size,assets.length,'Duplicate public Alpha asset identity');
+      assert.equal(new Set(assets.map(asset=>asset.name)).size,assets.length,'Duplicate public Alpha asset name');
+      return assets.sort((a,b)=>a.name<b.name?-1:a.name>b.name?1:0);
+    }
+  }
+  throw Error('Public Alpha asset inventory exceeds bounded pagination');
+}
+async function readPublicAlphaAsset(asset,{keep=false,fileDescriptor,fetcher=fetch}={}) {
+  assert.equal(typeof fetcher,'function');
+  if(fileDescriptor!==undefined)assert.ok(Number.isSafeInteger(fileDescriptor)&&fileDescriptor>=0&&!keep);
+  if(keep)assert.ok(asset.size<=ALPHA_METADATA_MAX_BYTES,'Public Alpha metadata exceeds supported manifest bound');
+  let url=asset.url,response;
+  for(let redirects=0;redirects<=4;redirects++) {
+    const parsed=new URL(url);
+    assert.equal(parsed.protocol,'https:');assert.equal(parsed.username,'');assert.equal(parsed.password,'');assert.equal(parsed.port,'');
+    assert.ok(['github.com','release-assets.githubusercontent.com','objects.githubusercontent.com'].includes(parsed.hostname),
+      'Public Alpha asset redirect left GitHub release hosting');
+    response=await fetcher(url,{redirect:'manual',signal:AbortSignal.timeout(180_000),
+      headers:{Accept:'application/octet-stream','Accept-Encoding':'identity'}});
+    if([301,302,303,307,308].includes(response.status)) {
+      const location=response.headers.get('location');if(response.body)await response.body.cancel();
+      assert.ok(location&&redirects<4,'Public Alpha asset redirect is absent or excessive');
+      url=new URL(location,url).href;continue;
+    }
+    if(response.status!==200) {if(response.body)await response.body.cancel();
+      assert.fail('Public Alpha asset download did not return HTTP200');}break;
+  }
+  let reader;const hasher=crypto.createHash('sha256'),chunks=[];let bytes=0;
+  try {
+    const length=response.headers.get('content-length');
+    if(length!==null) {assert.match(length,/^(0|[1-9][0-9]*)$/);assert.equal(Number(length),asset.size,'Public Alpha Content-Length differs');}
+    const encoding=response.headers.get('content-encoding');assert.ok(encoding===null||encoding==='identity','Public Alpha asset was content-encoded');
+    assert.ok(response.body,'Public Alpha asset body is absent');reader=response.body.getReader();
+    while(true) {
+      const item=await reader.read();if(item.done)break;
+      bytes+=item.value.byteLength;assert.ok(bytes<=asset.size,'Public Alpha asset exceeded exact declared size');
+      hasher.update(item.value);if(keep)chunks.push(Buffer.from(item.value));
+      if(fileDescriptor!==undefined)for(let offset=0;offset<item.value.byteLength;) {
+        const written=fs.writeSync(fileDescriptor,item.value,offset,item.value.byteLength-offset);
+        assert.ok(written>0,'Private public-asset file write made no progress');offset+=written;
+      }
+    }
+  } finally {if(reader)await reader.cancel();else if(response.body)await response.body.cancel();}
+  assert.equal(bytes,asset.size,'Public Alpha asset is truncated');
+  const sha256=hasher.digest('hex');assert.equal('sha256:'+sha256,asset.digest,'Public Alpha asset digest differs');
+  return {id:asset.id,name:asset.name,bytes,sha256,publicUrl:asset.url,httpStatus:200,
+    authorizationHeaderSent:false,...(keep?{raw:Buffer.concat(chunks)}:{})};
+}
+function alphaOperatorMembers(descriptor,asset,sourcePaths) {
+  // This owned parser treats a held private ZIP as data. It reads only the selected
+  // catalog/source-map/41 raw inputs, with their existing installed-source bounds.
+  const selected=['capability/source-map.json','capability/docs/successor/capabilities/sources.json',
+    ...sourcePaths.map(name=>'capability/'+name)];
+  const script=`import sys,os,stat,hashlib,zipfile,json,base64
+f=os.fdopen(os.dup(0),'rb');before=os.fstat(f.fileno());assert stat.S_ISREG(before.st_mode)
+assert before.st_size==int(sys.argv[1]);f.seek(0);h=hashlib.sha256()
+while True:
+ b=f.read(1048576)
+ if not b:break
+ h.update(b)
+assert h.hexdigest()==sys.argv[2];f.seek(0);z=zipfile.ZipFile(f);items=z.infolist();assert len(items)<=200000
+seen=set();members={};total=0
+for i in items:
+ n=i.filename;assert n and not n.startswith('/') and '\\\\' not in n and ':' not in n
+ assert all(p not in ('','.','..') for p in n.rstrip('/').split('/')) and not any(ord(c)<32 or ord(c)==127 for c in n)
+ assert n not in seen;seen.add(n);assert not i.flag_bits&1
+ assert stat.S_IFMT(i.external_attr>>16) in (0,stat.S_IFREG,stat.S_IFDIR) and not stat.S_ISLNK(i.external_attr>>16)
+ if i.is_dir():continue
+ total+=i.file_size;assert total<=20000000000;members[n]=i
+out={};selected=json.loads(sys.argv[3]);assert len(selected)==len(set(selected))
+for n in selected:
+ i=members[n];assert i.file_size<=2000000
+ b=z.read(i);assert len(b)==i.file_size;out[n]=base64.b64encode(b).decode()
+assert sum(members[n].file_size for n in selected)<=16000000
+after=os.fstat(f.fileno())
+assert all(getattr(before,k)==getattr(after,k) for k in ('st_dev','st_ino','st_mode','st_size','st_mtime_ns','st_ctime_ns'))
+print(json.dumps(out,separators=(',',':')))
+`;
+  const output=json(execFileSync('python3',['-I','-c',script,String(asset.size),asset.digest.slice(7),JSON.stringify(selected)],
+    {stdio:[descriptor,'pipe','pipe'],timeout:90_000,maxBuffer:24_000_000}));
+  assert.deepEqual(Object.keys(output).sort(),selected.sort());
+  return new Map(Object.entries(output).map(([name,raw])=>[name,Buffer.from(raw,'base64')]));
+}
+async function verifyAlphaPublicAssets(api,release,qualification,alpha,{readAsset=readPublicAlphaAsset,catalogInput}={}) {
+  const assets=await alphaPublicAssetInventory(api,release.id,qualification.releaseTag),byName=new Map(assets.map(asset=>[asset.name,asset]));
+  for(const asset of release.assets||[])assert.deepEqual(alphaPublicAssetIdentity(asset,qualification.releaseTag),byName.get(asset.name),
+    'Release response and complete public Alpha inventory differ');
+  const observed=new Map(),metadata=new Map();
+  const read=async(name,keep=false,fileDescriptor)=>{
+    assert.ok(byName.has(name),'Required public Alpha release asset is absent: '+name);
+    const asset=byName.get(name),result=await readAsset(asset,{keep,...(fileDescriptor!==undefined?{fileDescriptor}:{})});
+    assert.equal(result.id,asset.id);assert.equal(result.name,asset.name);assert.equal(result.bytes,asset.size);
+    assert.equal('sha256:'+result.sha256,asset.digest);assert.equal(result.publicUrl,asset.url);
+    assert.equal(result.httpStatus,200);assert.equal(result.authorizationHeaderSent,false);
+    if(keep){assert.ok(Buffer.isBuffer(result.raw)&&result.raw.length===asset.size&&result.raw.length<=ALPHA_METADATA_MAX_BYTES);
+      assert.equal(hash(result.raw),result.sha256);metadata.set(name,result.raw);}
+    const {raw,...receipt}=result;observed.set(name,receipt);return keep?raw:receipt;
+  };
+  const sumsRaw=await read('SHA256SUMS',true),manifestRaw=await read('release-manifest.json',true);
+  const sumsText=sumsRaw.toString('utf8');assert.ok(Buffer.from(sumsText).equals(sumsRaw));
+  assert.ok(sumsText.endsWith('\n'),'Complete public Alpha checksum file required');
+  const checksums=new Map();
+  for(const line of sumsText.slice(0,-1).split('\n')) {
+    const match=/^([a-f0-9]{64})  ([A-Za-z0-9][A-Za-z0-9._-]{0,255})$/.exec(line);
+    assert.ok(match&&!checksums.has(match[2])&&match[2]!=='SHA256SUMS','Malformed or duplicate public Alpha checksum');
+    checksums.set(match[2],match[1]);
+  }
+  assert.deepEqual([...checksums.keys()].sort(),assets.map(asset=>asset.name).filter(name=>name!=='SHA256SUMS').sort(),
+    'Public Alpha checksum coverage differs from complete release inventory');
+  for(const[name,sha]of checksums)assert.equal(byName.get(name).digest,'sha256:'+sha);
+  const manifest=publicAlphaJson(manifestRaw);
+  assert.equal(manifest.repository,ALPHA_REPOSITORY);assert.equal(manifest.commit,alpha.commit);
+  assert.match(manifest.version||'',/^\d+\.\d+\.\d+$/);assert.equal(qualification.releaseTag,'v'+manifest.version);
+  assert.equal(manifest.workflow_run,'https://github.com/'+ALPHA_REPOSITORY+'/actions/runs/'+qualification.runId);
+  assert.equal(manifest.maximum_asset_bytes,ALPHA_ASSET_MAX_BYTES);
+  for(const[key,expected]of Object.entries({commit:alpha.commit,repository:ALPHA_REPOSITORY,ref:'refs/heads/main',required:true}))
+    assert.equal(manifest.historical_ci?.[key],expected,'Public Alpha historical qualification differs: '+key);
+  assert.ok(Array.isArray(manifest.assets)&&new Set(manifest.assets.map(asset=>asset.name)).size===manifest.assets.length);
+  assert.deepEqual(manifest.assets.map(asset=>asset.name).sort(),assets.map(asset=>asset.name)
+    .filter(name=>!['SHA256SUMS','release-manifest.json'].includes(name)).sort(),'Public Alpha manifest inventory is incomplete');
+  for(const asset of manifest.assets) {
+    assert.equal(asset.bytes,byName.get(asset.name).size);assert.equal('sha256:'+asset.sha256,byName.get(asset.name).digest);
+  }
+  for(const name of ['requirements-agent.lock','alpha-agent-v'+manifest.version+'-source.zip',
+    'alpha_factory_v1-'+manifest.version+'.tar.gz'])assert.ok(byName.has(name),'Required public Alpha software asset is absent: '+name);
+  const wheels=assets.filter(asset=>asset.name.startsWith('alpha_factory_v1-'+manifest.version+'-')&&asset.name.endsWith('.whl'));
+  assert.equal(wheels.length,1,'One version-bound public Alpha wheel is required');
+  assert.deepEqual(Object.keys(manifest.distributions||{}).sort(),['browser','site'],'Complete public Alpha distributions are required');
+  const operatorName='alpha-agent-v'+manifest.version+'-operator-guide.zip';
+  assert.ok(byName.has(operatorName),'Required public Alpha operator guide is absent');
+  const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'jobs-public-alpha-'));fs.chmodSync(temporary,0o700);
+  let descriptor,operator;
+  try {
+    descriptor=fs.openSync(path.join(temporary,'operator-guide.zip'),fs.constants.O_RDWR|fs.constants.O_CREAT|fs.constants.O_EXCL|fs.constants.O_NOFOLLOW,0o600);
+    await read(operatorName,false,descriptor);
+    const expectedCatalog=publicAlphaJson(catalogInput.raw);
+    operator=alphaOperatorMembers(descriptor,byName.get(operatorName),Object.keys(expectedCatalog.sources));
+  } finally {if(descriptor!==undefined)fs.closeSync(descriptor);fs.rmSync(temporary,{recursive:true,force:true});}
+  const publicCatalogRaw=one(operator,'capability/docs/successor/capabilities/sources.json');
+  assert.ok(Buffer.isBuffer(catalogInput?.raw)&&publicCatalogRaw.equals(catalogInput.raw),
+    'Public Alpha operator catalog differs from selected authenticated source catalog');
+  assert.equal(hash(publicCatalogRaw),catalogInput.sha256);
+  const publicCatalog=publicAlphaJson(publicCatalogRaw),sourceMap=publicAlphaJson(one(operator,'capability/source-map.json'));
+  assert.equal(sourceMap.schema,'agialpha.capability-operator-guide.v1');
+  assert.equal(sourceMap.commit,alpha.commit);assert.equal(sourceMap.version,manifest.version);assert.equal(sourceMap.sourceHash,alpha.sourceHash);
+  assert.equal(publicCatalog.sourceHash,alpha.sourceHash);assert.equal(hash(canonical(publicCatalog.sources)),alpha.sourceHash);
+  for(const[name,expected]of Object.entries(publicCatalog.sources)) {
+    const entry=sourceMap.files?.[name];assert.equal(entry?.archivePath,'capability/'+name);
+    assert.equal(entry.sourceSha256,expected);assert.equal(entry.packagedSha256,expected);
+    assert.equal(hash(one(operator,entry.archivePath)),expected,'Public Alpha operator source input differs: '+name);
+  }
+  const distributionNames=Object.values(manifest.distributions||{}).map(item=>item.manifest);
+  for(const name of distributionNames)await read(name,true);
+  for(const asset of assets)if(!observed.has(asset.name))await read(asset.name);
+  const distributions=[];
+  for(const[kind,entry]of Object.entries(manifest.distributions||{})) {
+    const distribution=publicAlphaJson(metadata.get(entry.manifest));
+    assert.equal(distribution.commit,alpha.commit);assert.equal(distribution.version,manifest.version);
+    assert.equal(distribution.schema,'agialpha.release-packs.v1');
+    assert.ok(Array.isArray(distribution.packs)&&Array.isArray(distribution.files));
+    assert.equal(distribution.packs.length,entry.packs);assert.equal(distribution.files.length,entry.files);
+    assert.equal(new Set(distribution.packs.map(pack=>pack.name)).size,distribution.packs.length);
+    for(const pack of distribution.packs) {
+      assert.equal(observed.get(pack.name)?.bytes,pack.bytes);assert.equal(observed.get(pack.name)?.sha256,pack.sha256);
+    }
+    distributions.push({kind,manifest:entry.manifest,manifestSha256:hash(metadata.get(entry.manifest)),packs:entry.packs,files:entry.files});
+  }
+  const finalRelease=await api('releases/tags/'+qualification.releaseTag);
+  for(const key of ['id','tag_name','draft','prerelease','published_at'])assert.equal(finalRelease[key],release[key],'Public Alpha release identity changed during download');
+  assert.deepEqual(await alphaPublicAssetInventory(api,release.id,qualification.releaseTag),assets,'Public Alpha assets changed during download');
+  return {schema:'agijobsv0/discovery-public-alpha-asset-acceptance/v1',releaseId:release.id,tag:qualification.releaseTag,
+    commit:alpha.commit,tree:alpha.tree,runId:qualification.runId,runAttempt:qualification.runAttempt,
+    sourceManifestSha256:hash(manifestRaw),checksumsSha256:hash(sumsRaw),allPublicAssetsDownloaded:true,
+    operatorGuide:{name:operatorName,sha256:observed.get(operatorName).sha256,sourceMapSha256:hash(one(operator,'capability/source-map.json')),
+      catalogSha256:hash(publicCatalogRaw),sourceHash:alpha.sourceHash,sourceInputs:Object.keys(publicCatalog.sources).length},
+    completeChecksumCoverage:true,completeManifestCoverage:true,assetCount:observed.size,
+    totalBytes:[...observed.values()].reduce((sum,item)=>sum+item.bytes,0),assets:[...observed.values()].sort((a,b)=>a.name<b.name?-1:a.name>b.name?1:0),distributions};
+}
+async function verifyAlphaPublication(api,qualification,alpha,catalogInput,assetOptions={}) {
   fields(qualification,['releaseTag','releaseId','runId','runAttempt'],'Exact public Alpha publication prerequisite fields differ');
   assert.ok(/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(qualification.releaseTag));
   for(const name of ['releaseId','runId','runAttempt'])assert.ok(positive(qualification[name]));
@@ -464,7 +680,7 @@ async function verifyAlphaPublication(api,qualification,alpha,catalogInput) {
   assert.ok(['ahead','identical'].includes(relationship.status));
   assert.equal(relationship.behind_by,0);assert.equal(relationship.base_commit?.sha,alpha.commit);
   assert.equal(release.id,qualification.releaseId);assert.equal(release.tag_name,qualification.releaseTag);
-  assert.equal(release.draft,false);assert.ok(typeof release.published_at==='string'&&release.published_at);
+  assert.equal(release.draft,false);assert.equal(release.prerelease,false);assert.ok(typeof release.published_at==='string'&&release.published_at);
   let tag=(await api('git/ref/tags/'+qualification.releaseTag)).object;
   for(let depth=0;tag?.type==='tag'&&depth<4;depth++)tag=(await api('git/tags/'+tag.sha)).object;
   assert.equal(tag?.type,'commit');assert.equal(tag.sha,alpha.commit,'Published Alpha tag differs from installed source');
@@ -478,9 +694,20 @@ async function verifyAlphaPublication(api,qualification,alpha,catalogInput) {
   const catalog=json(catalogRaw);
   assert.equal(catalog.schema,'successor-capability-source/v1');assert.equal(catalog.sourceHash,alpha.sourceHash);
   assert.equal(hash(canonical(catalog.sources)),alpha.sourceHash);assert.equal(Object.keys(catalog.sources).length,41);
-  return {repository:ALPHA_REPOSITORY,...qualification,source:alpha,officialMain:main.object.sha,
+  const publicAssets=await verifyAlphaPublicAssets(api,release,qualification,alpha,{...assetOptions,catalogInput});
+  const finalRun=await api('actions/runs/'+qualification.runId);
+  for(const key of ['id','run_attempt','head_sha','head_branch','event','path','status','conclusion'])
+    assert.equal(finalRun[key],run[key],'Public Alpha producer changed during download');
+  let finalTag=(await api('git/ref/tags/'+qualification.releaseTag)).object;
+  for(let depth=0;finalTag?.type==='tag'&&depth<4;depth++)finalTag=(await api('git/tags/'+finalTag.sha)).object;
+  assert.equal(finalTag?.type,'commit');assert.equal(finalTag.sha,alpha.commit,'Public Alpha tag changed during download');
+  const finalAlphaMain=await api('git/ref/heads/main');assert.ok(identity(finalAlphaMain.object?.sha));
+  const finalRelationship=await api('compare/'+alpha.commit+'...'+finalAlphaMain.object.sha);
+  assert.ok(['ahead','identical'].includes(finalRelationship.status),'Public Alpha source left official main ancestry during download');
+  assert.equal(finalRelationship.behind_by,0);assert.equal(finalRelationship.base_commit?.sha,alpha.commit);
+  return {repository:ALPHA_REPOSITORY,...qualification,source:alpha,officialMain:finalAlphaMain.object.sha,
     sourceIsOfficialMainAncestor:true,sourceCatalogSha256:hash(catalogRaw),releaseUrl:release.html_url,
-    publishedAt:release.published_at,workflowPath:run.path,event:run.event,headBranch:run.head_branch,conclusion:run.conclusion};
+    publishedAt:release.published_at,workflowPath:run.path,event:run.event,headBranch:run.head_branch,conclusion:run.conclusion,publicAssets};
 }
 async function reviewReferences(api,record,source) {
   const references=new Set(record.reviewReferences);
@@ -555,8 +782,13 @@ async function qualify(options) {
     custody.push({jobId:job.id,name,logSha256:hash(rawLog),logBytes:rawLog.length,artifactId:artifact.id,
       artifactName,archiveSha256:hash(bytes),archiveBytes:bytes.length,members:[...members].map(([name,raw])=>({name,bytes:raw.length,sha256:hash(raw)})),bytes,rawLog});
   }
-  const alphaQualification=await verifyAlphaPublication(alphaApi,record.alphaQualification,alpha,
-    {raw:one(producer.browser.packet,capture.PREFIX+'served/sources.json'),sha256:pin.catalogSha256});
+  // Public-release leases must be fresh; only immutable common-packet reads use alphaApi's cache.
+  // Reuse the existing workflow token for fixed-host API metadata; public asset
+  // transport remains anonymous. No new credential or cross-repository write.
+  const alphaReleaseApi=options.alphaApi||liveApi(process.env.GH_TOKEN,ALPHA_REPOSITORY);
+  const alphaQualification=await verifyAlphaPublication(alphaReleaseApi,record.alphaQualification,alpha,
+    {raw:one(producer.browser.packet,capture.PREFIX+'served/sources.json'),sha256:pin.catalogSha256},
+    options.alphaAssetReader?{readAsset:options.alphaAssetReader}:{});
   const inherited=inheritedPolicy(root);
   const policy=json(bounded(path.join(root,'config/solidity-compiler.json'),100000));
   assert.equal(policy.version,'0.8.37');assert.equal(policy.longVersion,'0.8.37+commit.f401782d');
@@ -627,7 +859,7 @@ async function qualify(options) {
   fs.writeFileSync(path.join(output,'qualification.json'),JSON.stringify(proof,null,2)+'\n',{flag:'wx'});return proof;
 }
 module.exports={REPOSITORY,WORKFLOW,VERSION,TAG,NODES,PRODUCER,CONSUMER,INSTALLER_PATH,INSTALLER_ASSET,hash,json,canonical,fields,bounded,sourceProof,plan,
-  validateRun,validateJob,validateArtifact,validateRetainedHistory,verifyBrowserInput,verifyAlphaPublication,reviewReferences,zipMembers,installedArchive,validateInstaller,assertProducerInventory,custodyFromProducer,validateBootstrap,validateNative,publicationRecord,scannerReview,qualify};
+  validateRun,validateJob,validateArtifact,validateRetainedHistory,verifyBrowserInput,verifyAlphaPublication,verifyAlphaPublicAssets,alphaPublicAssetIdentity,alphaPublicAssetInventory,readPublicAlphaAsset,ALPHA_ASSET_MAX_BYTES,reviewReferences,zipMembers,installedArchive,validateInstaller,assertProducerInventory,custodyFromProducer,validateBootstrap,validateNative,publicationRecord,scannerReview,qualify};
 if(require.main===module) {
   const [command,root,manifestSha256,verifierSha256,scopeVerifierSha256,runId,recordFile,recordSha256,output]=process.argv.slice(2);
   (async()=>{

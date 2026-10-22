@@ -6,14 +6,16 @@ import { execFileSync } from 'node:child_process';
 import { validateDiscoveryProtectedScope } from './discovery-protected-scope.mjs';
 import {auditInstalledGitRoot,installedGit,validateInstalledProtectedScope,INSTALLED_PROTECTED_BASELINE} from './discovery-installed-protected-scope.mjs';
 
+import {selectLedgerSource,verifyInstalledLedgerPrefix,verifyLedgerSourceClosure} from './discovery-installed-ledger-prefix.mjs';
+
 const root = path.resolve(import.meta.dirname, '../..');
-const installedEdition=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version==='2.1.0-rc.18';
+const git = (...args) => installedGit(root,...args);
+const selectedSource = selectLedgerSource(git);
+const {commit,tree,installed:installedEdition} = selectedSource;
 if(installedEdition) auditInstalledGitRoot(root);
 const directory = path.join(root, 'docs/security/remediation-2026-10-19');
 const ledger = JSON.parse(fs.readFileSync(path.join(directory, 'findings.json'), 'utf8'));
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
-const git = (...args) => installedEdition ? installedGit(root,...args)
-  : execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }).trim();
 const key = result => {
   const loc = result.locations[0].physicalLocation;
   return JSON.stringify([result.ruleId, loc.artifactLocation.uri, loc.region]);
@@ -57,14 +59,19 @@ assert.equal(ledger.baseline.deployedJobsSource, '818b3a246871e4cd4dde86558dbb91
 assert.equal(git('show', `${ledger.baseline.commit}:.github/codeql/config.yml`), fs.readFileSync(path.join(root, '.github/codeql/config.yml'), 'utf8').trim(), 'scanner query/path policy changed');
 const protectedPath = file => /^(contracts\/|config\/|deployment-config\/|deployment\/|deployments\/)/.test(file) || /(?:compiler-evidence|compiler-provenance|mainnet-deployment|deployment-addresses|configuration-readback|solidity-compiler|ethereum-mainnet)/.test(file) || (/receipts/i.test(file) && /\.json$/.test(file));
 const protectedFiles = git('ls-tree', '-r', '--name-only', ledger.baseline.commit).split('\n').filter(protectedPath);
+if (installedEdition) assert.equal(INSTALLED_PROTECTED_BASELINE, '83065adf18a6ee987f8fa479a496a052d35db682');
 const scopeBaseline = installedEdition ? INSTALLED_PROTECTED_BASELINE : ledger.baseline.commit;
-const changes = git('diff', '--name-only', scopeBaseline, 'HEAD').split('\n').filter(Boolean);
+const changes = git('diff', '--name-only', scopeBaseline, commit).split('\n').filter(Boolean);
 const discoveryScope = installedEdition
   ? validateInstalledProtectedScope(root,scopeBaseline,changes.filter(protectedPath))
   : validateDiscoveryProtectedScope(root, ledger.baseline.commit, changes.filter(protectedPath));
-assert.equal(git('diff', '--name-only', 'HEAD'), '', 'uncommitted tracked changes cannot be bound to HEAD qualification');
+const historicalProtectedPrefix = installedEdition
+  ? verifyInstalledLedgerPrefix({ledgerBaseline:ledger.baseline,commit,tree,scope:discoveryScope,readGit:git,protectedPath})
+  : null;
+assert.equal(git('diff', '--name-only', commit), '', 'uncommitted tracked changes cannot be bound to HEAD qualification');
+verifyLedgerSourceClosure({commit,installed:installedEdition,readGit:git});
 assert.equal(ledger.qualification.productionApproved, false);
-const result = { commit: git('rev-parse', 'HEAD'), tree: git('rev-parse', 'HEAD^{tree}'), baselineResults: 96, counts, protectedFiles: protectedFiles.length, unchangedQueryConfiguration: true, discoveryScope, productionApproved: false };
+const result = { commit, tree, baselineResults: 96, counts, protectedFiles: protectedFiles.length, unchangedQueryConfiguration: true, discoveryScope, historicalProtectedPrefix, sourceReviewed: false, nativeQualified: false, releaseQualified: false, publicationApproved: false, productionApproved: false };
 const out = path.join(root, 'reports/security/remediation'); fs.mkdirSync(out, { recursive: true });
 fs.writeFileSync(path.join(out, 'ledger-validation.json'), JSON.stringify(result, null, 2) + '\n');
 console.log(JSON.stringify(result));

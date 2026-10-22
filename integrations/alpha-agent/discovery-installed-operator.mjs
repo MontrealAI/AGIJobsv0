@@ -15,12 +15,15 @@ function dataOptions(input,names) {
   const result={};
   for(const name of names) {
     const item=Object.getOwnPropertyDescriptor(input,name);assert.ok(item&&Object.hasOwn(item,'value'),'Options require inert own fields');
-    assert.equal(typeof item.value,'string');result[name]=item.value;
+    if(name==='archiveBytes')assert.ok(Number.isSafeInteger(item.value)&&item.value>0&&item.value<=20_000_000,
+      'Independently selected archive bytes must be a bounded positive safe integer');
+    else assert.equal(typeof item.value,'string');
+    result[name]=item.value;
   }
   return Object.freeze(result);
 }
 export function installedStatus(input) {
-  const options=dataOptions(input,['installedRoot','manifestSha256']);
+  const options=dataOptions(input,['installedRoot','manifestSha256','archiveSha256','archiveBytes']);
   const installed=captureInstalled(options);
   return {schema:'agijobsv0/discovery-installed-status/v1',state:'SOURCE_AUTHENTICATED_LOCAL_REVIEW_AVAILABLE',
     jobs:installed.manifest.jobs,alpha:installed.manifest.alpha,capsule:installed.capsule,
@@ -29,9 +32,10 @@ export function installedStatus(input) {
     nativeQualification:'SEPARATE_FINAL_SOURCE_AND_ARCHIVE_QUALIFICATION_REQUIRED'};
 }
 export async function inspectInstalledRequest(input) {
-  const options=dataOptions(input,['installedRoot','manifestSha256','workspaceRaw','requestRaw']);
+  const options=dataOptions(input,['installedRoot','manifestSha256','archiveSha256','archiveBytes','workspaceRaw','requestRaw']);
   assert.ok(options.workspaceRaw.length<=2_000_000&&options.requestRaw.length<=2_000_000,'Installed input exceeds UTF-16 bound');
-  const installed=await openInstalled({installedRoot:options.installedRoot,manifestSha256:options.manifestSha256});
+  const installed=await openInstalled({installedRoot:options.installedRoot,manifestSha256:options.manifestSha256,
+    archiveSha256:options.archiveSha256,archiveBytes:options.archiveBytes});
   try {
     const [workspace,history,contract,receipts,evidence,docket,{createInspector}]=await Promise.all([
       'workspace','discovery-lab-history','discovery-lab-contract','discovery-lab-receipts',
@@ -71,16 +75,18 @@ export async function inspectInstalledRequest(input) {
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
   try {
-    const [command,installedRoot,manifestSha256,...args]=process.argv.slice(2);
+    const [command,installedRoot,manifestSha256,archiveSha256,archiveBytesRaw,...args]=process.argv.slice(2);
+    assert.ok(typeof archiveBytesRaw==='string'&&/^[1-9][0-9]{0,7}$/.test(archiveBytesRaw),'Explicit canonical archive byte count required');
+    const archiveBytes=Number(archiveBytesRaw);
     if(command==='status') {
-      assert.equal(args.length,0,'Use status ROOT INSTALLED_MANIFEST_SHA256');
-      console.log(JSON.stringify(installedStatus({installedRoot,manifestSha256}),null,2));
+      assert.equal(args.length,0,'Use status ROOT INSTALLED_MANIFEST_SHA256 ARCHIVE_SHA256 ARCHIVE_BYTES');
+      console.log(JSON.stringify(installedStatus({installedRoot,manifestSha256,archiveSha256,archiveBytes}),null,2));
     } else {
       assert.equal(command,'inspect','Use status or inspect');assert.equal(args.length,3,
-        'Use inspect ROOT INSTALLED_MANIFEST_SHA256 WORKSPACE_JSON REQUEST_TEXT ABSENT_OUTPUT_JSON');
+        'Use inspect ROOT INSTALLED_MANIFEST_SHA256 ARCHIVE_SHA256 ARCHIVE_BYTES WORKSPACE_JSON REQUEST_TEXT ABSENT_OUTPUT_JSON');
       const [workspacePath,requestPath,output]=args;
       assert.ok(path.isAbsolute(output)&&!fs.existsSync(output),'Explicit absent output path required');
-      const result=await inspectInstalledRequest({installedRoot,manifestSha256,
+      const result=await inspectInstalledRequest({installedRoot,manifestSha256,archiveSha256,archiveBytes,
         workspaceRaw:boundedInstalledBytes(path.resolve(workspacePath)).toString('utf8'),
         requestRaw:boundedInstalledBytes(path.resolve(requestPath)).toString('utf8')});
       fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify(result,null,2)+'\n',{flag:'wx',mode:0o600});

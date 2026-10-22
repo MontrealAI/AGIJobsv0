@@ -28,7 +28,7 @@ export function boundedSource(file, maxBytes = 2_000_000) {
 }
 
 export function parseNativeArguments(args) {
-  const supported = new Set(['--installed-root','--manifest-sha256','--output','--workspace','--request']);
+  const supported = new Set(['--installed-root','--manifest-sha256','--archive-sha256','--archive-bytes','--output','--workspace','--request']);
   assert.ok(Array.isArray(args) && args.length % 2 === 0, 'Use explicit named argument/value pairs');
   const result = {};
   for (let index=0; index<args.length; index+=2) {
@@ -37,8 +37,11 @@ export function parseNativeArguments(args) {
     assert.ok(typeof value==='string' && value && !value.startsWith('--'), 'Missing native argument value');
     result[key]=value;
   }
-  for (const key of ['--installed-root','--manifest-sha256','--output','--workspace','--request']) assert.ok(Object.hasOwn(result,key), 'Missing '+key);
+  for (const key of supported) assert.ok(Object.hasOwn(result,key), 'Missing '+key);
   assert.ok(hash(result['--manifest-sha256']), 'An independently selected installed manifest SHA-256 is required');
+  assert.ok(hash(result['--archive-sha256']), 'An independently selected archive SHA-256 is required');
+  assert.ok(/^[1-9][0-9]{0,7}$/.test(result['--archive-bytes'])&&Number(result['--archive-bytes'])<=20_000_000,
+    'An independently selected canonical bounded archive byte count is required');
   for (const key of ['--installed-root','--output','--workspace','--request']) {
     if(Object.hasOwn(result,key)) assert.ok(path.isAbsolute(result[key]), 'Explicit absolute paths are required');
   }
@@ -70,12 +73,12 @@ export function assertStrongerSuccessor(initial,stronger) {
 
 // Each path owns a separate Alpha module namespace and audit state. Nothing from
 // the constructed regression is imported into the original exported mission.
-async function runInstalledMission({installedRoot,manifestSha256,retainedWorkspaceRaw,retainedRequestRaw,phase}) {
+async function runInstalledMission({installedRoot,manifestSha256,archiveSha256,archiveBytes,retainedWorkspaceRaw,retainedRequestRaw,phase}) {
   const primary=phase==='primary';
   const prefix=primary?'':'regression/';
   const {openInstalled} = await import('./discovery-installed-runtime.mjs');
   const {inspectInstalledRequest} = await import('./discovery-installed-operator.mjs');
-  const installed = await openInstalled({installedRoot,manifestSha256});
+  const installed = await openInstalled({installedRoot,manifestSha256,archiveSha256,archiveBytes});
   let phaseFiles={},progressFiles={};
   try {
     const modules = await Promise.all(['discovery-lab','discovery-lab-history','workspace','discovery-lab-contract',
@@ -125,7 +128,7 @@ async function runInstalledMission({installedRoot,manifestSha256,retainedWorkspa
       const beforeHead=saved.events.at(-1).digest, beforeCount=saved.events.length;
       const beforeDocket=await docket.createDiscoveryDocket(saved);
       const beforeCosts=contract.parseBounded(beforeDocket.files['08_cost_ledgers/costs.json']);
-      const result=await inspectInstalledRequest({installedRoot,manifestSha256,workspaceRaw:previous,requestRaw});
+      const result=await inspectInstalledRequest({installedRoot,manifestSha256,archiveSha256,archiveBytes,workspaceRaw:previous,requestRaw});
       const base=prefix+'imports/'+String(imports.length+1).padStart(2,'0')+'-'+name;
       progressFiles[base+'.request.txt']=requestRaw;
       if(typeof result.rawReceipt==='string')progressFiles[base+'.receipt.json']=result.rawReceipt;
@@ -262,15 +265,15 @@ async function runInstalledMission({installedRoot,manifestSha256,retainedWorkspa
 
 
 /** A missing primary export always fails; constructed regressions are additional. */
-export async function qualifyDiscoveryLabReceiver({installedRoot,manifestSha256,retainedWorkspaceRaw,retainedRequestRaw}) {
+export async function qualifyDiscoveryLabReceiver({installedRoot,manifestSha256,archiveSha256,archiveBytes,retainedWorkspaceRaw,retainedRequestRaw}) {
   assert.ok(typeof retainedWorkspaceRaw==='string'&&retainedWorkspaceRaw.length>0,
     'The exact original exported workspace is required; native construction is not a fallback');
   assert.ok(typeof retainedRequestRaw==='string'&&retainedRequestRaw.length>0,
     'The exact original exported request is required; native construction is not a fallback');
   assert.ok(retainedWorkspaceRaw.length<=2_000_000&&retainedRequestRaw.length<=2_000_000,'Primary input exceeds its UTF-16 bound');
-  const primary=await runInstalledMission({installedRoot,manifestSha256,retainedWorkspaceRaw,retainedRequestRaw,phase:'primary'});
+  const primary=await runInstalledMission({installedRoot,manifestSha256,archiveSha256,archiveBytes,retainedWorkspaceRaw,retainedRequestRaw,phase:'primary'});
   let regression;
-  try {regression=await runInstalledMission({installedRoot,manifestSha256,retainedWorkspaceRaw:null,retainedRequestRaw:null,phase:'constructed-regression'});}
+  try {regression=await runInstalledMission({installedRoot,manifestSha256,archiveSha256,archiveBytes,retainedWorkspaceRaw:null,retainedRequestRaw:null,phase:'constructed-regression'});}
   catch(error) {error.evidenceFiles={...primary.files,...(error.evidenceFiles||{})};throw error;}
   assert.notEqual(primary.report.missionId,regression.report.missionId,'Regression must be a separately constructed mission');
   assert.deepEqual(primary.report.jobs,regression.report.jobs);assert.deepEqual(primary.report.alpha,regression.report.alpha);
@@ -317,7 +320,8 @@ if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.
     const retainedRequestRaw=boundedSource(args['--request']).toString('utf8');
     inputFiles={'workspace.input.json':retainedWorkspaceRaw,'primary.request.input.txt':retainedRequestRaw};
     const {report,files}=await qualifyDiscoveryLabReceiver({installedRoot:args['--installed-root'],
-      manifestSha256:args['--manifest-sha256'],retainedWorkspaceRaw,retainedRequestRaw});
+      manifestSha256:args['--manifest-sha256'],archiveSha256:args['--archive-sha256'],
+      archiveBytes:Number(args['--archive-bytes']),retainedWorkspaceRaw,retainedRequestRaw});
     writeNativeEvidence(output,files,report);
     console.log(JSON.stringify({state:'ACTUAL_INSTALLED_NATIVE_ACCEPTANCE_COMPLETE',output,
       reportSha256:sha(fs.readFileSync(output)),capsule:report.capsule,receiptImports:report.receiptImports.count,

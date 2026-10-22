@@ -30,7 +30,7 @@ jobs:
           git rev-parse HEAD > "$RUNNER_TEMP/discovery-lab/source-commit.txt"
           node --version > "$RUNNER_TEMP/discovery-lab/node-version.txt"
           sha256sum integrations/alpha-agent/discovery-lab-contract.mjs integrations/alpha-agent/discovery-lab-work-request.mjs integrations/alpha-agent/discovery-lab-work-request.test.mjs integrations/alpha-agent/fixtures/discovery-lab-request.json > "$RUNNER_TEMP/discovery-lab/SHA256SUMS.txt"
-          node --test --test-reporter=tap integrations/alpha-agent/discovery-lab-work-request.test.mjs test/security/discovery-protected-scope.test.mjs > "$RUNNER_TEMP/discovery-lab/policy.tap"
+          node --test --test-reporter=tap integrations/alpha-agent/discovery-lab-work-request.test.mjs test/security/discovery-protected-scope.test.mjs test/scripts/discovery-installed-dependency-preservation.test.cjs tools/security/discovery-installed-ledger-prefix.test.mjs > "$RUNNER_TEMP/discovery-lab/policy.tap"
           cat "$RUNNER_TEMP/discovery-lab/policy.tap"
       - name: Verify the candidate-only finite source inventory from actual tracked inputs
         run: |

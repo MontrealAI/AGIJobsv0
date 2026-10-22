@@ -37,17 +37,17 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "43733211dbdd9ed4d09da95afcaaab663dc26600fe0c309b385e02af96aa28e4"
+        "sha256": "53f2cbbf5bf319ffdcc30a59ba61e8c02f545de37f8aa1b5a00dbd253d7e825c"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Retain the new source-selected producer, independently saved installer, two-runtime extracted consumers and separately reviewed publication route; pass the exact independently selected archive hash, bounded byte count and installed-manifest hash from original producer custody to both extracted operator and native commands, without deriving selection from extracted custody"
     },
     ".github/workflows/discovery-lab-receiver.yml": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "9552b1e35ca82b75e58ae1f53ecdcade4df919cd3df2c680280198e1c0f7b7fb"
+        "sha256": "ddbeb096fe08d61ecc321e2da90079d8432668b29af4f5340326bfc3daf6ea70"
       },
-      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+      "reason": "Preserve full-history checkout, actual installed source applicability and both original suites in order; append only exact owner2425 dependency-coherence and historical-ledger-prefix suites as ordinary changed-source qualification, retaining failures and all existing gates"
     },
     ".github/workflows/source-release-rc16.yml": {
       "before": {
@@ -243,9 +243,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "b5b59a1b0c613461a7a5647c1a7fdca8c4d27c50ef7395c5889b6247b05d56c1"
+        "sha256": "783d00ccc0e1d2137b853f3dcb57ab117da88ee123526b34d8e3728be7b6303d"
       },
-      "reason": "Describe the installed reviewed Alpha61532 source and original common17 browser bindings accurately; retain separate original final-main producer/native/scanner/publication gates and explicit independent public Alpha asset-byte acceptance, without changing runtime or authority"
+      "reason": "Document the bounded installed local-review receiver, reviewed615 source and browser-input selection, independent archive hash/size/manifest runtime contract, machine-enforced Alpha public-asset acceptance and remaining exact-main/native/scanner/publication gates; preserve zero authority, incomplete-cost and deployment-observation limits and historical publisher evidence"
     },
     "docs/successor/DISCOVERY_LAB.md": {
       "before": null,
@@ -302,41 +302,41 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "eb8fd61115ba16b0b46f8c37bb652833bf9534154754305812289e2f6f4fc35a"
+        "sha256": "22e3b32d639a114e83360a390a745a8e942169cc9e1367030f37cd784dda4343"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Retain original exported primary mission plus separately constructed regression, exact raw inputs/receipts/dockets/costs and refusal evidence; require canonical CLI archive selection and thread the same independent hash/size/manifest tuple through both mission opens and every operator return, without replacing primary input or granting publication approval"
     },
     "integrations/alpha-agent/discovery-installed-native.test.mjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "e7dca7b272d7cac30a548083b7a4847ee8f0bd5abd86c86313a3fc2c518e779e"
+        "sha256": "99bba5301c9f30f6ada89ba9a1ee027ac949a2d975b3a282743825461d4acc32"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Retain ordinary input/no-fallback/failure-retention controls; test mandatory canonical archive CLI hash/size selection and the actual workflow inline command with inert fs/process stand-ins to prove both callers use only saved original producer custody and original input aliases"
     },
     "integrations/alpha-agent/discovery-installed-operator.mjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "94954c3372a1896d74c9dca66d354da151a9d1c0880b5f0eac27e83c2ee1446f"
+        "sha256": "bba31e025dbfc56187d61fdab6cefbe3cf826ebbeeb6de7bb2353530c1ddaf3e"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Retain source-bound zero-cap status and same-history original-request receipt/docket return; require the same inert independently selected archive hash/size/manifest tuple in both API and CLI routes and thread it to installed capture without reading expected values from custody"
     },
     "integrations/alpha-agent/discovery-installed-runtime.mjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "af41c84aeb5534f97feefab17911a3c5d4ebee5fc45fd72551476fbe64b09732"
+        "sha256": "98996a4bf688966e1554ddec2186286a30c4f5861ad0d2c6468c93c2f24276d9"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Capture the complete bounded installed input set and imported module bytes; require inert independently selected archive hash, positive bounded safe-integer byte count and manifest hash; compare exact extraction custody schema/authority/state/tuple before returning frozen selected capsule provenance, with no manifest-only fallback or new execution authority"
     },
     "integrations/alpha-agent/discovery-installed-runtime.test.mjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "c060b25b8f975a843a678c1778859c3902becfd937cfdb6f3820a2d4dd92d398"
+        "sha256": "d6b01a9db97f852fdae58ed7e1f686efd96a015f1e26f843447177a12e0af4ce"
       },
-      "reason": "Implement separately gated installed runtime and independently authenticated standalone bootstrap"
+      "reason": "Retain bounded inventory and ordinary trusted receiver controls; add inert exact extraction provenance cases rejecting hash/size/schema/authority/state/field drift, omitted or coerced external selection and accessors/proxies before installed capture; no native or release approval"
     },
     "integrations/alpha-agent/discovery-lab-contract.mjs": {
       "before": null,
@@ -428,17 +428,17 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "79e10f5181fc2240da9766174e724145371aaeab62d983343f13981f542173a5"
+        "sha256": "deb3a9631eddcbb8588c1f9532e17393c434c5f185c10e43604a4f76ac4a3d24"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Retain the deterministic installed archive builder, complete source/Alpha capture, manifest and standalone installer provenance; update only generated README instructions to require the authenticated original archive hash and byte count alongside installed-manifest hash"
     },
     "scripts/release/discovery-installed-qualification.cjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "669ee99e3913884b4faaaeba291ebfde67ee3e82db845e6061f1e3b4a4e65503"
+        "sha256": "362d4278e53fe91b3632bd17fc6ba6280d9b8d6f3b1647da478c775ca83ea044"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Retain original actual-main producer, two-runtime native/raw/browser/source/scanner/review qualification and fresh leased publication checks; machine-enforce complete actual public Alpha asset inventory and streamed hash/size/checksum/manifest/provenance acceptance before publication, including the installed-source/catalog bridge, without authenticated-artifact substitution"
     },
     "scripts/release/discovery-installed-release-dispatch.cjs": {
       "before": null,
@@ -452,9 +452,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "2741f332447d8aedb55a54341f1c829172b8ec8fad6adba5c0ac53c78bcb9dda"
+        "sha256": "ce81bb728dafff8d03e2d874751a7a01a914fc8d27e5cdb050589461b624bf99"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Retain existing inert source/producer/native/review/publication refusal controls; add ordinary public Alpha asset contract fixtures for exact inventory/checksum/manifest/provenance/streamed bytes and source/catalog binding plus mutation refusals, without claiming actual public downloads"
     },
     "scripts/release/discovery-lab-profile.py": {
       "before": null,
@@ -519,9 +519,9 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "df0cee794f2e6601019e939508b497923f461dc8515cc86aadd9ed3c2e898734"
+        "sha256": "5cdd598d6dbb2e2908cd5727c78144c9ae544f92b84c83fe701ab4972ede44cc"
       },
-      "reason": "Validate the exact installed edition through complete finite source proof while preserving dependency identities and legacy source protection"
+      "reason": "Compose exact owner2425 immutable committed-edition/source/control capture and typed independent dependency/generated proofs, preserving all seven protected dependency identities and the distinct original ba67 generator baseline; retain complete HEAD/index/byte/mode checks and false approval claims"
     },
     "scripts/security/test/dependency-preservation.test.cjs": {
       "before": {
@@ -576,9 +576,9 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "77b77167117a6a6879c09778c4bd54c68b7bfbda9f5dce56b84e1a3ec8808758"
+        "sha256": "882377fba4d0370da65d7150bdbb58d3a2152493b6eb290f81c33580524e0cd5"
       },
-      "reason": "Add separate complete committed-source scanner scope for the installed edition without weakening historical scope"
+      "reason": "Compose exact owner2425 immutable committed ledger edition/source selection and explicit original historical prefix helper/closure while preserving the historical query/archive/disposition/deployed assertion block and protected predicate; keep all source/native/release/publication approvals false"
     },
     "apps/console/Dockerfile": {
       "before": {
@@ -612,6 +612,30 @@
         "sha256": "c600c0f1ecdfb54922d12a7ec8352811e55e0ab2c4df7fdc06ee610f3e1fcb41"
       },
       "reason": "Retain existing strict audit failure and dependency-input controls and prove the three named CULTURE inputs select the existing exact-head production-audit surface and all-lock command without continue-on-error"
+    },
+    "test/scripts/discovery-installed-dependency-preservation.test.cjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "dbeda13c6850fce006913d8064e0c59979e1d26a55ac6de867dd1f7b6c1be484"
+      },
+      "reason": "Retain exact owner2425 focused owned-fixture dependency/source coherence controls for immutable edition/reference/typed-input/generated comparison and bounded regular-file capture, without substituting these focused cases for actual source/native/hosted qualification"
+    },
+    "tools/security/discovery-installed-ledger-prefix.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "7803b4eef32c4ad7bcd6552b7ee652ba7ba5c94c18e1b7b864ec3b5cfc30bee3"
+      },
+      "reason": "Compose exact owner2425 separate historical ledger proof: immutable original6a181/83065 set/mode/blob prefix, exactly288 protected originals, independently derived regular additions, exact typed source scope and HEAD/index closure; retain unchanged ledger/query/archive/disposition/deployment bodies"
+    },
+    "tools/security/discovery-installed-ledger-prefix.test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "652f16ba1eb1b1d6cb8d2945604d56614799388c95474838bc5355085e4174fd"
+      },
+      "reason": "Retain exact owner2425 injected-reader ledger-prefix controls for complete historical identities, strict current source/admission metadata, regular additions and immutable closure, without external process/network or owner/release qualification claims"
     }
   },
   "decisions": {

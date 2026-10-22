@@ -200,13 +200,14 @@ def build(root, selection, destination, *, alpha_root):
     proof = {'schema': 'agijobsv0/discovery-installed-producer-source/v1', 'source': source, 'selection': selection,
              'scope': 'Complete Jobs source raw-byte/Git/index/ancestry proof before capturing this installed subset; no execution or publication approval.'}
     captured['PRODUCER_SOURCE_PROOF.json'] = ((json.dumps(proof, indent=2)+'\n').encode(), '100644')
-    captured['README.txt'] = (('Jobs standalone Discovery local review. Verify the archive SHA-256 and installed manifest SHA-256\n'
+    captured['README.txt'] = (('Jobs standalone Discovery local review. Verify the archive SHA-256, byte count and installed manifest SHA-256\n'
         'from independently selected, qualified producer provenance before installing or running code.\n'
         'Install using the separately authenticated install-discovery-installed.py --archive ARCHIVE --sha256 ARCHIVE_SHA\n'
         '  --manifest-sha256 INSTALLED_MANIFEST_SHA --output ABSENT_DIRECTORY\n'
-        'Run: node integrations/alpha-agent/discovery-installed-operator.mjs status ABSOLUTE_ROOT INSTALLED_MANIFEST_SHA\n'
-        'Inspect: node integrations/alpha-agent/discovery-installed-operator.mjs inspect ABSOLUTE_ROOT INSTALLED_MANIFEST_SHA\n'
+        'Run: node integrations/alpha-agent/discovery-installed-operator.mjs status ABSOLUTE_ROOT INSTALLED_MANIFEST_SHA ARCHIVE_SHA ARCHIVE_BYTES\n'
+        'Inspect: node integrations/alpha-agent/discovery-installed-operator.mjs inspect ABSOLUTE_ROOT INSTALLED_MANIFEST_SHA ARCHIVE_SHA ARCHIVE_BYTES\n'
         '  WORKSPACE_JSON REQUEST_TEXT ABSENT_OUTPUT_JSON\n'
+        'Select the archive hash and byte count from authenticated original producer provenance, never from extracted INSTALLATION_CUSTODY.json.\n'
         'No source checkout, Git, npm install, network, wallet, money, settlement or external execution is used by installed inspection.\n'
         'The actual local Alpha checker returns a receipt into the original mission and canonical docket.\n').encode(), '100644')
     jobs = {'commit': source['sourceCommit'], 'tree': source['sourceTree'],

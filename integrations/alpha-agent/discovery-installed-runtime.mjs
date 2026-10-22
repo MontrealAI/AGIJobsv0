@@ -11,7 +11,7 @@ import {parseBounded, canonical} from './discovery-lab-contract.mjs';
 import {parseModuleSources, checkDependencyRecords, createModuleBoundary} from './discovery-installed-module-graph-runtime.mjs';
 
 export const INSTALLED_MANIFEST = 'INSTALLED_SOURCE.json';
-const MAX_FILE = 2_000_000, MAX_TOTAL = 16_000_000, MAX_FILES = 256;
+const MAX_FILE = 2_000_000, MAX_TOTAL = 16_000_000, MAX_FILES = 256, MAX_ARCHIVE = 20_000_000;
 const ADAPTER = 'integrations/alpha-agent/discovery-lab-work-request.mjs';
 const CONTRACT = 'integrations/alpha-agent/discovery-lab-contract.mjs';
 const INSPECTOR = 'examples/successor-capability/discovery-lab-inspector.mjs';
@@ -67,16 +67,36 @@ export function installedNames(root,expectedNames) {
 function runtimeOptions(input) {
   assert.ok(input&&typeof input==='object'&&!Array.isArray(input)&&!types.isProxy(input)
     && [Object.prototype,null].includes(Object.getPrototypeOf(input)));
-  assert.deepEqual(Reflect.ownKeys(input).sort(),['installedRoot','manifestSha256']);
+  const fields=['archiveBytes','archiveSha256','installedRoot','manifestSha256'];
+  assert.deepEqual(Reflect.ownKeys(input).sort(),fields,'An independently selected archive and manifest identity is required');
   const values={};
-  for(const key of ['installedRoot','manifestSha256']) {
+  for(const key of fields) {
     const item=Object.getOwnPropertyDescriptor(input,key);assert.ok(item&&Object.hasOwn(item,'value'),'Runtime options need inert own data');
-    assert.equal(typeof item.value,'string');values[key]=item.value;
+    if(key==='archiveBytes')assert.ok(Number.isSafeInteger(item.value)&&item.value>0&&item.value<=MAX_ARCHIVE,
+      'Independently selected archive bytes must be a bounded positive safe integer');
+    else assert.equal(typeof item.value,'string');
+    values[key]=item.value;
   }
+  assert.ok(hash(values.archiveSha256),'An independently selected archive SHA-256 is required');
+  assert.ok(hash(values.manifestSha256),'An independently selected installed-manifest SHA-256 is required');
   return Object.freeze(values);
 }
+export function installationCapsule(input,custody) {
+  const {archiveSha256,archiveBytes,manifestSha256}=runtimeOptions(input);
+  const expected={schema:'agijobsv0/discovery-installed-extraction/v1',archiveSha256,archiveBytes,
+    installedManifestSha256:manifestSha256,authority:'none',state:'EXTRACTED_INACTIVE_LOCAL_REVIEW_ONLY'};
+  assert.ok(custody&&typeof custody==='object'&&!Array.isArray(custody)&&!types.isProxy(custody)
+    &&[Object.prototype,null].includes(Object.getPrototypeOf(custody)),'Extraction custody must be inert data');
+  assert.deepEqual(Reflect.ownKeys(custody).sort(),Object.keys(expected).sort(),'Extraction custody fields differ');
+  for(const [name,value] of Object.entries(expected)) {
+    const item=Object.getOwnPropertyDescriptor(custody,name);
+    assert.ok(item&&Object.hasOwn(item,'value'),'Extraction custody must contain inert own data');
+    assert.equal(item.value,value,'Extraction custody differs from independently selected provenance: '+name);
+  }
+  return Object.freeze({sha256:archiveSha256,bytes:archiveBytes,manifestSha256});
+}
 export function captureInstalled(input) {
-  const {installedRoot,manifestSha256}=runtimeOptions(input);
+  const options=runtimeOptions(input),{installedRoot,manifestSha256}=options;
   assert.ok(path.isAbsolute(installedRoot||''),'An explicit installed root is required');
   const root=fs.realpathSync(installedRoot);assert.ok(hash(manifestSha256),'An independently selected installed-manifest SHA-256 is required');
   const manifestBytes=boundedInstalledBytes(path.join(root,INSTALLED_MANIFEST));
@@ -126,9 +146,7 @@ export function captureInstalled(input) {
     recordedOperationallyReady:inventory.operationallyReady,onChainObservation:'NOT_RUN',
     authority:'none',executionApproved:false,scope:'Source-bound repository records; no fresh chain-state confirmation.'};
   const custody=parseBounded(boundedInstalledBytes(path.join(root,'INSTALLATION_CUSTODY.json')).toString('utf8'));
-  assert.equal(custody.schema,'agijobsv0/discovery-installed-extraction/v1');assert.equal(custody.installedManifestSha256,manifestSha256);
-  assert.ok(hash(custody.archiveSha256)&&Number.isSafeInteger(custody.archiveBytes)&&custody.archiveBytes>0);
-  return {root,manifest,captured,total,deploymentCompatibility,capsule:{sha256:custody.archiveSha256,bytes:custody.archiveBytes,manifestSha256}};
+  return {root,manifest,captured,total,deploymentCompatibility,capsule:installationCapsule(options,custody)};
 }
 export async function openInstalled(input) {
   const options=runtimeOptions(input);

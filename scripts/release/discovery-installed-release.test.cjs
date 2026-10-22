@@ -333,29 +333,147 @@ test('rehashed docket metadata cannot hide omitted raw receiver costs',()=>{
   f.report.docket.sha256=Q.hash(raw);f.report.docket.reopenedSha256=Q.hash(raw);f.refresh();
   assert.throws(()=>Q.validateNative(f.members,{source,alpha,custody:f.custody,version:'24.21.0'}),/receiver costs/);
 });
-test('actual public Alpha qualification must bind released tag, exactmain run and catalog source',async()=>{
+function alphaPublicationFixture() {
   const sources=Object.fromEntries(Array.from({length:41},(_,i)=>['inert/'+i+'.json',Q.hash('{}')]));
   const pin={...alpha,sourceHash:Q.hash(Q.canonical(sources))};
-  const qualification={releaseTag:'alpha-agent-v1.38.0',releaseId:8,runId:9,runAttempt:1};
+  const qualification={releaseTag:'v1.38.0',releaseId:8,runId:9,runAttempt:1};
   const catalog=Buffer.from(JSON.stringify({schema:'successor-capability-source/v1',sourceHash:pin.sourceHash,sources}));
+  const sourceMap={schema:'agialpha.capability-operator-guide.v1',commit:pin.commit,version:'1.38.0',sourceHash:pin.sourceHash,
+    files:Object.fromEntries(Object.entries(sources).map(([name,sha])=>[name,{archivePath:'capability/'+name,sourceSha256:sha,packagedSha256:sha}]))};
+  const entries=[['capability/source-map.json',JSON.stringify(sourceMap)],['capability/docs/successor/capabilities/sources.json',catalog.toString()],
+    ...Object.keys(sources).map(name=>['capability/'+name,'{}'])];
+  const zip=()=>execFileSync('python3',['-I','-c',
+    'import io,zipfile,json,sys\nb=io.BytesIO()\nz=zipfile.ZipFile(b,"w",zipfile.ZIP_DEFLATED)\nfor n,v in json.loads(sys.argv[1]):z.writestr(n,v)\nz.close();sys.stdout.buffer.write(b.getvalue())',JSON.stringify(entries)],{maxBuffer:1_000_000});
+  const payloads=new Map([['alpha-agent-v1.38.0-operator-guide.zip',zip()],['alpha_factory_v1-1.38.0-py3-none-any.whl',Buffer.from('inert wheel')],
+    ['alpha-agent-v1.38.0-source.zip',Buffer.from('inert source archive')],['alpha_factory_v1-1.38.0.tar.gz',Buffer.from('inert sdist')],
+    ['requirements-agent.lock',Buffer.from('inert lock')],['model.bin',Buffer.from('inert model')]]);
+  for(const kind of ['browser','site'])payloads.set(kind+'-packs.json',Buffer.from(JSON.stringify({schema:'agialpha.release-packs.v1',
+    commit:pin.commit,version:'1.38.0',files:[],packs:[{name:'model.bin',bytes:payloads.get('model.bin').length,sha256:Q.hash(payloads.get('model.bin'))}]})));
+  const manifest={repository:'MontrealAI/AGI-Alpha-Agent-v0',commit:pin.commit,version:'1.38.0',
+    workflow_run:'https://github.com/MontrealAI/AGI-Alpha-Agent-v0/actions/runs/9',maximum_asset_bytes:Q.ALPHA_ASSET_MAX_BYTES,
+    historical_ci:{commit:pin.commit,repository:'MontrealAI/AGI-Alpha-Agent-v0',ref:'refs/heads/main',required:true},
+    distributions:Object.fromEntries(['browser','site'].map(kind=>[kind,{manifest:kind+'-packs.json',packs:1,files:0}]))};
   const records={
     ['git/commits/'+pin.commit]:{sha:pin.commit,tree:{sha:pin.tree}},
     'git/ref/heads/main':{object:{sha:'f'.repeat(40)}},
     ['compare/'+pin.commit+'...'+'f'.repeat(40)]:{status:'ahead',behind_by:0,base_commit:{sha:pin.commit}},
-    'releases/tags/alpha-agent-v1.38.0':{id:8,tag_name:'alpha-agent-v1.38.0',draft:false,published_at:'2026-10-22T01:00:00Z'},
-    'git/ref/tags/alpha-agent-v1.38.0':{object:{type:'tag',sha:'1'.repeat(40)}},
+    'releases/tags/v1.38.0':{id:8,tag_name:'v1.38.0',draft:false,prerelease:false,published_at:'2026-10-22T01:00:00Z'},
+    'git/ref/tags/v1.38.0':{object:{type:'tag',sha:'1'.repeat(40)}},
     ['git/tags/'+'1'.repeat(40)]:{object:{type:'commit',sha:pin.commit}},
     'actions/runs/9':{id:9,run_attempt:1,repository:{full_name:'MontrealAI/AGI-Alpha-Agent-v0'},path:'.github/workflows/agent-release.yml',
       head_sha:pin.commit,head_branch:'main',event:'push',status:'completed',conclusion:'success'},
   };
-  const api=async route=>{assert.ok(!route.startsWith('contents/')&&!route.startsWith('git/blobs/'));return structuredClone(records[route]);};
-  const authenticatedCatalog={raw:catalog,sha256:Q.hash(catalog)};
-  assert.equal((await Q.verifyAlphaPublication(api,qualification,pin,authenticatedCatalog)).sourceIsOfficialMainAncestor,true);
-  await assert.rejects(Q.verifyAlphaPublication(api,qualification,pin,{...authenticatedCatalog,sha256:'f'.repeat(64)}),/catalog differs/);
+  const calls=[],apiCalls=[];
+  const refresh=({manifestInventory=true,manifestRaw}={})=>{
+    if(manifestInventory)manifest.assets=[...payloads].filter(([name])=>!['release-manifest.json','SHA256SUMS'].includes(name))
+      .map(([name,raw])=>({name,bytes:raw.length,sha256:Q.hash(raw)}));
+    payloads.set('release-manifest.json',manifestRaw||Buffer.from(JSON.stringify(manifest)));
+    payloads.set('SHA256SUMS',Buffer.from([...payloads].filter(([name])=>name!=='SHA256SUMS').sort(([a],[b])=>a.localeCompare(b))
+      .map(([name,raw])=>Q.hash(raw)+'  '+name).join('\n')+'\n'));
+    const assets=[...payloads].sort(([a],[b])=>a.localeCompare(b)).map(([name,raw],index)=>({id:index+20,name,size:raw.length,
+      state:'uploaded',digest:'sha256:'+Q.hash(raw),browser_download_url:'https://github.com/MontrealAI/AGI-Alpha-Agent-v0/releases/download/v1.38.0/'+name}));
+    records['releases/8/assets?per_page=100&page=1']=assets;records['releases/tags/v1.38.0'].assets=assets;
+  };
+  refresh();
+  const api=async route=>{apiCalls.push(route);assert.ok(!route.startsWith('contents/')&&!route.startsWith('git/blobs/'));assert.ok(records[route],route);return structuredClone(records[route]);};
+  const fixture={pin,qualification,records,payloads,manifest,entries,zip,refresh,calls,apiCalls,api};
+  const fetcher=async(url,options)=>{
+    assert.equal(options.redirect,'manual');assert.equal(options.headers.Authorization,undefined);assert.equal(options.headers['Accept-Encoding'],'identity');
+    const name=decodeURIComponent(new URL(url).pathname.split('/').at(-1));calls.push(name);assert.ok(payloads.has(name));
+    const raw=fixture.transportFault?.(name,payloads.get(name))||payloads.get(name);
+    fixture.afterDownload?.(name);return new Response(raw,{headers:{'content-length':String(raw.length)}});
+  };
+  fixture.assetOptions={readAsset:(asset,options)=>Q.readPublicAlphaAsset(asset,{...options,fetcher})};
+  fixture.authenticatedCatalog={raw:catalog,sha256:Q.hash(catalog)};
+  fixture.verify=()=>Q.verifyAlphaPublication(api,qualification,pin,fixture.authenticatedCatalog,fixture.assetOptions);
+  return fixture;
+}
+test('actual public Alpha qualification must bind released tag, exactmain run and downloaded catalog source',async()=>{
+  const f=alphaPublicationFixture(),{api,qualification,pin,authenticatedCatalog,assetOptions,records}=f;
+  const proof=await f.verify();
+  assert.equal(proof.sourceIsOfficialMainAncestor,true);assert.equal(proof.publicAssets.allPublicAssetsDownloaded,true);
+  assert.equal(proof.publicAssets.assetCount,f.payloads.size);assert.equal(proof.publicAssets.operatorGuide.sourceInputs,41);
+  assert.deepEqual(f.calls.sort(),[...f.payloads.keys()].sort());
+  assert.equal(f.apiCalls.filter(route=>route==='releases/8/assets?per_page=100&page=1').length,2);
+  assert.equal(f.apiCalls.filter(route=>route==='actions/runs/9').length,2);
+  await assert.rejects(Q.verifyAlphaPublication(api,qualification,pin,{...authenticatedCatalog,sha256:'f'.repeat(64)},assetOptions),/catalog differs/);
   records['actions/runs/9'].conclusion='failure';
-  await assert.rejects(Q.verifyAlphaPublication(api,qualification,pin,authenticatedCatalog));
+  await assert.rejects(f.verify());
   records['actions/runs/9'].conclusion='success';records['git/tags/'+'1'.repeat(40)].object.sha='f'.repeat(40);
-  await assert.rejects(Q.verifyAlphaPublication(api,qualification,pin,authenticatedCatalog));
+  await assert.rejects(f.verify());
+});
+test('public Alpha acceptance rejects missing, corrupted, extra and incomplete public bytes',async()=>{
+  {const f=alphaPublicationFixture();f.transportFault=(name,raw)=>name==='model.bin'?Buffer.alloc(raw.length,88):raw;
+    await assert.rejects(f.verify(),/digest differs/);}
+  {const f=alphaPublicationFixture();f.records['releases/8/assets?per_page=100&page=1']=f.records['releases/8/assets?per_page=100&page=1'].filter(a=>a.name!=='requirements-agent.lock');
+    await assert.rejects(f.verify(),/inventory differ/);}
+  {const f=alphaPublicationFixture();f.manifest.assets.pop();f.refresh({manifestInventory:false});
+    await assert.rejects(f.verify(),/manifest inventory/);}
+  {const f=alphaPublicationFixture();f.payloads.set('extra.bin',Buffer.from('not in manifest'));f.refresh({manifestInventory:false});
+    await assert.rejects(f.verify(),/manifest inventory/);}
+});
+test('public Alpha cannot qualify a self-consistent inventory missing software or historical qualification',async()=>{
+  for(const name of ['requirements-agent.lock','alpha-agent-v1.38.0-source.zip','alpha_factory_v1-1.38.0.tar.gz','alpha_factory_v1-1.38.0-py3-none-any.whl']) {
+    const f=alphaPublicationFixture();f.payloads.delete(name);f.refresh();await assert.rejects(f.verify(),/software asset|wheel is required/);
+  }
+  for(const change of [{commit:'f'.repeat(40)},{repository:'another/repository'},{ref:'refs/heads/feature'},{required:false}]) {
+    const f=alphaPublicationFixture();Object.assign(f.manifest.historical_ci,change);f.refresh();await assert.rejects(f.verify(),/historical qualification/);
+  }
+});
+test('public Alpha source manifest, operator source map and raw catalog/source bodies are all bound',async()=>{
+  for(const change of [{commit:'f'.repeat(40)},{workflow_run:'https://github.com/MontrealAI/AGI-Alpha-Agent-v0/actions/runs/10'},{version:'1.39.0'}]) {
+    const f=alphaPublicationFixture();Object.assign(f.manifest,change);f.refresh();await assert.rejects(f.verify());
+  }
+  {const f=alphaPublicationFixture();f.entries.find(([name])=>name==='capability/inert/0.json')[1]='changed';
+    f.payloads.set('alpha-agent-v1.38.0-operator-guide.zip',f.zip());f.refresh();await assert.rejects(f.verify(),/operator source input/);}
+  {const f=alphaPublicationFixture();f.entries.find(([name])=>name==='capability/docs/successor/capabilities/sources.json')[1]='{}';
+    f.payloads.set('alpha-agent-v1.38.0-operator-guide.zip',f.zip());f.refresh();await assert.rejects(f.verify(),/operator catalog differs/);}
+});
+test('public Alpha metadata accepts original Python Unicode spelling and rejects duplicate decoded fields',async()=>{
+  {const f=alphaPublicationFixture();f.manifest.description='valid é';f.refresh();
+    const raw=Buffer.from(f.payloads.get('release-manifest.json').toString().replace('é','\\u00e9'));
+    f.refresh({manifestInventory:false,manifestRaw:raw});assert.equal((await f.verify()).publicAssets.sourceManifestSha256,Q.hash(raw));}
+  {const f=alphaPublicationFixture(),raw=Buffer.from(f.payloads.get('release-manifest.json').toString().replace('{"repository":','{"repository":"duplicate","repository":'));
+    f.refresh({manifestInventory:false,manifestRaw:raw});await assert.rejects(f.verify(),/Duplicate public Alpha JSON field/);}
+});
+test('public Alpha leases are re-read after downloads and source never uses cached public-release metadata',async()=>{
+  {const f=alphaPublicationFixture();f.afterDownload=name=>{if(name==='model.bin')f.records['actions/runs/9'].run_attempt=2;};await assert.rejects(f.verify(),/producer changed/);}
+  {const f=alphaPublicationFixture();f.afterDownload=name=>{if(name==='model.bin')f.records['git/tags/'+'1'.repeat(40)].object.sha='f'.repeat(40);};await assert.rejects(f.verify(),/tag changed/);}
+  {const f=alphaPublicationFixture();f.afterDownload=name=>{if(name==='model.bin')f.records['releases/8/assets?per_page=100&page=1'][0].digest='sha256:'+'f'.repeat(64);};await assert.rejects(f.verify(),/assets changed/);}
+  {const f=alphaPublicationFixture();f.afterDownload=name=>{if(name==='model.bin') {
+    f.records['git/ref/heads/main'].object.sha='9'.repeat(40);
+    f.records['compare/'+f.pin.commit+'...'+'9'.repeat(40)]={status:'diverged',behind_by:1,base_commit:{sha:f.pin.commit}};
+  }};await assert.rejects(f.verify(),/left official main ancestry/);}
+  {const f=alphaPublicationFixture();f.afterDownload=name=>{if(name==='model.bin') {
+    f.records['git/ref/heads/main'].object.sha='9'.repeat(40);
+    f.records['compare/'+f.pin.commit+'...'+'9'.repeat(40)]={status:'ahead',behind_by:0,base_commit:{sha:f.pin.commit}};
+  }};assert.equal((await f.verify()).officialMain,'9'.repeat(40));}
+  const code=fs.readFileSync(path.join(__dirname,'discovery-installed-qualification.cjs'),'utf8');
+  assert.ok(code.includes('verifyAlphaPublication(alphaReleaseApi,record.alphaQualification'));
+  assert.ok(code.includes('alphaReleaseApi=options.alphaApi||liveApi(process.env.GH_TOKEN,ALPHA_REPOSITORY)'));
+});
+test('public Alpha release host boundary permits450MB and larger assets without requiring immutability',()=>{
+  const f=alphaPublicationFixture(),base=f.records['releases/8/assets?per_page=100&page=1'][0];
+  for(const size of [450_000_000,450_000_001,Q.ALPHA_ASSET_MAX_BYTES])assert.equal(Q.alphaPublicAssetIdentity({...base,size},'v1.38.0').size,size);
+  for(const size of [false,-1,Q.ALPHA_ASSET_MAX_BYTES+1])assert.throws(()=>Q.alphaPublicAssetIdentity({...base,size},'v1.38.0'));
+  assert.equal(Object.hasOwn(f.records['releases/tags/v1.38.0'],'immutable'),false);
+});
+test('public Alpha stream rejects truncated/overflow/HTML bytes and redirects outside release hosting',async()=>{
+  const raw=Buffer.from('known public asset'),asset={id:1,name:'asset.bin',size:raw.length,digest:'sha256:'+Q.hash(raw),url:'https://github.com/MontrealAI/AGI-Alpha-Agent-v0/releases/download/v1.38.0/asset.bin'};
+  const read=fetcher=>Q.readPublicAlphaAsset(asset,{fetcher});
+  assert.equal((await read(async()=>new Response(raw))).sha256,Q.hash(raw));
+  await assert.rejects(read(async()=>new Response(raw.subarray(1))),/truncated/);
+  await assert.rejects(read(async()=>new Response(Buffer.concat([raw,Buffer.from('x')]))),/exceeded/);
+  await assert.rejects(read(async()=>new Response(Buffer.alloc(raw.length,60))),/digest differs/);
+  let requests=0;
+  await assert.rejects(read(async()=>{requests++;return new Response(null,{status:302,headers:{location:'https://example.invalid/asset'}});}),/left GitHub/);
+  assert.equal(requests,1);
+  let calls=0;
+  const proof=await read(async(url,options)=>{
+    assert.equal(options.headers.Authorization,undefined);calls++;
+    return calls===1?new Response(null,{status:302,headers:{location:'https://release-assets.githubusercontent.com/public/file?opaque=public'}}):new Response(raw);
+  });
+  assert.equal(proof.authorizationHeaderSent,false);assert.equal(calls,2);
 });
 test('rc17 and rc18 applicability retains the original suite and admits no unknown or false version',()=>{
   const dispatch=require('./discovery-installed-release-dispatch.cjs');

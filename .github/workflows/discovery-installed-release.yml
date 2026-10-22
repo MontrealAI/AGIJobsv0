@@ -179,11 +179,14 @@ jobs:
           const base = process.env.RUNNER_TEMP + '/';
           const custody = JSON.parse(fs.readFileSync(base + 'discovery-saved-producer/jobs-discovery-installed.tar.gz.custody.json','utf8'));
           assert.match(custody.installedManifestSha256,/^[a-f0-9]{64}$/);
+          assert.match(custody.archiveSha256,/^[a-f0-9]{64}$/);
+          assert.ok(Number.isSafeInteger(custody.archiveBytes) && custody.archiveBytes > 0 && custody.archiveBytes <= 20000000);
           cp.execFileSync(process.execPath,[base + 'discovery-installed/integrations/alpha-agent/discovery-installed-operator.mjs',
-            'status',base + 'discovery-installed',custody.installedManifestSha256],{stdio:'inherit'});
+            'status',base + 'discovery-installed',custody.installedManifestSha256,custody.archiveSha256,String(custody.archiveBytes)],{stdio:'inherit'});
           fs.mkdirSync(base + 'discovery-native-evidence',{recursive:true});
           cp.execFileSync(process.execPath,[base + 'discovery-installed/integrations/alpha-agent/discovery-installed-native.mjs',
             '--installed-root',base + 'discovery-installed','--manifest-sha256',custody.installedManifestSha256,
+            '--archive-sha256',custody.archiveSha256,'--archive-bytes',String(custody.archiveBytes),
             '--output',base + 'discovery-native-evidence/native-evidence.json',
             '--workspace',base + 'discovery-saved-producer/browser-inputs/workspace.json',
             '--request',base + 'discovery-saved-producer/browser-inputs/request.txt'],{stdio:'inherit'});
