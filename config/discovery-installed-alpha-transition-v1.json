@@ -1,9 +1,14 @@
 {
   "schema": "agijobsv0/discovery-alpha-pin-transition/v1",
-  "status": "UNSET_PENDING_REVIEW",
+  "status": "REVIEWED_PIN_PROPOSAL",
   "fromPinSha256": "01e32d5283b6858c977659701ab32c24a846b502adf1d1363c9f066d633e9207",
-  "toPinSha256": null,
-  "reviewSha256": null,
-  "reviewRaw": null,
-  "fromSource": null
+  "toPinSha256": "7b6ac047905dc27da219cb2608a92b590380bb2781d155afe15734af1173b0f3",
+  "reviewSha256": "cd3966b4c547e890b1e2a7a2b1d9201ee89265f66595f98ead959cc952fabeee",
+  "reviewRaw": "{\n  \"schema\": \"agijobsv0/discovery-alpha-source-review/v1\",\n  \"repository\": \"MontrealAI/AGI-Alpha-Agent-v0\",\n  \"decision\": \"ACCEPTED_FOR_INSTALLED_SOURCE\",\n  \"commit\": \"61532fb82621a065e668fd11e57289dcfb65c67b\",\n  \"tree\": \"7814d1bd9dcd3845b349590e0bcac57ba93b3167\",\n  \"sourceHash\": \"644258ac21cc938aff861d02ad728e8f3c9716f6ea78700acc35e4d7400eebf2\",\n  \"catalogSha256\": \"9cddd00ed38a3500efeaac8977bf3db46363face0cfe56e713ec91750662e09a\",\n  \"evidence\": [\n    \"https://github.com/MontrealAI/AGI-Alpha-Agent-v0/pull/4867#issuecomment-6349682216\",\n    \"https://github.com/MontrealAI/AGI-Alpha-Agent-v0/actions/runs/39841271826\"\n  ],\n  \"publicationApproved\": false,\n  \"installedCompatibilityAccepted\": false,\n  \"externalExecution\": \"unprovisioned\"\n}\n",
+  "fromSource": {
+    "tree": "b0829a924c3a1cc9df299f78d72853594178c327",
+    "manifestSha256": "4e59bebfb3b2d09589e340f36341047e38d7d9c6861a7b5cd0b5875f8f4b5279",
+    "verifierSha256": "a218a60ec306b9e4176141c915de8e0c51c4736ca3a0b467e6c4d7f994232508",
+    "scopeVerifierSha256": "d7a657aedea6a5033a1b7e3777610c0f02b17b6f0b0274dc413a4aa3e0360efb"
+  }
 }

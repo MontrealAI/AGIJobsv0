@@ -1,30 +1,89 @@
 {
   "schema": "manager/discovery-browser-input-artifact/v1",
-  "state": "UNSET_PENDING_AUTHENTICATED_ALPHA_ARTIFACT",
+  "state": "REVIEWED_AUTHENTICATED_ALPHA_ARTIFACT",
   "repository": "MontrealAI/AGI-Alpha-Agent-v0",
   "workflowPath": ".github/workflows/successor-capability.yml",
-  "producer": null,
-  "artifact": null,
-  "sourceHash": null,
-  "pageSha256": null,
-  "catalogSha256": null,
-  "inventorySha256": null,
-  "members": {
-    "discovery-continuation/browser-native-requests.json": null,
-    "discovery-continuation/fleet-browser-request.json": null,
-    "discovery-continuation/fleet-browser-workspace.json": null,
-    "discovery-continuation/fleet-native/native-proof.json": null,
-    "discovery-continuation/jobs-browser-request.json": null,
-    "discovery-continuation/jobs-browser-workspace.json": null,
-    "discovery-continuation/journey.json": null,
-    "discovery-continuation/served/index.html": null,
-    "discovery-continuation/served/sources.json": null,
-    "exact-checkout.json": null,
-    "source.json": null
+  "producer": {
+    "checkoutCommit": "61532fb82621a065e668fd11e57289dcfb65c67b",
+    "checkoutParents": [
+      "2b92933a5e3955440be770362acc18f06abf1708",
+      "68c8ab81e97544168f58568ed6dbb3d216b39929"
+    ],
+    "checkoutTree": "7814d1bd9dcd3845b349590e0bcac57ba93b3167",
+    "event": "push",
+    "headBranch": "main",
+    "headCommit": "61532fb82621a065e668fd11e57289dcfb65c67b",
+    "runAttempt": 1,
+    "runId": 39841271826,
+    "workflowId": 391067735
   },
-  "campaignDigest": null,
-  "missionId": null,
-  "workspaceSha256": null,
-  "requestSha256": null,
-  "transport": null
+  "artifact": {
+    "digest": "sha256:3f5dda52ed2833b00b38608894b6a640d931f08f4d27904362fff794b8ada8f4",
+    "id": 12453756312,
+    "name": "successor-capability-61532fb82621a065e668fd11e57289dcfb65c67b",
+    "sizeInBytes": 29381858
+  },
+  "sourceHash": "644258ac21cc938aff861d02ad728e8f3c9716f6ea78700acc35e4d7400eebf2",
+  "pageSha256": "7ce110be53cf4c699984c0cfd20e0e7d7434c463a676fe1dfb9498589e5319d3",
+  "catalogSha256": "9cddd00ed38a3500efeaac8977bf3db46363face0cfe56e713ec91750662e09a",
+  "inventorySha256": "bc26dbbb451833d24b0319bac777c403ec4cbcd0c76e2ae245df3d634c184740",
+  "members": {
+    "discovery-continuation/browser-native-requests.json": {
+      "bytes": 1882,
+      "sha256": "b2d2c2a799f33ef1c363a5d46d91cca22730cd2680ddd3448de65766092e02eb"
+    },
+    "discovery-continuation/fleet-browser-request.json": {
+      "bytes": 93994,
+      "sha256": "8690f513fb8b576350f34d6f229984513d7a044547246c6b63d0fcd20f7d403c"
+    },
+    "discovery-continuation/fleet-browser-workspace.json": {
+      "bytes": 109736,
+      "sha256": "5203d4472972b959a135d8d062999d357dcc1aff84f3158a2cb2c950a1a5ee03"
+    },
+    "discovery-continuation/fleet-native/native-proof.json": {
+      "bytes": 7041,
+      "sha256": "ef1378fb34a64060a7bff113ec46af3f67e98d0f3f0d11aaa5d4059a07de6fbb"
+    },
+    "discovery-continuation/jobs-browser-request.json": {
+      "bytes": 94004,
+      "sha256": "d13ca8f286284a1079cdd63dbc05d73a09f0ac1261a85fdf371d4548fc893962"
+    },
+    "discovery-continuation/jobs-browser-workspace.json": {
+      "bytes": 109736,
+      "sha256": "5203d4472972b959a135d8d062999d357dcc1aff84f3158a2cb2c950a1a5ee03"
+    },
+    "discovery-continuation/journey.json": {
+      "bytes": 9069,
+      "sha256": "a27c423d3c3bbb3f95360805aa6e1dbe8c15dee82e0ade00c71c55ba19e0209e"
+    },
+    "discovery-continuation/served/index.html": {
+      "bytes": 782569,
+      "sha256": "7ce110be53cf4c699984c0cfd20e0e7d7434c463a676fe1dfb9498589e5319d3"
+    },
+    "discovery-continuation/served/sources.json": {
+      "bytes": 5416,
+      "sha256": "9cddd00ed38a3500efeaac8977bf3db46363face0cfe56e713ec91750662e09a"
+    },
+    "exact-checkout.json": {
+      "bytes": 10915,
+      "sha256": "181ac2c64108842dabdb1623c7b691ac60c6642de8ac86699d3ff018aa5af870"
+    },
+    "source.json": {
+      "bytes": 5600,
+      "sha256": "14cad34eb9a93d5fb3ec78d15799d265afd27949255f0818aabe3c3ea48f309b"
+    }
+  },
+  "campaignDigest": "670e121f438be0528083e358f3737eabfb5109c8f7e011befd62cd80cdc3701b",
+  "missionId": "capability-9d434c16-dfdc-477e-a8eb-d06070eab8bf",
+  "workspaceSha256": "5203d4472972b959a135d8d062999d357dcc1aff84f3158a2cb2c950a1a5ee03",
+  "requestSha256": "8690f513fb8b576350f34d6f229984513d7a044547246c6b63d0fcd20f7d403c",
+  "transport": {
+    "repository": "MontrealAI/AGI-Alpha-Agent-v0",
+    "commit": "e31e74d1a5144973e6a22006dbe29ea628a80386",
+    "tree": "60823a663933991dc5f703735577a40f07a7d3dc",
+    "path": "evidence/discovery-browser-inputs-v1/61532fb82621a065e668fd11e57289dcfb65c67b",
+    "custodySha256": "c27e9c5f113d2a407ec4499c6ddb7cd922460bfaa873b8426f4c32f01281f6c6",
+    "custodyBytes": 42746,
+    "custodyGitBlob": "04905c565fc36ae99effd65567b44848bafc8692"
+  }
 }

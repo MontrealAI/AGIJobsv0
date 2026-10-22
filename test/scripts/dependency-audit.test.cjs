@@ -158,3 +158,33 @@ test('production publication requires the audit and retains failures without wea
   assert.match(upload.if, /always\(\)/);
   assert.equal(upload.with['if-no-files-found'], 'error');
 });
+
+test('CULTURE dependency inputs select the existing strict all-lock qualification', () => {
+  const workflow = yaml.load(
+    fs.readFileSync(
+      path.resolve(__dirname, '../../.github/workflows/dependency-repair.yml'),
+      'utf8'
+    )
+  );
+  const selectedPaths = workflow.on.pull_request.paths;
+  for (const name of [
+    'demo/CULTURE-v0/indexers/culture-graph-indexer/package.json',
+    'demo/CULTURE-v0/indexers/culture-graph-indexer/package-lock.json',
+    'demo/CULTURE-v0/pnpm-lock.yaml',
+  ]) {
+    assert.equal(selectedPaths.filter((item) => item === name).length, 1);
+  }
+  const job = workflow.jobs.compatibility;
+  assert.ok(job.strategy.matrix.surface.includes('production-audit'));
+  const checkout = job.steps.find((step) =>
+    step.uses?.startsWith('actions/checkout@')
+  );
+  assert.equal(checkout.with.ref, '${{ github.event.pull_request.head.sha }}');
+  const audit = job.steps.find((step) => step.env?.SURFACE);
+  assert.match(
+    audit.run,
+    /run_check all-locks npm run release:audit-dependencies/
+  );
+  assert.equal(audit['continue-on-error'], undefined);
+  assert.equal(job['continue-on-error'], undefined);
+});
