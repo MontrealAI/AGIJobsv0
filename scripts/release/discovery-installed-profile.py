@@ -273,15 +273,13 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                                             'controls through the '
                                                                             'prerequisite merge'},
  'package-lock.json': {'after': {'mode': '100644',
-                                 'sha256': 'd0cbf0ae222ba683900aa8dcf8a2954dc45e1e6dabcbf993d13ca55636474dec'},
+                                 'sha256': 'bac9b147a450bf1da8bbfa7295f0dfa202d0b795698401268bbacb577c7af0b9'},
                        'before': {'blob': '49676e6284cfb6aee1e953338e702b55fc01b3be', 'mode': '100644'},
-                       'reason': 'Select proposed rc18 metadata for the separate installed edition without '
-                                 'changing dependencies'},
+                       'reason': 'Preserve proposed rc18 metadata and patch only Next15.5.27 to15.5.28 for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r while preserving the seven protected contract/compiler dependency identities'},
  'package.json': {'after': {'mode': '100644',
-                            'sha256': '14e369adcc74ff127a4bce92268b5f9e26c054f05d83960ca56b7e9edbbc9094'},
+                            'sha256': '9ea637ad7657f01621e9a3a9666a99cda60ffdfa4a0338533391e9d13599d1e0'},
                   'before': {'blob': 'd69a25b422673d9cb130be61fb45a9f4977317c9', 'mode': '100644'},
-                  'reason': 'Select proposed rc18 metadata for the separate installed edition without '
-                            'changing dependencies'},
+                  'reason': 'Preserve proposed rc18 metadata and patch only Next15.5.27 to15.5.28 for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r while preserving the seven protected contract/compiler dependency identities'},
  'scripts/release/capture-discovery-browser-input.cjs': {'after': {'mode': '100644',
                                                                    'sha256': '170ef450c718e6a54719a970939d68a3b46b443adb017eadf15e35ab6c7adcfe'},
                                                          'before': None,
@@ -393,7 +391,7 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                                 'finite source-only controls through the '
                                                                 'prerequisite merge'},
  'tools/security/discovery-installed-protected-scope.test.mjs': {'after': {'mode': '100644',
-                                                                           'sha256': '5565e8b7b6061d41ffdef0797abcf1ae3666fa69d22f54edfea7ccc36a02c22f'},
+                                                                           'sha256': 'd3c8d813e5f51d7d3d340ae2e5745d4f877f5bcf07fc0d01189df8938a7d5af5'},
                                                                  'before': None,
                                                                  'reason': 'Add separate complete '
                                                                            'committed-source scanner scope '
@@ -414,14 +412,68 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                               'scanner scope for the installed edition '
                                                               'without weakening historical scope'},
  'scripts/security/check-dependency-preservation.cjs': {'after': {'mode': '100644',
-                                                                  'sha256': '74cbf3ad57ddd0535fb00ddbd939a61617a95b613f0eb312cd5c1c1c5ec596ef'},
+                                                                  'sha256': 'df0cee794f2e6601019e939508b497923f461dc8515cc86aadd9ed3c2e898734'},
                                                         'before': {'blob': 'e697e1504a9649dfabfd8746a188bf66725f654b',
                                                                    'mode': '100644'},
                                                         'reason': 'Validate the exact installed '
                                                                   'edition through complete finite '
                                                                   'source proof while preserving '
                                                                   'dependency identities and '
-                                                                  'legacy source protection'}}
+                                                                  'legacy source protection'},
+ 'apps/enterprise-portal/package-lock.json': {'after': {'mode': '100644',
+                                                        'sha256': 'f8f6cfa0094d4581a628019f6eb4011519243a370031d8e7bc37eb02e40aea29'},
+                                              'before': {'blob': '85295a87f758c5c22a39fa7a77e499be71b06a5d',
+                                                         'mode': '100644'},
+                                              'reason': 'Patch the exact Next15.5.28 dependency '
+                                                        'graph for GHSA-2464-fhr4-w9xw and '
+                                                        'GHSA-p3m5-59mp-jv5r while preserving '
+                                                        'contract/compiler dependencies'},
+ 'apps/enterprise-portal/package.json': {'after': {'mode': '100644',
+                                                   'sha256': '83b3c0c65b527ff2b1f97f9ec20bb8fbe8a5f10a29f0fe338cc74dead921a476'},
+                                         'before': {'blob': '2629eb35c1a52eb90ccd0f7ade18c4705f079c31',
+                                                    'mode': '100644'},
+                                         'reason': 'Patch the exact Next15.5.28 dependency graph '
+                                                   'for GHSA-2464-fhr4-w9xw and '
+                                                   'GHSA-p3m5-59mp-jv5r while preserving '
+                                                   'contract/compiler dependencies'},
+ 'apps/onebox/package-lock.json': {'after': {'mode': '100644',
+                                             'sha256': 'afa21b271aa87d1e90e2ca888a6f37ba06061b38d450f0efa1004b63e7c83892'},
+                                   'before': {'blob': '0fbb3e3406f94cbc4a61721db924685bc8824644',
+                                              'mode': '100644'},
+                                   'reason': 'Patch the exact Next15.5.28 dependency graph for '
+                                             'GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r while '
+                                             'preserving contract/compiler dependencies'},
+ 'apps/onebox/package.json': {'after': {'mode': '100644',
+                                        'sha256': 'd3700df816d22e593a0ab53ae10b043c6aaa822f4ac8987ab81966c294d52a4f'},
+                              'before': {'blob': '97930338ea29bb0e273d4721d99d2c6b92f992c1',
+                                         'mode': '100644'},
+                              'reason': 'Patch the exact Next15.5.28 dependency graph for '
+                                        'GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r while '
+                                        'preserving contract/compiler dependencies'},
+ 'apps/validator-ui/package-lock.json': {'after': {'mode': '100644',
+                                                   'sha256': '4a24b40c41f884a98c863fc908b5ee1f9f22301994f29652cf5d45cab6c58363'},
+                                         'before': {'blob': 'a9226f713f46772dbd2ad8e83dba17c657dc50f3',
+                                                    'mode': '100644'},
+                                         'reason': 'Patch the exact Next15.5.28 dependency graph '
+                                                   'for GHSA-2464-fhr4-w9xw and '
+                                                   'GHSA-p3m5-59mp-jv5r while preserving '
+                                                   'contract/compiler dependencies'},
+ 'apps/validator-ui/package.json': {'after': {'mode': '100644',
+                                              'sha256': 'bde0a9c7113c0c85a731fca975eb610353da82f8eb3dbac4a093ea9402d50a11'},
+                                    'before': {'blob': '25389692413880af3d964ef79dc1994628c8f044',
+                                               'mode': '100644'},
+                                    'reason': 'Patch the exact Next15.5.28 dependency graph for '
+                                              'GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r while '
+                                              'preserving contract/compiler dependencies'},
+ 'scripts/security/test/dependency-preservation.test.cjs': {'after': {'mode': '100644',
+                                                                      'sha256': '1fd3d3bc825a3f1532504b65a660283bcf1a850cf8422a6a0cdc1d5a78015b02'},
+                                                            'before': {'blob': '3d0fd583d31bbb9c39c061326f845e1520346c43',
+                                                                       'mode': '100644'},
+                                                            'reason': 'Prove exact committed '
+                                                                      'source separately from '
+                                                                      'reproduced generated '
+                                                                      'outputs and reject '
+                                                                      'unrelated tracked drift'}}
 # END FIXED DISCOVERY INSTALLED DELTA
 DENIALS = {'releaseQualified': False, 'publicationApproved': False,
            'executionApproved': False, 'settlementApproved': False}
