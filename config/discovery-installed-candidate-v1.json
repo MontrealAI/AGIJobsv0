@@ -598,9 +598,9 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "7f52b2cfa962332fdf532e00a0e103be1c7ea25c9a22a26fabfd2a505fd7c48c"
+        "sha256": "3e9ee393990f8eab58714489c9f77ef40d27497823794c8738bdbef6752c4aa6"
       },
-      "reason": "Retain exact-head all22 production audit, CULTURE path triggers, compatibility surfaces, thresholds and failed-command retention; write only workflow harness evidence to owned runner scratch, read both audit JSON outputs there and stage original artifact-relative report/SBOM/screenshot paths outside authenticated source; execute existing audit regression file in the library surface without filtering generated-source or weakening any guard"
+      "reason": "Preserve exact-head all22 production audit, CULTURE triggers, compatibility surfaces, thresholds and failed-command retention; retain harness evidence and disposable local deployment report/journal under owned runner scratch with original report/SBOM/screenshot artifact paths; scope existing DEPLOY_DEFAULTS_OUTPUT to local-deploy only and retain complete unfiltered Git mutation status before the unchanged generated-source comparator"
     },
     "test/scripts/dependency-audit.test.cjs": {
       "before": {
@@ -609,9 +609,9 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "4f892ed1a5b519bf72b6bd0e71dda79052bcb5c355809790559d4ba27f337a7a"
+        "sha256": "bed697ed769babda71332707fccfe435a425db8345beccb9a0cfe644ecde4f8c"
       },
-      "reason": "Retain all7 strict audit and CULTURE workflow test bodies; add two ordinary inert harness/reader cases proving scratch-only output, positive and failed log retention, unchanged logical artifact paths, mandatory source/generated commands and severity/error refusal, without claiming local execution or release approval"
+      "reason": "Retain all9 preceding strict audit, CULTURE, harness and reader test bodies; append one ordinary owned fixture proving the actual scoped deployment-output command retains both report and journal for success and exit7, does not write checkout reports or leak the output variable, and preserves every unfiltered owned mutation path; current-source hosted qualification remains separately required"
     },
     "test/scripts/discovery-installed-dependency-preservation.test.cjs": {
       "before": null,

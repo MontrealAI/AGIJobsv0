@@ -57,7 +57,8 @@ jobs:
         run: |
           set +e
           set -uo pipefail
-          evidence="$RUNNER_TEMP/dependency-repair-$SURFACE/reports/dependency-repair-$SURFACE"
+          artifact_root="$RUNNER_TEMP/dependency-repair-$SURFACE"
+          evidence="$artifact_root/reports/dependency-repair-$SURFACE"
           mkdir -p "$evidence"
           failed=0
           run_check() {
@@ -83,8 +84,9 @@ jobs:
             contracts)
               if run_check compile npm run compile; then
                 run_check size npm run release:check-size
-                run_check local-deploy npm run deploy:local
+                run_check local-deploy env DEPLOY_DEFAULTS_OUTPUT="$artifact_root/reports/deployment-hardhat.json" npm run deploy:local
                 run_check deployer-tests npx --no-install hardhat test --no-compile test/v2/Deployer.test.js test/v2/DeploymentScripts.test.js test/v2/DeploymentCli.test.js
+                run_check generated-source-status git status --porcelain=v1 --untracked-files=all
                 run_check generated-preservation node scripts/security/check-dependency-preservation.cjs generated
               fi
               ;;

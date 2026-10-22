@@ -254,3 +254,57 @@ test('audit readers consume exact scratch JSON while retaining severity and malf
     }
   }
 });
+
+test('local deployment evidence and journal stay in scratch with complete mutation evidence and scoped output', (t) => {
+  const workflow = yaml.load(fs.readFileSync(path.resolve(__dirname, '../../.github/workflows/dependency-repair.yml'), 'utf8'));
+  const run = workflow.jobs.compatibility.steps.find((step) => step.env?.SURFACE).run;
+  const local = run.split('\n').find((line) => line.includes('run_check local-deploy '));
+  const status = run.split('\n').find((line) => line.includes('run_check generated-source-status '));
+  assert.equal(local.trim(), 'run_check local-deploy env DEPLOY_DEFAULTS_OUTPUT="$artifact_root/reports/deployment-hardhat.json" npm run deploy:local');
+  assert.equal(status.trim(), 'run_check generated-source-status git status --porcelain=v1 --untracked-files=all');
+  assert.ok(run.indexOf(status) < run.indexOf('run_check generated-preservation'));
+  const harness = run.slice(0, run.indexOf('run_check source-preservation'));
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'dependency-local-output-owned-'));
+  t.after(() => fs.rmSync(folder, { recursive: true, force: true }));
+  const bin = path.join(folder, 'bin');
+  fs.mkdirSync(bin);
+  fs.writeFileSync(path.join(bin, 'npm'), '#!/usr/bin/env node\n' + [
+    "const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict');",
+    "assert.deepEqual(process.argv.slice(2), ['run', 'deploy:local']);",
+    "const output = process.env.DEPLOY_DEFAULTS_OUTPUT;",
+    "assert.equal(output, path.join(process.env.EXPECTED_ARTIFACT_ROOT, 'reports/deployment-hardhat.json'));",
+    "fs.writeFileSync(output, JSON.stringify({scope:'owned disposable deployment'}), {flag:'wx'});",
+    "fs.writeFileSync(output + '.journal.jsonl', JSON.stringify({scope:'owned retained journal'}) + '\\n', {flag:'wx'});",
+    "process.exit(process.env.OWNED_DEPLOY_FAIL === '1' ? 7 : 0);",
+  ].join('\n') + '\n', { mode: 0o755 });
+  for (const fail of [false, true]) {
+    const root = path.join(folder, fail ? 'failed-checkout' : 'passed-checkout');
+    const runnerTemp = path.join(folder, fail ? 'failed-runner' : 'passed-runner');
+    fs.mkdirSync(root); fs.mkdirSync(runnerTemp);
+    const env = { ...process.env, PATH: bin + path.delimiter + process.env.PATH,
+      RUNNER_TEMP: runnerTemp, SURFACE: 'contracts', OWNED_NODE: process.execPath,
+      OWNED_DEPLOY_FAIL: fail ? '1' : '0',
+      EXPECTED_ARTIFACT_ROOT: path.join(runnerTemp, 'dependency-repair-contracts'),
+      GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null' };
+    delete env.DEPLOY_DEFAULTS_OUTPUT;
+    execFileSync('git', ['init', '--quiet', root], { env });
+    fs.writeFileSync(path.join(root, 'owned-source.txt'), 'owned source');
+    fs.mkdirSync(path.join(root, 'nested'));
+    fs.writeFileSync(path.join(root, 'nested/owned-extra.json'), '{}');
+    execFileSync('bash', ['-c', harness + '\n' + local + '\n' +
+      'actual_code=$?\n' +
+      'test "$actual_code" -eq ' + (fail ? 7 : 0) + ' && test "$failed" -eq ' + (fail ? 1 : 0) + ' || exit 97\n' +
+      status + '\n' +
+      'run_check owned-after "$OWNED_NODE" -e \'require("node:assert/strict").equal(process.env.DEPLOY_DEFAULTS_OUTPUT,undefined)\'\n'], { cwd: root, env });
+    const artifact = env.EXPECTED_ARTIFACT_ROOT;
+    assert.equal(JSON.parse(fs.readFileSync(path.join(artifact, 'reports/deployment-hardhat.json'), 'utf8')).scope, 'owned disposable deployment');
+    assert.equal(JSON.parse(fs.readFileSync(path.join(artifact, 'reports/deployment-hardhat.json.journal.jsonl'), 'utf8')).scope, 'owned retained journal');
+    const evidence = path.join(artifact, 'reports/dependency-repair-contracts');
+    assert.match(fs.readFileSync(path.join(evidence, 'exits.txt'), 'utf8'), new RegExp('local-deploy ' + (fail ? 7 : 0) + '\\n'));
+    const mutations = fs.readFileSync(path.join(evidence, 'generated-source-status.log'), 'utf8');
+    assert.match(mutations, /\?\? owned-source\.txt/);
+    assert.match(mutations, /\?\? nested\/owned-extra\.json/);
+    assert.equal(fs.existsSync(path.join(root, 'reports')), false);
+    assert.equal(fs.existsSync(path.join(evidence, 'owned-after.log')), true);
+  }
+});
