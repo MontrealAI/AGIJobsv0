@@ -49,7 +49,7 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                                      'retained mission evidence and release '
                                                                      'qualification'},
  '.github/workflows/discovery-installed-python-analysis.yml': {'after': {'mode': '100644',
-                                                                         'sha256': '43ea91b6a037ebcda101818a2d1a7079e4a4607b685a4142592fc955c0e69863'},
+                                                                         'sha256': '84f8c3dbc2ae03c26fc85d8d8f531e94fcec89e2cc4cf67f3df0010fd054b695'},
                                                                'before': None,
                                                                'reason': 'Implement separately gated '
                                                                          'source-bound installed archive, '
@@ -65,7 +65,7 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                                  'transition, operator, retained mission '
                                                                  'evidence and release qualification'},
  '.github/workflows/discovery-lab-receiver.yml': {'after': {'mode': '100644',
-                                                            'sha256': '1d745e792b5e3f167be5c5d00e5b94c4aaff5aedba576dc07d66ceeebe0271ff'},
+                                                            'sha256': '9552b1e35ca82b75e58ae1f53ecdcade4df919cd3df2c680280198e1c0f7b7fb'},
                                                   'before': None,
                                                   'reason': 'Preserve exact Discovery receiver and finite '
                                                             'source-only controls through the prerequisite '
@@ -304,7 +304,7 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                                      'fixtures without browser or native '
                                                                      'qualification claims'},
  'scripts/release/discovery-installed-package.py': {'after': {'mode': '100644',
-                                                              'sha256': 'dc90730221c301524c147d8a50ea1d2ca6b595b83ad1ec7e3f5d3b01db0bec82'},
+                                                              'sha256': '79e10f5181fc2240da9766174e724145371aaeab62d983343f13981f542173a5'},
                                                     'before': None,
                                                     'reason': 'Implement separately gated source-bound '
                                                               'installed archive, immutable Alpha '
@@ -353,7 +353,7 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                               'and independently authenticated standalone '
                                                               'bootstrap'},
  'scripts/release/publish-discovery-installed.cjs': {'after': {'mode': '100644',
-                                                               'sha256': '0bc9fd94e83317430adf5500867c40b44d8d813105969381f1affc94e24bfe89'},
+                                                               'sha256': '49b5fdb589e4498a5fa12bb5e1ffc4b0ed265acff9f6e34f8244934beebd4ce5'},
                                                      'before': None,
                                                      'reason': 'Implement separately gated source-bound '
                                                                'installed archive, immutable Alpha '
@@ -367,7 +367,7 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                                    'transition, operator, retained mission '
                                                                    'evidence and release qualification'},
  'scripts/release/test-discovery-installed-profile.py': {'after': {'mode': '100644',
-                                                                   'sha256': 'ade5fbf51d04793808eff5e858fa11ac2842d77af88d6a48dbecdc608ca76857'},
+                                                                   'sha256': '00788d5c5ee27570ac6e95b7f2805493e9f8c642b402285380f01703203e8177'},
                                                          'before': None,
                                                          'reason': 'Implement separately gated source-bound '
                                                                    'installed archive, immutable Alpha '
@@ -380,7 +380,7 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                              'source-only controls through the prerequisite '
                                                              'merge'},
  'test/scripts/hardhat-test-discovery.test.cjs': {'after': {'mode': '100644',
-                                                            'sha256': '67b50a18fb9d61785080a01518bac6377637763ed76b9a0cfff335729f37114a'},
+                                                            'sha256': 'dead1e8aed0c87c0664261d1ed7956fa5bff0c9949bafc7eedcb638cf28114d7'},
                                                   'before': {'blob': '491f41a628672b817995f4ef5e4a0959c80db940',
                                                              'mode': '100644'},
                                                   'reason': 'Preserve exact Discovery receiver and finite '
@@ -393,7 +393,7 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                                 'finite source-only controls through the '
                                                                 'prerequisite merge'},
  'tools/security/discovery-installed-protected-scope.test.mjs': {'after': {'mode': '100644',
-                                                                           'sha256': 'f3f3a12290e6ce7f96ea88085a1d2cd4ea3d6fb2a5632ebf94e1d079ba359972'},
+                                                                           'sha256': '5565e8b7b6061d41ffdef0797abcf1ae3666fa69d22f54edfea7ccc36a02c22f'},
                                                                  'before': None,
                                                                  'reason': 'Add separate complete '
                                                                            'committed-source scanner scope '
@@ -407,12 +407,21 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                             'source-only controls through the prerequisite '
                                                             'merge'},
  'tools/security/validate-codeql-remediation.mjs': {'after': {'mode': '100644',
-                                                              'sha256': '6bba9bb1bc39a7427f0b443261ae951b960003f558729ef6ab368cdc2a86450a'},
+                                                              'sha256': '77b77167117a6a6879c09778c4bd54c68b7bfbda9f5dce56b84e1a3ec8808758'},
                                                     'before': {'blob': '9657ecd2c072276276079e55fde51c5b66b8b37c',
                                                                'mode': '100644'},
                                                     'reason': 'Add separate complete committed-source '
                                                               'scanner scope for the installed edition '
-                                                              'without weakening historical scope'}}
+                                                              'without weakening historical scope'},
+ 'scripts/security/check-dependency-preservation.cjs': {'after': {'mode': '100644',
+                                                                  'sha256': '74cbf3ad57ddd0535fb00ddbd939a61617a95b613f0eb312cd5c1c1c5ec596ef'},
+                                                        'before': {'blob': 'e697e1504a9649dfabfd8746a188bf66725f654b',
+                                                                   'mode': '100644'},
+                                                        'reason': 'Validate the exact installed '
+                                                                  'edition through complete finite '
+                                                                  'source proof while preserving '
+                                                                  'dependency identities and '
+                                                                  'legacy source protection'}}
 # END FIXED DISCOVERY INSTALLED DELTA
 DENIALS = {'releaseQualified': False, 'publicationApproved': False,
            'executionApproved': False, 'settlementApproved': False}
@@ -676,7 +685,7 @@ def guard_git_metadata(root):
         if line.lstrip().startswith('['):
             require(re.fullmatch(r'\s*\[[^\]\r\n]+\]\s*(?:[;#].*)?', line) is not None,
                     'Inline or unsupported Git section framing is refused')
-        match = re.match(r'^\s*worktreeconfig(?:\s|=|[;#]|$)(.*)$', line, re.IGNORECASE)
+        match = re.match(r'^\s*worktreeconfig(?=\s|=|[;#]|$)', line, re.IGNORECASE)
         if match:
             tail = line.lstrip()[len('worktreeconfig'):].strip()
             require(tail.startswith('='), 'Bare worktreeConfig activates unsupported configuration')

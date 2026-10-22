@@ -90,7 +90,7 @@ async function publish(options,{api=apiClient(process.env.GH_TOKEN),command=gh}=
   assert.equal(process.env.GITHUB_REPOSITORY,Q.REPOSITORY);
   assert.equal(process.env.GITHUB_EVENT_NAME,'workflow_dispatch');assert.equal(process.env.GITHUB_REF,'refs/heads/main');
   assert.equal(process.env.GITHUB_ACTOR,process.env.GITHUB_REPOSITORY_OWNER,'Owner-selected software publication only');
-  const {root,recordCommit,recordSha256,output}=options;
+  const {recordCommit,recordSha256,output}=options;
   const source=Q.sourceProof(options);assert.equal(source.sourceCommit,process.env.GITHUB_SHA);
   const remote=await api('contents/'+RECORD_PATH+'?ref='+recordCommit);
   assert.equal(remote.type,'file');assert.equal(remote.encoding,'base64');

@@ -165,4 +165,3 @@ jobs:
             ${{ runner.temp }}/discovery-installed-python-report/source-scope-after.json
             ${{ runner.temp }}/discovery-installed-python-report/source-extraction.json
           if-no-files-found: error
-

@@ -15,6 +15,7 @@ jobs:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
@@ -34,6 +35,19 @@ jobs:
       - name: Verify the candidate-only finite source inventory from actual tracked inputs
         run: |
           set -euo pipefail
+          edition=$(node -p "require('./package.json').version")
+          case "$edition" in
+            2.1.0-rc.18)
+              python3 -B scripts/release/test-discovery-installed-profile.py > "$RUNNER_TEMP/discovery-lab/source-profile-tests.txt" 2>&1
+              cat "$RUNNER_TEMP/discovery-lab/source-profile-tests.txt"
+              node --input-type=module <<'NODE' > "$RUNNER_TEMP/discovery-lab/source-profile.json"
+          import {auditInstalledGitRoot,installedGit,validateInstalledProtectedScope,INSTALLED_PROTECTED_BASELINE} from './tools/security/discovery-installed-protected-scope.mjs';
+          const root=process.cwd();auditInstalledGitRoot(root);
+          const changes=installedGit(root,'diff','--name-only',INSTALLED_PROTECTED_BASELINE,'HEAD').split('\n').filter(Boolean);
+          console.log(JSON.stringify(validateInstalledProtectedScope(root,INSTALLED_PROTECTED_BASELINE,changes)));
+          NODE
+              ;;
+            2.1.0-rc.16|2.1.0-rc.17)
           python3 scripts/release/test-discovery-lab-profile.py > "$RUNNER_TEMP/discovery-lab/source-profile-tests.txt" 2>&1
           cat "$RUNNER_TEMP/discovery-lab/source-profile-tests.txt"
           python3 - <<'PYCODE' > "$RUNNER_TEMP/discovery-lab/source-profile.json"
@@ -50,6 +64,9 @@ jobs:
           result['sourceTree'] = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}']).decode().strip()
           print(json.dumps(result, sort_keys=True))
           PYCODE
+              ;;
+            *) echo 'Unsupported Discovery source edition' >&2; exit 1 ;;
+          esac
           sha256sum config/discovery-lab-source-candidate-v1.json config/discovery-lab-source-baseline-v1.json scripts/release/discovery-lab-profile.py scripts/release/test-discovery-lab-profile.py .github/workflows/discovery-lab-receiver.yml docs/successor/DISCOVERY_LAB.md >> "$RUNNER_TEMP/discovery-lab/SHA256SUMS.txt"
       - name: Capture the exact reviewed Alpha implementation
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
