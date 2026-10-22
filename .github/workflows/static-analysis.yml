@@ -221,10 +221,14 @@ jobs:
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        env:
+          # Preserve the reviewed producer's toolcache diagnostics.
+          CODEQL_ACTION_CLEANUP_TOOLCACHE_BUNDLES: 'false'
         with:
           languages: javascript
           config-file: .github/codeql/config-integrations.yml
           build-mode: none
+          tools: https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.27.2/codeql-bundle-linux64.tar.gz
 
       - name: Perform CodeQL analysis
         id: codeql_analyze

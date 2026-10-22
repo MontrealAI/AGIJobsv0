@@ -37,6 +37,7 @@ on:
       - 'scripts/release/source-native-evidence-rc16.cjs'
       - 'scripts/release/verify-transformational-compatibility.mjs'
       - 'docs/production/RELEASE_NOTES_SOURCE_RC16.md'
+      - 'docs/production/RELEASE_NOTES_SOURCE_RC17.md'
       - 'test/scripts/source-profile-rc16.test.cjs'
       - 'test/scripts/source-release-rc16.test.cjs'
       - 'test/scripts/source-release-security-rc16-gate.test.cjs'

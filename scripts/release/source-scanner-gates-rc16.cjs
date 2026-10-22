@@ -102,7 +102,7 @@ function evaluate(runs, checks, sha, processedCodeql) {
       check.app.slug === 'github-actions'
   );
   for (const check of trusted) {
-    if (check.name === 'Publish qualified rc.16 source prerelease') continue;
+    if (check.name === 'Publish qualified rc.17 source prerelease') continue;
     if (check.status !== 'completed')
       pending.push(check.name + ': ' + check.status);
     else if (!['success', 'skipped', 'neutral'].includes(check.conclusion))
@@ -861,8 +861,20 @@ function expectedReceiverSources(git, sha) {
   const omittedDirectory =
     /\/(?:node_modules|dist|\.next|coverage|reports|data|deploy|deployment|deployments|test)\//;
   const omittedSubgraph = /\/subgraph\/(?:generated|build|node_modules)\//;
+  // The pinned producer's declaration predates the telemetry amendment.
+  // Keep that declaration exact; the release policy separately requires actual
+  // extraction of these finite additional files, including in raw SARIF.
+  const telemetry = new Set(
+    (profile.telemetryRuntime?.transitions || [])
+      .map((item) => item.path)
+      .filter(
+        (file) => file.startsWith('agent-gateway/') && file.endsWith('.ts')
+      )
+  );
   const additional = profile.scannerRequiredPaths.filter(
-    (file) => !/^(?:integrations\/alpha-agent|website\/assets)\//.test(file)
+    (file) =>
+      !/^(?:integrations\/alpha-agent|website\/assets)\//.test(file) &&
+      !telemetry.has(file)
   );
   assert(
     additional.every((file) => source.has(file)),
@@ -993,9 +1005,16 @@ function verifyScannerProducerArchive(
     'Scanner static policy proof is incomplete'
   );
   const expectedSources = expectedReceiverSources(git, sha);
+  const releaseSources = new Set([
+    ...expectedSources,
+    ...profile.scannerRequiredPaths,
+  ]);
+  const tracked = parseTree(git('ls-tree', '-rz', sha));
   assert(
     expectedSources.length > 0 &&
-      requiredSources.every((file) => expectedSources.includes(file)),
+      requiredSources.every(
+        (file) => releaseSources.has(file) && tracked.has(file)
+      ),
     'Required receiver source is absent from release Git inventory'
   );
   assert.deepEqual(

@@ -11,8 +11,8 @@ const javascriptQualityPolicy = Object.freeze({
 const pythonReviewSchema = 'agijobsv0/codeql-python-review/2';
 const pythonReviewedProducer = Object.freeze({
   event: 'push',
-  headBranch: 'fix/processed-codeql-release-proof-20261020',
-  ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+  headBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+  ref: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
 });
 const pythonFinalProducer = Object.freeze({
   event: 'push',
@@ -357,7 +357,7 @@ function verifyScannerReviewInstallBinding({
     'Scanner review does not bind this source'
   );
   git('merge-base', '--is-ancestor', review.sourceCommit, sha);
-  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const profilePath = 'scripts/release/source-profile-rc17.json';
   const slots = ['scannerReview', 'pythonScannerReview'];
   const profiles = new Map();
   const readProfile = (commit) => {
@@ -593,9 +593,9 @@ function verifyThreeSlotReviewBinding({
   field,
   git,
   parseNotes,
-  notesPath = 'docs/production/RELEASE_NOTES_SOURCE_RC16.md',
+  notesPath = 'docs/production/RELEASE_NOTES_SOURCE_RC17.md',
 }) {
-  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const profilePath = 'scripts/release/source-profile-rc17.json';
   const slots = ['notesReview', 'scannerReview', 'pythonScannerReview'];
   const identity = (value) => /^[a-f0-9]{40}$/.test(value || '');
   assert(
@@ -604,7 +604,7 @@ function verifyThreeSlotReviewBinding({
       slots.includes(field) &&
       typeof git === 'function' &&
       typeof parseNotes === 'function' &&
-      notesPath === 'docs/production/RELEASE_NOTES_SOURCE_RC16.md',
+      notesPath === 'docs/production/RELEASE_NOTES_SOURCE_RC17.md',
     'Exact three-slot review source, field, Git and strict notes parser required'
   );
   assert(

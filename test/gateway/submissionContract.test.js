@@ -435,6 +435,7 @@ describe('gateway current registry submissions', function () {
         },
         './agentActions': actionModule,
         './requestBudget': require('../../agent-gateway/requestBudget'),
+        './telemetrySample': require('../../agent-gateway/telemetrySample'),
         './apiHelpers': { resolveAgentAddress: async (value) => value },
         './deliverableStore': {},
         './stakeCoordinator': {},

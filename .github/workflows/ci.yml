@@ -165,6 +165,8 @@ jobs:
           npm run build:validator
           node --test test/scripts/runtime-packaging.test.cjs
           node --test apps/orchestrator/dist/apps/orchestrator/__tests__/computerWork.test.js
+      - name: Telemetry numeric ingress and durable recovery regressions
+        run: node --test test/scripts/telemetryRecovery.test.cjs
       - name: Hardhat test-runner isolation regressions
         run: node --test test/scripts/hardhat-test-discovery.test.cjs
       - name: Polaris disposable quorum and receipt regressions
