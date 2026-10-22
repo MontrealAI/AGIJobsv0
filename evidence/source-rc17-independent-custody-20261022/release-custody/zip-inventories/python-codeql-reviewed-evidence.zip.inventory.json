@@ -1,0 +1,30 @@
+[
+  {
+    "path": "python.sarif",
+    "bytes": 789151,
+    "sha256": "a81ca00cddd294e3d096d51a8faa02327272a8dcb3e4296e241349de1deea95c",
+    "externalAttr": 2175008800,
+    "createSystem": 3
+  },
+  {
+    "path": "source-scope-before.json",
+    "bytes": 1545,
+    "sha256": "32629a3bc73815940f3caea093824d576ab13fe9aad8a9a3227346b06c87ff0f",
+    "externalAttr": 2175008800,
+    "createSystem": 3
+  },
+  {
+    "path": "source-scope-after.json",
+    "bytes": 1545,
+    "sha256": "32629a3bc73815940f3caea093824d576ab13fe9aad8a9a3227346b06c87ff0f",
+    "externalAttr": 2175008800,
+    "createSystem": 3
+  },
+  {
+    "path": "source-extraction.json",
+    "bytes": 13265,
+    "sha256": "dc99f55754aa744825c609fef6b497e1daf86fec4fd383551d6f41537e460b0b",
+    "externalAttr": 2172649504,
+    "createSystem": 3
+  }
+]

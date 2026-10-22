@@ -1,0 +1,492 @@
+[
+  {
+    "path": "build.json",
+    "bytes": 16784,
+    "sha256": "c9de11d2d1d4586183d4e134a714581bf004affed5609c8a935745f7324c98a2",
+    "externalAttr": 2175008800,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/ArbitratorCommittee.sol/ArbitratorCommittee.json",
+    "bytes": 32029,
+    "sha256": "d4af0d452731473fa2bf518a7c8ec6f3bd5ca85fc1a1fbd3b80cab33bf5a3664",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/ArtifactRegistry.sol/ArtifactRegistry.json",
+    "bytes": 67095,
+    "sha256": "6a97ae4b079a9e1401b2f86f17391065d783c44068a4d67801e04cbbec68d2eb",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/AttestationRegistry.sol/AttestationRegistry.json",
+    "bytes": 17256,
+    "sha256": "0ab6c6572ad9d692aa153de4c2a502a43a4b46c7ede3bb67729f4290a354504e",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/AuditModule.sol/AuditModule.json",
+    "bytes": 25415,
+    "sha256": "1de6141cc85a998211fe4a7eb7458f5ec009bd1aacdf2a26f8dbccf6d36e2b9d",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/CertificateNFT.sol/CertificateNFT.json",
+    "bytes": 58234,
+    "sha256": "197ee569e3a5c1e53e30d47a0acb8c1c33b381a8e23ca418046f793a7ba11587",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/CultureRegistry.sol/CultureRegistry.json",
+    "bytes": 32647,
+    "sha256": "2bc14da074c48c2156c9b74c3def6ead2ad0523bb750a0cdf0168c24907455d1",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/Deployer.sol/Deployer.json",
+    "bytes": 75574,
+    "sha256": "b0315a0ba08ace812c852c640e1ea347553f17c31ea4dab4a30eccf9a31c9bb1",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/ENSIdentityVerifier.sol/ENSIdentityVerifier.json",
+    "bytes": 1207,
+    "sha256": "b6282a6ee2e20faf2fafae15ccb6e9a0f138af0a604d603e637fba7d62fce7f0",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/EnergyOracle.sol/EnergyOracle.json",
+    "bytes": 27315,
+    "sha256": "78aeb608b63334b4c979ffd1b2b6572b784b6e020b3da746b8d60e909b969ca5",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/FeePool.sol/FeePool.json",
+    "bytes": 63968,
+    "sha256": "34619eabf9a80614abe484ef310e960d38150101f165558f6ae55f903fff4a06",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/GovernanceReward.sol/GovernanceReward.json",
+    "bytes": 29981,
+    "sha256": "f6476b506a359f856af8263b829f0a0c06a544987ba86674e79376708ade64f6",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/HamiltonianMonitor.sol/HamiltonianMonitor.json",
+    "bytes": 16525,
+    "sha256": "5a636dd3b882f8f9c33bc5c17d247f582d5da0c492bf9b332fc071f2e312017f",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/IdentityRegistry.sol/IdentityRegistry.json",
+    "bytes": 125863,
+    "sha256": "676df678d9567df1cfc1bdc2dbbce874bd56c43d1e9614cec30740e1b7b3207f",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/JobRegistry.sol/JobRegistry.json",
+    "bytes": 129569,
+    "sha256": "dc311257efc6a86dc8166ca7a338ed835b74bcf738b00298ef110267522d7868",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/ModuleInstaller.sol/ModuleInstaller.json",
+    "bytes": 30366,
+    "sha256": "d3dc79637942688773991c9433b09d60d1386177146bf76a80cf88316c068ac4",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/Phase6ExpansionManager.sol/Phase6ExpansionManager.json",
+    "bytes": 124295,
+    "sha256": "4ef7d039e80812f22fc76bc6ac662cbc754580cb41907701045f7abcec9b4cdd",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/Phase8UniversalValueManager.sol/Phase8UniversalValueManager.json",
+    "bytes": 149667,
+    "sha256": "8c4a26ae3b6702e49b95374493eefcc0dbf6b83ea2e266f2e57b4cb592e13e8c",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/PlatformIncentives.sol/PlatformIncentives.json",
+    "bytes": 20074,
+    "sha256": "aa13996ac79dceef5c2ba249677579d5a1ccb918a62504048efd744ef93997a7",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/PlatformRegistry.sol/PlatformRegistry.json",
+    "bytes": 52615,
+    "sha256": "25a82c5c4758c8eb118e51261a4eef916776c96ab7555f2deee9db786628a6cc",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/QuadraticVoting.sol/QuadraticVoting.json",
+    "bytes": 28323,
+    "sha256": "b2026d9fb05236f94b6a4fa23bb12e39a7169b93aff8f27599f2de07700a20fb",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/RandaoCoordinator.sol/RandaoCoordinator.json",
+    "bytes": 28240,
+    "sha256": "0d3182cf18f3c39a00dc949ecb2b6802543791ee269180e12b64519526fc9590",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/ReputationEngine.sol/ReputationEngine.json",
+    "bytes": 53140,
+    "sha256": "fb8b33dc653a6a2ac3c5d067cceb85e15a814de2586e3c579db1b821cfb77c62",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/RewardEngineMB.sol/RewardEngineMB.json",
+    "bytes": 90050,
+    "sha256": "7dc4a33287d4931d3937349fcfd1ed05b4eae9b41a5a377e36d373dc63f614d2",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/SelfPlayArena.sol/SelfPlayArena.json",
+    "bytes": 67608,
+    "sha256": "571d2b240734ecd2136836aa93861a443f5a4be56c24c3e3439449c4123441f3",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/StakeManager.sol/StakeManager.json",
+    "bytes": 136367,
+    "sha256": "f362b4f9e28635183addb8333d20d6f75b585a48f044b6344e7ed93de112fc59",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/SystemPause.sol/SystemPause.json",
+    "bytes": 54790,
+    "sha256": "1cc770b5aef7309c5575b4b3cc7e398c0c079a5384011552dd4b513da88205f1",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/TaxPolicy.sol/TaxPolicy.json",
+    "bytes": 32279,
+    "sha256": "557af2200753973f4e9ca84080acbf7449d688920311493eb045cdbafb8af465",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/Thermostat.sol/Thermostat.json",
+    "bytes": 23197,
+    "sha256": "a9527eb3356a5c004b2ff950845dc78231f52aa7c8bc152a1960b4626932e4a5",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/ValidationModule.sol/ValidationModule.json",
+    "bytes": 94411,
+    "sha256": "a54698f7653a1ecbea407402ba13406d74bba36953efb0d7a81f6d249329252b",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/admin/HGMControlModule.sol/HGMControlModule.json",
+    "bytes": 89078,
+    "sha256": "a267dfcba92a3480b22d044dc7eb4e4cfc48a44b063c40e4f5aae2dee5a3e285",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/governance/AGIGovernor.sol/AGIGovernor.json",
+    "bytes": 101339,
+    "sha256": "45564474c7bb76c0b37f1384b9eba53ca7389674bf326dc70cbdfa90a50fad57",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/governance/AGITimelock.sol/AGITimelock.json",
+    "bytes": 45613,
+    "sha256": "5de2187748a9216405571118a729c9cb81acbe003f35b8548bdf24babd3d1e59",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/admin/OwnerConfigurator.sol/OwnerConfigurator.json",
+    "bytes": 15176,
+    "sha256": "b90e5c7f85ee3935be4a894ed76adcf59ae702bb51a7bb5d1857d7603368a847",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/governance/GlobalGovernanceCouncil.sol/GlobalGovernanceCouncil.json",
+    "bytes": 44614,
+    "sha256": "c4cc48303f0adb2fb76faf7b33c08bf5f1dfafe42c221ccec6f2e22840c81dc9",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/implementation/JobRegistryConfiguration.sol/JobRegistryConfiguration.json",
+    "bytes": 135325,
+    "sha256": "616dccfcdf79f6c1c50e70f19c33740b21a6b93c1171fd491f43a05b4db2d653",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/implementation/JobRegistryLifecycle.sol/JobRegistryLifecycle.json",
+    "bytes": 151426,
+    "sha256": "bf1d01a6f1e5ca0fb23d3061ff4593012770a8a2d30361c4fdb715f1c228f39a",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/implementation/JobRegistrySettlement.sol/JobRegistrySettlement.json",
+    "bytes": 137275,
+    "sha256": "518783171083d884c5eaee01f2425981a6df7901ed2a150bb5c8e83d6974b110",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/implementation/StakeManagerConfiguration.sol/StakeManagerConfiguration.json",
+    "bytes": 143467,
+    "sha256": "d64a5ecb0b578600590276cdb8cc07e7fb22e560640ba7ed0022149a48bf8f65",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/implementation/StakeManagerEscrow.sol/StakeManagerEscrow.json",
+    "bytes": 117065,
+    "sha256": "778336b17c705fc487f5197569af2772eba5acfe5cdf991bd99504311b149b5f",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/implementation/StakeManagerSlashing.sol/StakeManagerSlashing.json",
+    "bytes": 122524,
+    "sha256": "a6e9bb972590c73a188f05a8054aca612c0f740c9fd385b9cb0bb12b175d4b42",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/implementation/StakeManagerStaking.sol/StakeManagerStaking.json",
+    "bytes": 105208,
+    "sha256": "bbe8cb6fcbfc6752b11cd2c57602fc559007b013a46519e6856396af4593285c",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/implementation/ValidationModuleConfiguration.sol/ValidationModuleConfiguration.json",
+    "bytes": 110358,
+    "sha256": "daa378f8515685dd97522075b3132dea0f924f2ac47b0f1926f14acd2dfc40c5",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/implementation/ValidationModuleSelection.sol/ValidationModuleSelection.json",
+    "bytes": 112151,
+    "sha256": "f2d13f35dddbf0a18e7f514f0c12d91b8e904c006d2b11d62249ff1c4eee3920",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/implementation/ValidationModuleVoting.sol/ValidationModuleVoting.json",
+    "bytes": 121857,
+    "sha256": "799479830323cc6d3c2022add29f98b78679597418bae599ebda2a7d3aa4a034",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/kernel/Config.sol/KernelConfig.json",
+    "bytes": 16763,
+    "sha256": "b2130c4ffe86aeb44093fa8e54d03d9efeac553d1e2ddfe562c6e1b742acf2fe",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/kernel/EscrowVault.sol/EscrowVault.json",
+    "bytes": 16835,
+    "sha256": "3282d52c7269e8eabdbf0d97915f31ddf3991e55669455bde04d1b0e58c8207e",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/kernel/JobRegistry.sol/KernelJobRegistry.json",
+    "bytes": 52231,
+    "sha256": "18fe8a7a6d506d30f57c31725bf20fdcd776293c53576776c583040187b7b719",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/kernel/RewardEngine.sol/RewardEngine.json",
+    "bytes": 12961,
+    "sha256": "ad24bf02e422ebd3b8845beab0540dda39953505ab070b0c4d0c95a0a0dd4aa2",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/kernel/StakeManager.sol/KernelStakeManager.json",
+    "bytes": 29552,
+    "sha256": "05f799712e0774259a44fd1775128d7bcbe090db02bfd9d60f61ab1fe551b1bb",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/kernel/ValidationModule.sol/ValidationModule.json",
+    "bytes": 27501,
+    "sha256": "505382c371c5145c0ee15595fcb1e8522a24d892bc27e066543f28171bdcbfe2",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/libraries/ThermoMath.sol/ThermoMath.json",
+    "bytes": 708,
+    "sha256": "b9c338632929894f963f0241b5956c0039ecb3685cfd520de26c715d33a1c352",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/CertificateNFT.sol/CertificateNFT.json",
+    "bytes": 43914,
+    "sha256": "d325c22cf9fd0cf4d7afe26cdf79db39506624eacd5a14966caaef8ceff62748",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/DiscoveryModule.sol/DiscoveryModule.json",
+    "bytes": 22632,
+    "sha256": "d7f7d6a9ea7e2dfc6d525b8392918b5fb8983df7aee08a93fee1bfcacc58510d",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/DayOneUtilityController.sol/DayOneUtilityController.json",
+    "bytes": 25506,
+    "sha256": "88f85c3975092bc0959eff66aea261801d7e677338d765f5c9b1ef148a03f96a",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/DisputeModule.sol/DisputeModule.json",
+    "bytes": 66799,
+    "sha256": "cd549d94bc12a125d456574eec8926bac9fb61caac55365effdab0de4c5e380b",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/ENSOwnershipVerifier.sol/ENSOwnershipVerifier.json",
+    "bytes": 26930,
+    "sha256": "7eedb9c93ce71f44ec5a4682da446c9a904e3f8fbc8e9f18c8ba37ec644b5acd",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/JobEscrow.sol/JobEscrow.json",
+    "bytes": 31291,
+    "sha256": "614b682f945f3f79f63aa477191768d53be86f21f7bf2dca88ace3858d420485",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/JobRouter.sol/JobRouter.json",
+    "bytes": 25943,
+    "sha256": "d0897187e54332f7bf9ea1df4712d00be5e11b9f063b3a0c7a68e688cf519340",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/KlerosDisputeModule.sol/KlerosDisputeModule.json",
+    "bytes": 23096,
+    "sha256": "df86c79e3f33c1eca229d3343c86e487c388abb8ab24ad871554bf70d39a0b2b",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/NoValidationModule.sol/NoValidationModule.json",
+    "bytes": 31397,
+    "sha256": "d9773d04786b716945b2445f5f59a460b0ef39a0ef12ca0f7bddbd1a40747668",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/OracleValidationModule.sol/OracleValidationModule.json",
+    "bytes": 33713,
+    "sha256": "ec51ddc9f4224fa3cfeb11efcfe9a7298dab3d3248c0cf71142bc1709ef9324a",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/RevenueDistributor.sol/RevenueDistributor.json",
+    "bytes": 20456,
+    "sha256": "63226438849452c82e35351070e9aea46085d76ad1aadb132a9f4e181675ad44",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/RoutingModule.sol/RoutingModule.json",
+    "bytes": 31895,
+    "sha256": "9f700a0b3d2d60ae47907c72f27da3e832f45b75a047c5da9f6c602476b10524",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/ShardJobQueue.sol/ShardJobQueue.json",
+    "bytes": 31495,
+    "sha256": "0083edc93f3fd32b619c1ffeda2731f73f26983129941f02999f9fea087845a7",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/ShardRegistry.sol/ShardRegistry.json",
+    "bytes": 53842,
+    "sha256": "8b3ac403a1ddbfe1100742b496d0515512e257bb4a9f13f3d71c1420f370424d",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/artifacts/contracts/v2/modules/VerifyOwnership.sol/VerifyOwnership.json",
+    "bytes": 535,
+    "sha256": "5056148fcb01eaf4dc7279ff8d7898348960cbda51a3f65083c5e5333dcde97b",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/build-info/4b480a63780a84184a34139dfef893d9db73b3efddacc23a9660b198e05ab084.json",
+    "bytes": 48247740,
+    "sha256": "4b480a63780a84184a34139dfef893d9db73b3efddacc23a9660b198e05ab084",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/index.json",
+    "bytes": 43205,
+    "sha256": "6c8de4deee84504ead6e9fbf7fc6dd76a1861731a38be1a921dcd7770b49a737",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  },
+  {
+    "path": "verification/standard-input/4b480a63780a84184a34139dfef893d9db73b3efddacc23a9660b198e05ab084.json",
+    "bytes": 1869318,
+    "sha256": "a962576832d4540c4cd682f9251b6eed2a333c87a1ce5fa61ed5716e7091b891",
+    "externalAttr": 2164260896,
+    "createSystem": 3
+  }
+]

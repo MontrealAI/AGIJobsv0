@@ -1,0 +1,30 @@
+[
+  {
+    "path": "javascript.sarif",
+    "bytes": 2079563,
+    "sha256": "4e6d136144d25d19428878c6efef86702caccc81c552a08c087326de889b5952",
+    "externalAttr": 2175008800,
+    "createSystem": 3
+  },
+  {
+    "path": "source-extraction.json",
+    "bytes": 52366,
+    "sha256": "346a41d761f7fd9f5de9e2cb475e82dea6327386904ba1e28236864116c3b1ba",
+    "externalAttr": 2172649504,
+    "createSystem": 3
+  },
+  {
+    "path": "source-scope-after.json",
+    "bytes": 5624,
+    "sha256": "5ccac6f0d0942b7e77899d0059dbae7913949a283dc5c5e0c9e3b290b8f57ef1",
+    "externalAttr": 2175008800,
+    "createSystem": 3
+  },
+  {
+    "path": "source-scope-before.json",
+    "bytes": 5624,
+    "sha256": "5ccac6f0d0942b7e77899d0059dbae7913949a283dc5c5e0c9e3b290b8f57ef1",
+    "externalAttr": 2175008800,
+    "createSystem": 3
+  }
+]

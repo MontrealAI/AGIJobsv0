@@ -1,0 +1,36 @@
+{
+  "schema": "independent-public-source-archive-tree-check/1",
+  "recordedAt": "2026-10-22T03:43:17.046927+00:00",
+  "repository": "MontrealAI/AGIJobsv0",
+  "commit": "ba67d5d19ef7d9ac643f99f2b8f49c160714fdf6",
+  "tree": "16c29d934e8bb4d36d286fae7fbf3f9b9d506a85",
+  "publicArchive": "source-v2.1.0-rc.17-source.zip",
+  "prefix": "AGIJobsv0/",
+  "archiveMembers": 6296,
+  "archiveFiles": 5190,
+  "archiveDirectories": 1106,
+  "gitTreeEntries": 5190,
+  "gitBlobBytes": 210525704,
+  "verifiedExactBlobContents": 5190,
+  "missingFiles": [],
+  "extraFiles": [],
+  "contentDifferences": [],
+  "missingDirectories": [],
+  "extraDirectories": [],
+  "gitModes": {
+    "100644": 5061,
+    "100755": 129
+  },
+  "zipCreateSystems": {
+    "0": 6167,
+    "3": 129
+  },
+  "zipFileExternalAttrs": {
+    "0": 5061,
+    "2179792896": 129
+  },
+  "modesClaim": "All129 Git100755 entries carry exact Unix100755 ZIP mode (createSystem3). All5061 Git100644 entries use conventional DOS/createSystem0 externalAttr0; ZIP does not explicitly encode Unix100644 for these ordinary files. No symlinks/submodules exist in tree.",
+  "status": "PASS_CONTENT_MEMBERSHIP_EXECUTABLE_MODES",
+  "modeDifferences": [],
+  "verifiedExecutableModes": 129
+}

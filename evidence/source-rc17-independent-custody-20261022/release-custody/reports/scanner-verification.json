@@ -1,0 +1,40 @@
+{
+  "schema": "agijobsv0/independent-rc17-scanner-observation/1",
+  "sha": "ba67d5d19ef7d9ac643f99f2b8f49c160714fdf6",
+  "profileAssetExactTrackedBytes": true,
+  "javascript": {
+    "rawResults": 42,
+    "reviewedSlots": 42,
+    "falsePositiveSlots": 34,
+    "nonsecurityQualityAcknowledgements": 8,
+    "toolVersion": "2.27.2",
+    "extractedPaths": 835,
+    "artifactReferencePermutation": 910,
+    "completeTransportedRunHash": "42a4c202de4223c71df83264870f1dbc4c97d473231e60ff7af9058741890f12",
+    "allRawResultHashesAndCompleteReviewedSlotsMatch": true,
+    "metadataAndQueryPolicyRetained": true,
+    "independentInverseReconstructsEntireOriginalRun": true,
+    "requiredExtractedFiles": 89,
+    "queryRuleIds": 201
+  },
+  "python": {
+    "toolVersion": "2.27.3",
+    "rawResults": 0,
+    "extractedPaths": 79,
+    "queryRuleIds": 172,
+    "requiredExtractedFiles": 8
+  },
+  "serviceEvidence": {
+    "embeddedReceiptZipAndRawSarifDigestsVerified": true,
+    "producerArtifactMetadataIndependentApiMatch": true,
+    "serviceAnalysisRows": "retained authenticated publisher service observations; direct analysis endpoint unsupported by connector",
+    "javascriptAnalysisId": 2001696566,
+    "pythonAnalysisId": 2001650077
+  },
+  "frozenHistoricalDigests": {
+    "configSha256": "4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892",
+    "findingsSha256": "3bb26ea360c74550cf8c3561085a742e55d058a03ca6658e74efb7e344bd7b0f",
+    "originalArchiveSha256": "c7dd344ab78de98d423d3294db17c1c7b810afa531df7416271f813096c25ba9"
+  },
+  "productionApproved": false
+}

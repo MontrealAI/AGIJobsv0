@@ -1,0 +1,37 @@
+{
+  "schema": "jobs-rc17/live-pages-browser-observation/v1",
+  "observedAt": "2026-10-22T03:55:42Z/2026-10-22T03:58:44Z",
+  "repository": "MontrealAI/AGIJobsv0",
+  "source": "ba67d5d19ef7d9ac643f99f2b8f49c160714fdf6",
+  "releaseId": 420279454,
+  "home": "https://montrealai.github.io/AGIJobsv0/",
+  "english": "https://montrealai.github.io/AGIJobsv0/successor/mission/",
+  "french": "https://montrealai.github.io/AGIJobsv0/successor/mission/fr/",
+  "checks": {
+    "homeFooterSource": "ba67d5d1",
+    "englishFooterSource": "ba67d5d1",
+    "frenchFooterSource": "ba67d5d1",
+    "englishBusinessPresetFilled": true,
+    "uncheckedRightsRefusal": "Please check this box if you want to proceed.",
+    "englishPreparedStatus": "PREPARED · NOT EXECUTED",
+    "englishMissionDigest": "sha256:ce14268ac522c0b99b85b46c58ae5532cc98d27b5694f75af79f1b59ab454915",
+    "englishDeskSameDigest": true,
+    "englishDeskStatus": "USER-ENTERED · UNVERIFIED",
+    "frenchResearchPresetFilled": true,
+    "frenchPreparedStatus": "PRÉPARÉ · NON EXÉCUTÉ",
+    "frenchMissionDigest": "sha256:ecc8b69089be67c5da137a3f6208b6ed8a4ef445be85f3619f2fc7f32f425490"
+  },
+  "observedConsole": {
+    "errorOrWarningCount": 26,
+    "siteUrlErrors": 0,
+    "chromeExtensionErrors": 26,
+    "scope": "bounded recorded browser log observation, not a universal error-free claim"
+  },
+  "screenshot": {
+    "capturedOnce": true,
+    "browserFile": "jobs-rc17-live-desk-1792641461554.jpg",
+    "mainFileAvailableAfterFiveSeconds": false,
+    "attachment": "UNAVAILABLE; no recapture or manual transfer"
+  },
+  "scope": "Interactive live Pages preparation and public preset workspace only. No source retrieval, model run, experiment, operational authority or installed rc18/four-repository qualification."
+}

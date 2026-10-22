@@ -1,0 +1,175 @@
+{
+  "schema": "agijobsv0/independent-public-rc17-custody/1",
+  "release": {
+    "id": 420279454,
+    "tag": "source-v2.1.0-rc.17",
+    "publishedAt": "2026-10-22T03:34:13Z",
+    "draft": false,
+    "prerelease": true,
+    "source": "ba67d5d19ef7d9ac643f99f2b8f49c160714fdf6",
+    "tree": "16c29d934e8bb4d36d286fae7fbf3f9b9d506a85",
+    "tagRefAndTargetMatch": true
+  },
+  "qualification": {
+    "publisherRun": 39710971421,
+    "publisherAttempt": 2,
+    "publisherJob": 119622402171,
+    "publisherConclusion": "success",
+    "workflowRecords": 43,
+    "requiredWorkflowPaths": 18,
+    "requiredCheckContexts": 37,
+    "currentChecks": 130,
+    "allExactMainPushWorkflowsSuccess": true,
+    "allRequiredTrustedGithubActionsContextsSuccess": true,
+    "sourceProfileAssetExactTrackedBytes": true,
+    "profileQualificationLiteral": "PENDING_FINAL_SOURCE_MAIN_PUSH",
+    "profileLiteralMeaning": "preserved source-authoring marker; completed exact-source qualification is separately recorded by producer attempt2 and published provenance",
+    "sourceProfileSha256": "d2559f3f27d082f1254725b19d70573b28885a9261a462e348a63d86e8f733b2"
+  },
+  "actualPublicAssetCustody": {
+    "assets": 25,
+    "totalDownloadedBytes": 173653961,
+    "allApiDigestsAndByteSizesMatch": true,
+    "sha256SumsExact24OtherAssetsMatch": true,
+    "zipArchives": 7,
+    "allZipMemberCrcAndSha256Verified": true,
+    "sourceZipSha256": "4aff5e9887ad93836e6bc0a5efc44a023e13920b19f2d8443bd95e73d8e1b5c0",
+    "sourceBlobFiles": 5190,
+    "sourceDirectoryEntries": 1106,
+    "sourceGitBlobBytes": 210525704,
+    "sourceGitMembershipBytesAndExecutableModesMatch": true,
+    "ordinaryFilesZipAttributes": "DOS attr0, no explicit Unix100644;129 executable100755modes preserved",
+    "retention": "large ZIPs not retained; inventories and small original public assets retained"
+  },
+  "evidenceProducers": {
+    "independentlyMatchedOriginalArtifactListings": 6,
+    "javascriptFinal": [
+      39710971370,
+      1,
+      12397841182
+    ],
+    "javascriptReviewed": [
+      39686436694,
+      1,
+      12386742537
+    ],
+    "pythonFinal": [
+      39710971218,
+      1,
+      12396648448
+    ],
+    "pythonReviewed": [
+      39686436679,
+      1,
+      12387214713
+    ],
+    "compiler": [
+      39710971368,
+      1,
+      12396708659
+    ],
+    "native": [
+      39710971410,
+      1,
+      12396573388
+    ],
+    "serviceReceiptArtifacts": [
+      12397985623,
+      12397485871
+    ]
+  },
+  "scanner": {
+    "schema": "agijobsv0/independent-rc17-scanner-observation/1",
+    "sha": "ba67d5d19ef7d9ac643f99f2b8f49c160714fdf6",
+    "profileAssetExactTrackedBytes": true,
+    "javascript": {
+      "rawResults": 42,
+      "reviewedSlots": 42,
+      "falsePositiveSlots": 34,
+      "nonsecurityQualityAcknowledgements": 8,
+      "toolVersion": "2.27.2",
+      "extractedPaths": 835,
+      "artifactReferencePermutation": 910,
+      "completeTransportedRunHash": "42a4c202de4223c71df83264870f1dbc4c97d473231e60ff7af9058741890f12",
+      "allRawResultHashesAndCompleteReviewedSlotsMatch": true,
+      "metadataAndQueryPolicyRetained": true,
+      "independentInverseReconstructsEntireOriginalRun": true,
+      "requiredExtractedFiles": 89,
+      "queryRuleIds": 201
+    },
+    "python": {
+      "toolVersion": "2.27.3",
+      "rawResults": 0,
+      "extractedPaths": 79,
+      "queryRuleIds": 172,
+      "requiredExtractedFiles": 8
+    },
+    "serviceEvidence": {
+      "embeddedReceiptZipAndRawSarifDigestsVerified": true,
+      "producerArtifactMetadataIndependentApiMatch": true,
+      "serviceAnalysisRows": "retained authenticated publisher service observations; direct analysis endpoint unsupported by connector",
+      "javascriptAnalysisId": 2001696566,
+      "pythonAnalysisId": 2001650077
+    },
+    "frozenHistoricalDigests": {
+      "configSha256": "4b34450e1dcc0b489feea158d642a6b66261d9e935463928782219c8716c0892",
+      "findingsSha256": "3bb26ea360c74550cf8c3561085a742e55d058a03ca6658e74efb7e344bd7b0f",
+      "originalArchiveSha256": "c7dd344ab78de98d423d3294db17c1c7b810afa531df7416271f813096c25ba9"
+    },
+    "productionApproved": false
+  },
+  "priorFailedAttemptsRetained": [
+    {
+      "run": 39710971421,
+      "attempt": 1,
+      "conclusion": "failure",
+      "cause": "Pages, earlier root-retained log evidence"
+    },
+    {
+      "run": 39710971389,
+      "attempt": 2,
+      "conclusion": "failure",
+      "cause": "pnpm10.5.2HTTP503, earlier root-retained log evidence"
+    }
+  ],
+  "laterPages": {
+    "run": 39710971389,
+    "attempt": 4,
+    "conclusion": "success",
+    "initiator": "concurrent work, not this agent or root"
+  },
+  "limits": [
+    "Direct code-scanning analysis endpoint is unsupported by GitHub connector (HTTP400 allowed endpoint); no access expansion attempted. Embedded receipt archives, producer artifact metadata and producer upload-complete logs were verified.",
+    "Compiler/native/scanner tests were not rerun; fresh successful producer evidence and actual byte identity were verified.",
+    "rc17 source-only qualification does not qualify local rc18 or new installed four-repository functionality. Native evidence preserves historical source/free-inspection compatibility scope."
+  ],
+  "productionApproved": false,
+  "publicMutationsPerformed": false,
+  "evidenceFiles": [
+    {
+      "file": "actual-public-assets.json",
+      "bytes": 10224,
+      "sha256": "cb99da0ef05598ca8b2fcc6d4c0a78eb69938e97b1bdcc6509119d0a992548ca"
+    },
+    {
+      "file": "source-archive-tree-verification.json",
+      "bytes": 1218,
+      "sha256": "75f166fbfec7dc2671bbaf33a26e99160749800a8e71de9cb8bca52a114a3083"
+    },
+    {
+      "file": "scanner-verification.json",
+      "bytes": 1575,
+      "sha256": "49dafcb223444e85679a23c09554b27da8dfc54818afd054a5cb6b20d4fd0e82"
+    },
+    {
+      "file": "scanner-producer-log-excerpts.json",
+      "bytes": 1960,
+      "sha256": "0f1188292b882045ba2042db63060bec7fa6ad06a18fc254375e47b7cfd60369"
+    },
+    {
+      "file": "publisher-attempt2.log",
+      "bytes": 724123,
+      "sha256": "7d62b5478fa4bdb483df307265f12f7f012916fe2636b462fd689f23993af0de"
+    }
+  ]
+}

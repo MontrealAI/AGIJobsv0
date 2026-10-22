@@ -1,0 +1,235 @@
+{
+  "schema": "jobs-rc17-independent-public-assets/v1",
+  "releaseId": 420279454,
+  "tag": "source-v2.1.0-rc.17",
+  "source": "ba67d5d19ef7d9ac643f99f2b8f49c160714fdf6",
+  "publishedAt": "2026-10-22T03:34:13Z",
+  "actualAssetDownloads": [
+    {
+      "id": 664560471,
+      "name": "codeql-evidence.zip",
+      "bytes": 199915,
+      "sha256": "9c3487f56381b65108f35ecd89e5c9bb468157ad2fbf11cdbfd81a074cbdf2c2",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/codeql-evidence.zip",
+      "actualPublicBytesDownloaded": true,
+      "zipCRCAndAllMembersVerified": true,
+      "members": 4,
+      "expandedBytes": 2143048
+    },
+    {
+      "id": 664560468,
+      "name": "codeql-provenance.json",
+      "bytes": 322861,
+      "sha256": "68eb9625b1a0e2a719529a6a11ef9acac4091a1f801fcb26d90192cf5c05ea81",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/codeql-provenance.json",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560469,
+      "name": "codeql-reviewed-evidence.zip",
+      "bytes": 199984,
+      "sha256": "34e633d9a394ab4242b0aa6cd5d3b08f8f7c64df72fb7478a83db5cf7dd10477",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/codeql-reviewed-evidence.zip",
+      "actualPublicBytesDownloaded": true,
+      "zipCRCAndAllMembersVerified": true,
+      "members": 4,
+      "expandedBytes": 2143177
+    },
+    {
+      "id": 664560501,
+      "name": "codeql-service-evidence.json",
+      "bytes": 10546,
+      "sha256": "959a92d4c412ba79e74c302219c5059a536b4bf111fd803c9c4c278f2c58abea",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/codeql-service-evidence.json",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560500,
+      "name": "compiler-evidence.zip",
+      "bytes": 6713137,
+      "sha256": "4ec9f1a28877e748b1baefe4f93009b8f80ac1e73a8cc4d40830507ce9383f9f",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/compiler-evidence.zip",
+      "actualPublicBytesDownloaded": true,
+      "zipCRCAndAllMembersVerified": true,
+      "members": 70,
+      "expandedBytes": 54043618
+    },
+    {
+      "id": 664560508,
+      "name": "compiler-provenance.json",
+      "bytes": 609,
+      "sha256": "e76c53aa28537a7e2f48fa300c64871d2aca0a02f4f9d501bce00db3c0a55f63",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/compiler-provenance.json",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560511,
+      "name": "compiler-warnings-2026-10-13.md",
+      "bytes": 10718,
+      "sha256": "48944bcc484100c8e42df3af57d7f56c6a3bf845c0054de3142e3bab287d2e38",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/compiler-warnings-2026-10-13.md",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560515,
+      "name": "configuration-readback-2026-10-13.json",
+      "bytes": 23287,
+      "sha256": "ce2db778b31e50f2085e5e269cc83fa4aa59daa807543bb80066737ed754f314",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/configuration-readback-2026-10-13.json",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560530,
+      "name": "deployment-addresses.mainnet.json",
+      "bytes": 2420,
+      "sha256": "2589882de18dbf7395b11e20fa1135966685671ecd8579433c1895f12a4b4c31",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/deployment-addresses.mainnet.json",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560537,
+      "name": "ethereum-mainnet-2026-10-12.json",
+      "bytes": 53030,
+      "sha256": "7565891a776b1d058342818dec51d4f13f46b10ee2a497e74f3203f9ac1c31ff",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/ethereum-mainnet-2026-10-12.json",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560539,
+      "name": "jobs-mainnet-2026-10-18.json",
+      "bytes": 55770,
+      "sha256": "b4335f5763f73e8da664c3cd45ac7ca8fa6f0d3beb2780b209e50fd1e3def23f",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/jobs-mainnet-2026-10-18.json",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560540,
+      "name": "mainnet-deployment-2026-10-12.md",
+      "bytes": 18864,
+      "sha256": "43c3fccf6e2ccd70ae95869cd50ddafd0ba882ffb1e2246ec114d0d8977fc5e2",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/mainnet-deployment-2026-10-12.md",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560544,
+      "name": "mainnet-deployment-2026-10-18.md",
+      "bytes": 12163,
+      "sha256": "f35f728d821a1b30c81e0151d3df138b01db891a0764ef6f2b91f7a5da7c027d",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/mainnet-deployment-2026-10-18.md",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560552,
+      "name": "mainnet-deployment-receipts-2026-10-18.json",
+      "bytes": 41485,
+      "sha256": "69fac1728be59752d4aadc66157f6e533273c5d9bef3b71d86a97530ce7db576",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/mainnet-deployment-receipts-2026-10-18.json",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560549,
+      "name": "native-compatibility.zip",
+      "bytes": 793,
+      "sha256": "e1d3b83484957c13d1b12c14cdbb53002951181161964995b1e407f5ac5c2763",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/native-compatibility.zip",
+      "actualPublicBytesDownloaded": true,
+      "zipCRCAndAllMembersVerified": true,
+      "members": 1,
+      "expandedBytes": 1057
+    },
+    {
+      "id": 664560553,
+      "name": "native-provenance.json",
+      "bytes": 1830,
+      "sha256": "0b17361161be8feb180004a2b08c73e904f7e774361a84b775774b7eb02db919",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/native-provenance.json",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560558,
+      "name": "provenance.json",
+      "bytes": 2942810,
+      "sha256": "6f150b6baaf5c5b01cbb0e05af17d833428fa5b9937dbf516fbf6574565cd3af",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/provenance.json",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560571,
+      "name": "python-codeql-evidence.zip",
+      "bytes": 106987,
+      "sha256": "af0b24e57726fa54dc924b87aa365b4d1833aa141779d7d7e7c506847e5b036e",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/python-codeql-evidence.zip",
+      "actualPublicBytesDownloaded": true,
+      "zipCRCAndAllMembersVerified": true,
+      "members": 4,
+      "expandedBytes": 805377
+    },
+    {
+      "id": 664560580,
+      "name": "python-codeql-provenance.json",
+      "bytes": 1753337,
+      "sha256": "2ba9f067b25d74caa5480baf21625c0688cee4e9e4469066f8efc1ca5c1d0c9a",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/python-codeql-provenance.json",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560583,
+      "name": "python-codeql-reviewed-evidence.zip",
+      "bytes": 107131,
+      "sha256": "2cee6a3dc7617b312d65cb79bf5670fe9fb18e2853248a9ec31e667228678c4f",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/python-codeql-reviewed-evidence.zip",
+      "actualPublicBytesDownloaded": true,
+      "zipCRCAndAllMembersVerified": true,
+      "members": 4,
+      "expandedBytes": 805506
+    },
+    {
+      "id": 664560472,
+      "name": "RELEASE_NOTES_SOURCE_RC17.md",
+      "bytes": 122685,
+      "sha256": "4dea6bf54c78f587ab2e315b90392236e13d33e028fc32835bd89b2a16ee6556",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/RELEASE_NOTES_SOURCE_RC17.md",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560470,
+      "name": "SHA256SUMS.txt",
+      "bytes": 2274,
+      "sha256": "3be0154806820e15cdbea9cb2f2b730c62b9fd1c573c1da1724ad7fcfd89379f",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/SHA256SUMS.txt",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560591,
+      "name": "solidity-compiler.json",
+      "bytes": 2867,
+      "sha256": "48b1584546fa588b961eff8534daba37d7fea69ad557c85c599757213a53efdf",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/solidity-compiler.json",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560597,
+      "name": "source-profile-rc17.json",
+      "bytes": 964918,
+      "sha256": "d2559f3f27d082f1254725b19d70573b28885a9261a462e348a63d86e8f733b2",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/source-profile-rc17.json",
+      "actualPublicBytesDownloaded": true
+    },
+    {
+      "id": 664560600,
+      "name": "source-v2.1.0-rc.17-source.zip",
+      "bytes": 159983540,
+      "sha256": "4aff5e9887ad93836e6bc0a5efc44a023e13920b19f2d8443bd95e73d8e1b5c0",
+      "publicUrl": "https://github.com/MontrealAI/AGIJobsv0/releases/download/source-v2.1.0-rc.17/source-v2.1.0-rc.17-source.zip",
+      "actualPublicBytesDownloaded": true,
+      "zipCRCAndAllMembersVerified": true,
+      "members": 6296,
+      "expandedBytes": 210525704
+    }
+  ],
+  "checksumManifestMembership": "PASS24plusself",
+  "zipCrcAndMemberHashes": "PASSall7archives",
+  "totalBytes": 173653961,
+  "retention": "Small raw assets and complete ZIP member inventories retained; large ZIP bytes hashed and inspected in RAM only to avoid full disk",
+  "qualificationClaim": "Asset-byte custody only; semantic producer/source validation follows"
+}
