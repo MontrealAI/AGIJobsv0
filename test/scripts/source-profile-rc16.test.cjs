@@ -116,6 +116,384 @@ function addReviewedPython(r) {
     );
 }
 
+function addCurrentReleaseMetadata(r) {
+  const toolchain = p.profile.javascriptToolchain.transition;
+  r.put(
+    toolchain.path,
+    command(ROOT, ['cat-file', 'blob', toolchain.after.blob])
+  );
+  for (const item of p.profile.telemetryRuntime.transitions)
+    r.put(item.path, command(ROOT, ['cat-file', 'blob', item.after.blob]));
+  for (const [name, identity] of Object.entries(p.previousReleaseRecords))
+    r.put(name, command(ROOT, ['cat-file', 'blob', identity.blob]));
+  for (const item of p.releaseTriggerTransitions)
+    r.put(item.path, fs.readFileSync(path.join(ROOT, item.path)));
+  r.put('CHANGELOG.md', fs.readFileSync(path.join(ROOT, 'CHANGELOG.md')));
+}
+
+test('telemetry scope binds its genuine complete origin and rejects inventory, blob and mode drift', () => {
+  const scope = p.profile.telemetryRuntime;
+  const git = (...args) => command(ROOT, args);
+  assert.equal(p.verifyTelemetryOrigin(git), scope);
+  const before = p.parseTree(git('ls-tree', '-rz', scope.baseline));
+  const after = p.parseTree(git('ls-tree', '-rz', scope.source));
+  const paths = p.verifyTelemetryTransitions(before, after);
+  assert.equal(paths.length, 12);
+  assert.equal(
+    paths.filter((name) => name.startsWith('agent-gateway/')).length,
+    6
+  );
+  for (const name of paths) {
+    const changed = new Map(after);
+    changed.set(name, { ...changed.get(name), blob: '0'.repeat(40) });
+    assert.throws(
+      () => p.verifyTelemetryTransitions(before, changed),
+      /blob or mode/
+    );
+    changed.set(name, { ...after.get(name), mode: '100755' });
+    assert.throws(
+      () => p.verifyTelemetryTransitions(before, changed),
+      /blob or mode/
+    );
+    changed.delete(name);
+    assert.throws(
+      () => p.verifyTelemetryTransitions(before, changed),
+      /blob or mode/
+    );
+  }
+  for (const mutate of [
+    (value) => value.transitions.pop(),
+    (value) => value.transitions.reverse(),
+    (value) =>
+      value.transitions.push({
+        ...value.transitions[0],
+        path: 'agent-gateway/another.ts',
+      }),
+    (value) => {
+      value.source = scope.baseline;
+    },
+    (value) => {
+      value.transitions[0].after.blob = '0'.repeat(40);
+    },
+  ]) {
+    const changed = clone(scope);
+    mutate(changed);
+    assert.throws(
+      () => p.validateTelemetryRuntime(changed),
+      /scope commitment/
+    );
+  }
+  const alteredOrigin = (...args) =>
+    args[0] === 'rev-parse' && args[1] === `${scope.source}^{tree}`
+      ? '0'.repeat(40)
+      : git(...args);
+  assert.throws(
+    () => p.verifyTelemetryOrigin(alteredOrigin),
+    /immutable origin/
+  );
+  const receiverPaths = paths.filter((name) =>
+    name.startsWith('agent-gateway/')
+  );
+  assert(
+    receiverPaths.every((name) => p.profile.scannerRequiredPaths.includes(name))
+  );
+  assert(
+    receiverPaths.every((name) => p.profile.scannerReceiverPaths.includes(name))
+  );
+});
+
+test('historical telemetry proof composes only with the exact discovery follow-up', () => {
+  const scope = p.profile.telemetryRuntime;
+  const historical = scope.historical;
+  const followup = scope.followup;
+  const git = (...args) => command(ROOT, args);
+  assert.equal(
+    createHash('sha256').update(JSON.stringify(historical)).digest('hex'),
+    'ff6f82ddd6738d3a0e7481fdd4cd1fc065853b68bc1a20e1defbfaccefea792c'
+  );
+  assert.equal(historical.transitions.length, 11);
+  assert.equal(followup.transitions.length, 4);
+  assert.deepEqual(
+    followup.transitions.map((item) => item.path),
+    [
+      '.github/workflows/ci.yml',
+      'test/gateway/telemetryRecovery.test.cjs',
+      'test/scripts/hardhat-test-discovery.test.cjs',
+      'test/scripts/telemetryRecovery.test.cjs',
+    ]
+  );
+  const removed = followup.transitions[1];
+  const added = followup.transitions[3];
+  assert.equal(removed.after, null);
+  assert.equal(added.before, null);
+  assert.deepEqual(removed.before, added.after);
+  assert.equal(followup.baseline, historical.source);
+  assert.equal(followup.baselineTree, historical.tree);
+  assert.equal(followup.source, scope.durability.baseline);
+  assert.equal(followup.tree, scope.durability.baselineTree);
+  assert.equal(scope.durability.source, scope.source);
+  assert.equal(scope.durability.tree, scope.tree);
+  for (const field of ['historical', 'followup', 'durability']) {
+    for (const mutate of [
+      (proof) => {
+        proof.source = proof.baseline;
+      },
+      (proof) => {
+        proof.tree = '0'.repeat(40);
+      },
+      (proof) => {
+        proof.transitions.pop();
+      },
+      (proof) => {
+        proof.transitions.reverse();
+      },
+      (proof) => {
+        proof.transitions.push({
+          ...proof.transitions[0],
+          path: 'agent-gateway/unreviewed.ts',
+        });
+      },
+      (proof) => {
+        proof.transitions[0].after.blob = '0'.repeat(40);
+      },
+      (proof) => {
+        proof.transitions[0].after.mode = '100755';
+      },
+    ]) {
+      const changed = clone(scope);
+      mutate(changed[field]);
+      assert.throws(
+        () => p.validateTelemetryRuntime(changed),
+        /scope commitment/
+      );
+    }
+    const proof = scope[field];
+    for (const name of ['baseline', 'source']) {
+      const alteredTree = (...args) =>
+        args[0] === 'rev-parse' && args[1] === `${proof[name]}^{tree}`
+          ? '0'.repeat(40)
+          : git(...args);
+      assert.throws(
+        () => p.verifyTelemetryOrigin(alteredTree),
+        /immutable origin/
+      );
+    }
+    const wrongAncestry = (...args) => {
+      if (
+        args[0] === 'merge-base' &&
+        args[2] === proof.baseline &&
+        args[3] === proof.source
+      )
+        throw new Error('injected nonancestor');
+      return git(...args);
+    };
+    assert.throws(
+      () => p.verifyTelemetryOrigin(wrongAncestry),
+      /injected nonancestor/
+    );
+  }
+  const extraRuntime = 'agent-gateway/unreviewed.ts';
+  const extraBlob = '0'.repeat(40);
+  for (const proof of [historical, followup, scope.durability]) {
+    const unexpectedFile = (...args) => {
+      const result = git(...args);
+      return args[0] === 'ls-tree' && args[2] === proof.source
+        ? result + `100644 blob ${extraBlob}\t${extraRuntime}\0`
+        : result;
+    };
+    assert.throws(
+      () => p.verifyTelemetryOrigin(unexpectedFile),
+      /transition inventory/
+    );
+  }
+  const discovery = followup.transitions[2];
+  const beforeTree = p.parseTree(git('ls-tree', '-rz', followup.baseline));
+  const afterTree = p.parseTree(git('ls-tree', '-rz', followup.source));
+  for (const item of followup.transitions) {
+    for (const [key, original] of [
+      ['before', beforeTree],
+      ['after', afterTree],
+    ]) {
+      for (const replacement of [
+        null,
+        { mode: '100644', blob: '0'.repeat(40) },
+        { mode: '100755', blob: item[key]?.blob || extraBlob },
+      ]) {
+        if (JSON.stringify(replacement) === JSON.stringify(item[key])) continue;
+        const changed = new Map(original);
+        if (replacement === null) changed.delete(item.path);
+        else changed.set(item.path, replacement);
+        const corrupted = (...args) => {
+          if (
+            args[0] === 'ls-tree' &&
+            args[2] === followup[key === 'before' ? 'baseline' : 'source']
+          )
+            return [...changed]
+              .map(
+                ([name, identity]) =>
+                  `${identity.mode} blob ${identity.blob}\t${name}\0`
+              )
+              .join('');
+          return git(...args);
+        };
+        assert.throws(
+          () => p.verifyTelemetryOrigin(corrupted),
+          /blob or mode|transition inventory/
+        );
+      }
+    }
+  }
+  assert.equal(
+    discovery.after.blob,
+    git('hash-object', 'test/scripts/hardhat-test-discovery.test.cjs').trim()
+  );
+});
+
+test('telemetry durability admits only its two exact paths after the preserved isolation proof', () => {
+  const scope = p.profile.telemetryRuntime;
+  const git = (...args) => command(ROOT, args);
+  assert.equal(
+    createHash('sha256').update(JSON.stringify(scope.followup)).digest('hex'),
+    'e2a605cfc233ba1cad6061b514aaadc2175a067cd67a1696012a04f3a3bb7137'
+  );
+  assert.deepEqual(
+    scope.durability.transitions.map((item) => item.path),
+    [
+      'agent-gateway/telemetryQueue.ts',
+      'test/scripts/telemetryRecovery.test.cjs',
+    ]
+  );
+  const before = p.parseTree(git('ls-tree', '-rz', scope.durability.baseline));
+  const after = p.parseTree(git('ls-tree', '-rz', scope.durability.source));
+  for (const item of scope.durability.transitions) {
+    assert.deepEqual(item.before, before.get(item.path));
+    assert.deepEqual(item.after, after.get(item.path));
+    assert.equal(item.after.blob, git('hash-object', item.path).trim());
+    for (const [side, original] of [
+      ['before', before],
+      ['after', after],
+    ]) {
+      for (const replacement of [
+        null,
+        { mode: '100644', blob: '0'.repeat(40) },
+        { mode: '100755', blob: item[side].blob },
+      ]) {
+        const changed = new Map(original);
+        if (replacement === null) changed.delete(item.path);
+        else changed.set(item.path, replacement);
+        const corrupted = (...args) => {
+          if (
+            args[0] === 'ls-tree' &&
+            args[2] ===
+              scope.durability[side === 'before' ? 'baseline' : 'source']
+          )
+            return [...changed]
+              .map(
+                ([name, identity]) =>
+                  `${identity.mode} blob ${identity.blob}\t${name}\0`
+              )
+              .join('');
+          return git(...args);
+        };
+        assert.throws(
+          () => p.verifyTelemetryOrigin(corrupted),
+          /blob or mode|transition inventory/
+        );
+      }
+    }
+  }
+  const final = new Map(after);
+  const oldQueue = scope.durability.transitions[0];
+  final.set(oldQueue.path, oldQueue.before);
+  assert.throws(
+    () =>
+      p.verifyTelemetryTransitions(
+        p.parseTree(git('ls-tree', '-rz', scope.baseline)),
+        final
+      ),
+    /blob or mode/
+  );
+  assert.equal(p.verifyTelemetryOrigin(git), scope);
+});
+
+function finiteTelemetryAdmission(t, p) {
+  const pending = pendingProfileFixture(p.profile);
+  const runtime = profileFixtureRuntime(pending);
+  const r = repository(t);
+  shareObjects(r);
+  r.git('read-tree', p.profile.telemetryRuntime.source);
+  addCurrentReleaseMetadata(r);
+  r.put(
+    'scripts/release/source-profile-rc17.json',
+    JSON.stringify(pending, null, 2) + '\n'
+  );
+  const source = r.commit([
+    p.profile.telemetryRuntime.source,
+    p.profile.javascriptToolchain.source,
+  ]);
+  const args = (sha) => ({
+    git: r.git,
+    sha,
+    version: p.profile.releaseVersion,
+    lock: JSON.parse(r.git('show', `${sha}:package-lock.json`)),
+    policy: JSON.parse(r.git('show', `${sha}:config/solidity-compiler.json`)),
+  });
+  assert.equal(
+    runtime.verifySourceScope(args(source)).productionApproved,
+    false
+  );
+  r.put(
+    'agent-gateway/unreviewed-runtime.ts',
+    'export const unreviewed = true;\n'
+  );
+  const extra = r.commit(source);
+  assert.throws(
+    () => runtime.verifySourceScope(args(extra)),
+    /Unexpected implementation-to-release change: agent-gateway\/unreviewed-runtime.ts/
+  );
+  r.git('read-tree', source);
+  r.put('.github/workflows/ci.yml', 'name: substituted CI\n');
+  const alteredCI = r.commit(source);
+  assert.throws(
+    () => runtime.verifySourceScope(args(alteredCI)),
+    /Exact telemetry runtime blob or mode differs/
+  );
+  r.git('read-tree', source);
+  r.put(
+    'test/gateway/telemetryRecovery.test.cjs',
+    command(ROOT, [
+      'cat-file',
+      'blob',
+      p.profile.telemetryRuntime.historical.transitions.at(-1).after.blob,
+    ])
+  );
+  const restoredOldSuite = r.commit(source);
+  assert.throws(
+    () => runtime.verifySourceScope(args(restoredOldSuite)),
+    /Unexpected implementation-to-release change: test\/gateway\/telemetryRecovery.test.cjs/
+  );
+  assert.throws(() => runtime.verifyPublicationReview(), /pending/);
+}
+
+test('finite telemetry admission preserves the rejection of an extra runtime file and altered CI commands', (t) => {
+  finiteTelemetryAdmission(t, p);
+});
+
+test('finite telemetry admission remains independent of installed inert review metadata', (t) => {
+  const source = command(ROOT, ['rev-parse', 'HEAD']).trim();
+  const tree = command(ROOT, ['rev-parse', `${source}^{tree}`]).trim();
+  const reviews = inertProfileReviews(source, tree);
+  const installed = {
+    ...clone(p.profile),
+    scannerReview: reviews.scannerReview,
+    pythonScannerReview: reviews.pythonScannerReview,
+  };
+  const runtime = profileFixtureRuntime(installed);
+  assert.notEqual(runtime.profile.scannerReview, null);
+  assert.notEqual(runtime.profile.pythonScannerReview, null);
+  finiteTelemetryAdmission(t, runtime);
+});
+
 test('actual Git trees require the complete finite protected transition set', (t) => {
   const r = repository(t);
   const beforeIdentity = r.put('contracts/Example.sol', 'before\n');
@@ -225,6 +603,7 @@ test('complete source verifier accepts only finite release plumbing over the act
   addReviewedWebsite(r);
   addReviewedIntegration(r);
   addReviewedPython(r);
+  addCurrentReleaseMetadata(r);
   const beforePackage = JSON.parse(
     r.git('show', `${p.profile.implementationBaseline}:package.json`)
   );
@@ -248,11 +627,11 @@ test('complete source verifier accepts only finite release plumbing over the act
     p.applyLegacyWorkflowGuard(oldWorkflow)
   );
   r.put(
-    'docs/production/RELEASE_NOTES_SOURCE_RC16.md',
+    'docs/production/RELEASE_NOTES_SOURCE_RC17.md',
     '# Pending fixture only\n'
   );
   r.put(
-    'scripts/release/source-profile-rc16.json',
+    'scripts/release/source-profile-rc17.json',
     JSON.stringify(pending, null, 2) + '\n'
   );
   const policy = JSON.parse(
@@ -270,6 +649,7 @@ test('complete source verifier accepts only finite release plumbing over the act
       p.profile.scannerPolicy.producerCommit,
       p.profile.sourceConvergenceBaseline,
       p.profile.pythonScannerBaseline,
+      p.profile.telemetryRuntime.source,
     ]),
     version: p.profile.releaseVersion,
     lock: afterLock,
@@ -281,23 +661,34 @@ test('complete source verifier accepts only finite release plumbing over the act
   assert.equal(result.scannerReview, null);
   assert.equal(result.pythonScannerReview, null);
   assert.deepEqual(result.pythonScannerPolicy, p.profile.pythonScannerPolicy);
-  assert.equal(result.scannerRequiredPaths.length, 28);
-  assert.equal(result.scannerReceiverPaths.length, 14);
+  assert.equal(result.scannerRequiredPaths.length, 34);
+  assert.equal(result.scannerReceiverPaths.length, 20);
+  assert.deepEqual(result.telemetryRuntime, p.profile.telemetryRuntime);
   assert.equal(result.pythonScannerRequiredPaths.length, 8);
   assert.equal(result.protectedTransitions.length, 18);
   assert.deepEqual(result.websiteTransitions, p.websiteTransitions);
   assert.throws(
-    () => runtime.verifySourceScope({ ...args, version: p.profile.previousVersion }),
+    () =>
+      runtime.verifySourceScope({
+        ...args,
+        version: p.profile.previousVersion,
+      }),
     /version/
   );
   assert.throws(
     () =>
-      runtime.verifySourceScope({ ...args, policy: { ...policy, optimizerRuns: 1 } }),
+      runtime.verifySourceScope({
+        ...args,
+        policy: { ...policy, optimizerRuns: 1 },
+      }),
     /compiler/
   );
   assert.throws(
     () =>
-      runtime.verifySourceScope({ ...args, lock: { ...afterLock, injected: true } }),
+      runtime.verifySourceScope({
+        ...args,
+        lock: { ...afterLock, injected: true },
+      }),
     /identity/
   );
   const changes = [
@@ -370,7 +761,9 @@ test('complete source verifier accepts only finite release plumbing over the act
     p.profile.nativePinBaseline,
     p.profile.sourceConvergenceBaseline,
   ]);
-  assert.throws(() => runtime.verifySourceScope({ ...args, sha: missingProducer }));
+  assert.throws(() =>
+    runtime.verifySourceScope({ ...args, sha: missingProducer })
+  );
 });
 
 test('actual Git website transitions admit only the two exact reviewed byte and mode changes', (t) => {
@@ -379,6 +772,7 @@ test('actual Git website transitions admit only the two exact reviewed byte and 
   r.git('read-tree', p.profile.implementationBaseline);
   addReviewedWebsite(r);
   addReviewedIntegration(r);
+  addCurrentReleaseMetadata(r);
   const after = r.commit(p.profile.implementationBaseline);
   const beforeTree = p.parseTree(
     r.git('ls-tree', '-rz', p.profile.implementationBaseline)
@@ -389,12 +783,15 @@ test('actual Git website transitions admit only the two exact reviewed byte and 
     p.verifyReleaseDelta(beforeTree, afterTree),
     [
       ...paths,
+      ...Object.keys(p.previousReleaseRecords),
+      'CHANGELOG.md',
       ...p.profile.integrationTransitions.map((item) => item.path),
+      ...p.profile.telemetryRuntime.transitions.map((item) => item.path),
     ].sort()
   );
   assert.throws(
     () => p.verifyReleaseDelta(beforeTree, beforeTree),
-    /website blob or mode/
+    /website blob or mode|release trigger|toolchain workflow/
   );
   for (const inventory of [
     p.websiteTransitions.slice(1),
@@ -484,7 +881,7 @@ test('version-only normalization rejects dependency, scripts, resolutions and co
   afterPackage.version =
     afterLock.version =
     afterLock.packages[''].version =
-      '2.1.0-rc.16';
+      '2.1.0-rc.17';
   assert.equal(
     p.verifyVersionOnly(beforePackage, afterPackage, beforeLock, afterLock),
     true
@@ -527,7 +924,7 @@ test('legacy version selection preserves every historical workflow byte outside 
       'qualify-source-release.cjs',
       'qualify-source-release-rc16.cjs'
     ),
-    guarded.replace('source-v2.1.0-rc.15', 'source-v2.1.0-rc.16'),
+    guarded.replace('source-v2.1.0-rc.15', 'source-v2.1.0-rc.17'),
     guarded.replace("selected == 'true'", "selected != 'true'"),
     guarded + '\n',
   ])
@@ -640,21 +1037,23 @@ test('Python producer retains original owner bytes plus exact service evidence a
   ]);
   // Normalize only the exact additive service-receipt steps, analyze output ID
   // and approved new push branch before checking the original owner bytes.
-  const reviewSuffix = "\n  codeql-review-bytes:\n    name: Complete Python CodeQL review bytes\n    needs: codeql-python\n    if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/fix/processed-codeql-release-proof-20261020' && github.repository == 'MontrealAI/AGIJobsv0' }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n      actions: read\n    steps:\n      - name: Harden runner\n        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a\n        with:\n          egress-policy: audit\n      - name: Checkout exact review source\n        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955\n        with:\n          fetch-depth: 1\n          persist-credentials: false\n      - name: Setup Node\n        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020\n        with:\n          node-version-file: '.nvmrc'\n      - name: Retain complete original CodeQL review bytes\n        env:\n          GH_TOKEN: ${{ github.token }}\n          CODEQL_REVIEW_ARTIFACT_ID: ${{ needs.codeql-python.outputs.raw_artifact_id }}\n        run: node scripts/release/emit-codeql-review-rc16.cjs --language python\n";
+  const reviewSuffix =
+    "\n  codeql-review-bytes:\n    name: Complete Python CodeQL review bytes\n    needs: codeql-python\n    if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/fix/processed-codeql-release-proof-20261020' && github.repository == 'MontrealAI/AGIJobsv0' }}\n    runs-on: ubuntu-24.04\n    timeout-minutes: 10\n    permissions:\n      contents: read\n      actions: read\n    steps:\n      - name: Harden runner\n        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a\n        with:\n          egress-policy: audit\n      - name: Checkout exact review source\n        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955\n        with:\n          fetch-depth: 1\n          persist-credentials: false\n      - name: Setup Node\n        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020\n        with:\n          node-version-file: '.nvmrc'\n      - name: Retain complete original CodeQL review bytes\n        env:\n          GH_TOKEN: ${{ github.token }}\n          CODEQL_REVIEW_ARTIFACT_ID: ${{ needs.codeql-python.outputs.raw_artifact_id }}\n        run: node scripts/release/emit-codeql-review-rc16.cjs --language python\n";
   assert.ok(formattedWorkflow.endsWith(reviewSuffix));
   let withoutReviewJob = formattedWorkflow.slice(0, -reviewSuffix.length);
   for (const addition of [
-    "    outputs:\n      raw_artifact_id: ${{ steps.codeql_raw.outputs.artifact-id }}\n",
-    "        id: codeql_raw\n",
+    '    outputs:\n      raw_artifact_id: ${{ steps.codeql_raw.outputs.artifact-id }}\n',
+    '        id: codeql_raw\n',
   ]) {
     assert.equal(withoutReviewJob.split(addition).length, 2);
     withoutReviewJob = withoutReviewJob.replace(addition, '');
   }
-  const serviceSuffix = "\n      - name: Retain exact processed CodeQL service receipt\n        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}\n        env:\n          GH_TOKEN: ${{ github.token }}\n          SARIF_UPLOAD_ID: ${{ steps.codeql_analyze.outputs.sarif-id }}\n        run: node scripts/release/source-codeql-service-rc16.cjs --capture --language python --output reports/security/codeql-service-python/codeql-service-receipt.json\n\n      - name: Upload exact processed CodeQL service receipt\n        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n        with:\n          name: codeql-service-receipt-python-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}\n          path: reports/security/codeql-service-python/codeql-service-receipt.json\n          if-no-files-found: error\n";
+  const serviceSuffix =
+    "\n      - name: Retain exact processed CodeQL service receipt\n        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}\n        env:\n          GH_TOKEN: ${{ github.token }}\n          SARIF_UPLOAD_ID: ${{ steps.codeql_analyze.outputs.sarif-id }}\n        run: node scripts/release/source-codeql-service-rc16.cjs --capture --language python --output reports/security/codeql-service-python/codeql-service-receipt.json\n\n      - name: Upload exact processed CodeQL service receipt\n        if: ${{ success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' }}\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n        with:\n          name: codeql-service-receipt-python-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}\n          path: reports/security/codeql-service-python/codeql-service-receipt.json\n          if-no-files-found: error\n";
   assert.ok(withoutReviewJob.endsWith(serviceSuffix));
   let retainedOriginal = withoutReviewJob.slice(0, -serviceSuffix.length);
   for (const addition of [
-    "        id: codeql_analyze\n",
+    '        id: codeql_analyze\n',
     "      - 'fix/processed-codeql-release-proof-20261020'\n",
   ]) {
     assert.equal(retainedOriginal.split(addition).length, 2);
@@ -715,8 +1114,8 @@ test('Python producer retains original owner bytes plus exact service evidence a
     reviewSchema: 'agijobsv0/codeql-python-review/2',
     reviewedProducer: {
       event: 'push',
-      headBranch: 'fix/processed-codeql-release-proof-20261020',
-      ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+      headBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+      ref: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
     },
     producerCommit: formattedProducer,
     producerTree: actualTree,
@@ -733,7 +1132,13 @@ test('Python producer retains original owner bytes plus exact service evidence a
     owner.pythonScannerRequiredPaths
   );
   assert.equal(pendingProfileFixture().pythonScannerReview, null);
-  assert.equal(p.allowedNewPaths.length, 29);
+  assert.equal(p.allowedNewPaths.length, 31);
+  assert(
+    p.allowedNewPaths.includes('scripts/release/source-profile-rc17.json')
+  );
+  assert(
+    p.allowedNewPaths.includes('docs/production/RELEASE_NOTES_SOURCE_RC17.md')
+  );
   for (const name of [
     'scripts/release/emit-codeql-review-rc16.cjs',
     'scripts/release/python-scanner-rc16.cjs',
@@ -795,6 +1200,7 @@ test('actual Git integration transitions reject substituted security/runtime byt
   ]) {
     r.git('read-tree', candidate);
     r.put(selected.path, bytes, mode);
+    addCurrentReleaseMetadata(r);
     assert.throws(
       () =>
         p.verifyReleaseDelta(
@@ -809,6 +1215,153 @@ test('actual Git integration transitions reject substituted security/runtime byt
   assert.throws(
     () => p.verifyIntegrationTransitions(wrongBefore, after),
     /integration blob or mode/
+  );
+});
+
+test('JavaScript toolchain proof pins one complete workflow transition and preserves all historical policies', () => {
+  const proof = p.profile.javascriptToolchain;
+  const git = (...args) => command(ROOT, args);
+  const after = p.parseTree(git('ls-tree', '-rz', proof.source));
+  const baselineProfile = JSON.parse(
+    git('show', `${proof.baseline}:scripts/release/source-profile-rc17.json`)
+  );
+  assert.equal(p.verifyJavascriptToolchainOrigin(git), proof);
+  assert.deepEqual(proof.historicalPolicy, baselineProfile.scannerPolicy);
+  const oldWorkflow = git('show', `${proof.baseline}:${proof.transition.path}`);
+  const pinnedWorkflow = git(
+    'show',
+    `${proof.source}:${proof.transition.path}`
+  );
+  const environment =
+    "        env:\n          # Preserve the reviewed producer's toolcache diagnostics.\n          CODEQL_ACTION_CLEANUP_TOOLCACHE_BUNDLES: 'false'\n";
+  const tools = '          tools: ' + proof.bundle.url + '\n';
+  assert.equal(pinnedWorkflow.split(environment).length, 2);
+  assert.equal(pinnedWorkflow.split(tools).length, 2);
+  assert.equal(
+    pinnedWorkflow.replace(environment, '').replace(tools, ''),
+    oldWorkflow
+  );
+  const normalized = p.normalizeJavascriptToolchain(after);
+  assert.deepEqual(
+    normalized.get(proof.transition.path),
+    proof.transition.before
+  );
+  assert.equal(normalized.size, after.size);
+  assert(
+    p
+      .verifyReleaseDelta(
+        p.parseTree(git('ls-tree', '-rz', p.profile.implementationBaseline)),
+        after
+      )
+      .includes(proof.transition.path)
+  );
+  assert.equal(p.profile.integrationTransitions.length, 43);
+  assert.deepEqual(
+    p.profile.integrationTransitions,
+    baselineProfile.integrationTransitions
+  );
+  for (const [name, identity] of after)
+    if (name !== proof.transition.path)
+      assert.deepEqual(normalized.get(name), identity);
+  assert.deepEqual(
+    p.profile.telemetryRuntime,
+    baselineProfile.telemetryRuntime
+  );
+  assert.deepEqual(
+    p.profile.pythonScannerPolicy,
+    baselineProfile.pythonScannerPolicy
+  );
+  for (const mutate of [
+    (value) => {
+      value.baselineTree = '0'.repeat(40);
+    },
+    (value) => {
+      value.source = value.baseline;
+    },
+    (value) => {
+      value.transition.path = '.github/workflows/another.yml';
+    },
+    (value) => {
+      value.transition.after.blob = '0'.repeat(40);
+    },
+    (value) => {
+      value.transition.after.mode = '100755';
+    },
+    (value) => {
+      value.historicalPolicy.workflowSha256 = '0'.repeat(64);
+    },
+    (value) => {
+      value.bundle.version = '2.27.3';
+    },
+    (value) => {
+      value.bundle.url += '?unreviewed';
+    },
+    (value) => {
+      value.cleanupToolcacheBundles = true;
+    },
+  ]) {
+    const changed = clone(proof);
+    mutate(changed);
+    assert.throws(
+      () => p.validateJavascriptToolchain(changed),
+      /proof commitment/
+    );
+  }
+  for (const replacement of [
+    null,
+    proof.transition.before,
+    { mode: '100755', blob: proof.transition.after.blob },
+  ]) {
+    const changed = new Map(after);
+    if (replacement === null) changed.delete(proof.transition.path);
+    else changed.set(proof.transition.path, replacement);
+    assert.throws(
+      () => p.normalizeJavascriptToolchain(changed),
+      /workflow blob or mode/
+    );
+  }
+  for (const source of [
+    proof.historicalPolicy.producerCommit,
+    proof.baseline,
+    proof.source,
+  ]) {
+    const wrongTree = (...args) =>
+      args[0] === 'rev-parse' && args[1] === `${source}^{tree}`
+        ? '0'.repeat(40)
+        : git(...args);
+    assert.throws(
+      () => p.verifyJavascriptToolchainOrigin(wrongTree),
+      /immutable source tree/
+    );
+  }
+  const extraSource = (...args) => {
+    const output = git(...args);
+    return args[0] === 'ls-tree' && args[2] === proof.source
+      ? output +
+          `100644 blob ${'0'.repeat(40)}\t.github/workflows/unreviewed.yml\0`
+      : output;
+  };
+  assert.throws(
+    () => p.verifyJavascriptToolchainOrigin(extraSource),
+    /finite JavaScript workflow transition/
+  );
+  const wrongAncestry = (...args) => {
+    if (args[0] === 'merge-base') throw new Error('injected nonancestor');
+    return git(...args);
+  };
+  assert.throws(
+    () => p.verifyJavascriptToolchainOrigin(wrongAncestry),
+    /injected nonancestor/
+  );
+  const changedHistoricalConfig = (...args) =>
+    args[0] === 'show' &&
+    args[1] ===
+      `${proof.baseline}:${proof.historicalPolicy.historicalConfigPath}`
+      ? 'substituted historical query policy\n'
+      : git(...args);
+  assert.throws(
+    () => p.verifyJavascriptToolchainOrigin(changedHistoricalConfig),
+    /historical CodeQL configuration/
   );
 });
 
@@ -855,9 +1408,9 @@ test('scanner producer pins must name the same immutable workflow bytes as the r
 
 // These fixtures exercise only review metadata admission. They contain no
 // scanner archive, SARIF report, authenticated API observation or authority.
-function pendingProfileFixture() {
+function pendingProfileFixture(value = p.profile) {
   return {
-    ...clone(p.profile),
+    ...clone(value),
     scannerReview: null,
     pythonScannerReview: null,
   };
@@ -875,7 +1428,7 @@ function profileFixtureRuntime(value) {
   // Compile the unchanged production function source with only its inert JSON
   // input replaced. Do not mutate the live require cache or any predicates.
   runtime.require = (name) =>
-    name === './source-profile-rc16.json'
+    name === './source-profile-rc17.json'
       ? clone(value)
       : originalRequire(name);
   runtime._compile(fs.readFileSync(filename, 'utf8'), filename);
@@ -890,8 +1443,8 @@ function inertProfileReviews(sourceCommit, tree) {
   assert.equal(policy.reviewSchema, 'agijobsv0/codeql-python-review/2');
   assert.deepEqual(policy.reviewedProducer, {
     event: 'push',
-    headBranch: 'fix/processed-codeql-release-proof-20261020',
-    ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+    headBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+    ref: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
   });
   return {
     notesReview: {
@@ -976,8 +1529,8 @@ function inertProfileReviews(sourceCommit, tree) {
 function inertProfileHistory(t) {
   const r = repository(t);
   shareObjects(r);
-  const profilePath = 'scripts/release/source-profile-rc16.json';
-  const notesPath = 'docs/production/RELEASE_NOTES_SOURCE_RC16.md';
+  const profilePath = 'scripts/release/source-profile-rc17.json';
+  const notesPath = 'docs/production/RELEASE_NOTES_SOURCE_RC17.md';
   const selected = command(ROOT, ['rev-parse', 'HEAD']).trim();
   const pending = pendingProfileFixture();
   const liveNotes = command(ROOT, ['show', `${selected}:${notesPath}`]);
@@ -1072,7 +1625,7 @@ test('production metadata admission preserves the actual installed profile and e
     'utf8'
   );
   const start = publisher.indexOf(
-    "  if (\n    canonical(\n      JSON.parse(\n        fs.readFileSync(path.join(downloaded, 'source-profile-rc16.json'))"
+    "  if (\n    canonical(\n      JSON.parse(\n        fs.readFileSync(path.join(downloaded, 'source-profile-rc17.json'))"
   );
   const endMarker = "    throw Error('Remote finite source profile differs');";
   assert(start > 0);
@@ -1081,7 +1634,7 @@ test('production metadata admission preserves the actual installed profile and e
   const comparison = publisher.slice(start, end + endMarker.length);
   const downloaded = path.join(r.root, 'inert-retained-profile');
   fs.mkdirSync(downloaded);
-  const asset = path.join(downloaded, 'source-profile-rc16.json');
+  const asset = path.join(downloaded, 'source-profile-rc17.json');
   fs.writeFileSync(asset, JSON.stringify(installed.value));
   const {
     canonical,
@@ -1096,6 +1649,19 @@ test('production metadata admission preserves the actual installed profile and e
       provenance: { sourceProfile: retained },
     });
   assert.doesNotThrow(() => compare(sourceProfile));
+  const substitutedRuntime = clone(sourceProfile);
+  substitutedRuntime.telemetryRuntime.transitions[0].after.blob = '0'.repeat(
+    40
+  );
+  assert.throws(() => compare(substitutedRuntime), /finite source profile/);
+  const omittedToolchain = clone(sourceProfile);
+  delete omittedToolchain.javascriptToolchain;
+  assert.throws(() => compare(omittedToolchain), /finite source profile/);
+  const substitutedToolchain = clone(sourceProfile);
+  substitutedToolchain.javascriptToolchain.transition.after.blob = '0'.repeat(
+    40
+  );
+  assert.throws(() => compare(substitutedToolchain), /finite source profile/);
   for (const field of ['scannerReview', 'pythonScannerReview']) {
     const altered = clone(sourceProfile);
     altered[field] = null;
@@ -1231,4 +1797,30 @@ test('current profile admission rejects immutable metadata drift, modes, malform
       ),
     /tree differs/
   );
+});
+
+test('rc17 release additions preserve every rc16 record and exact trigger-only delta', () => {
+  const git = (...args) => command(ROOT, args);
+  for (const [name, identity] of Object.entries(p.previousReleaseRecords)) {
+    assert.equal(git('rev-parse', `HEAD:${name}`).trim(), identity.blob);
+    assert.equal(
+      git(
+        'rev-parse',
+        `83065adf18a6ee987f8fa479a496a052d35db682:${name}`
+      ).trim(),
+      identity.blob
+    );
+  }
+  assert.equal(p.releaseTriggerTransitions.length, 7);
+  const needle = "      - 'docs/production/RELEASE_NOTES_SOURCE_RC17.md'\n";
+  for (const item of p.releaseTriggerTransitions) {
+    const before = git('cat-file', 'blob', item.before.blob);
+    const after = git('cat-file', 'blob', item.after.blob);
+    assert.equal(after.replaceAll(needle, ''), before);
+    assert.equal(
+      after.split(needle).length - 1,
+      before.split(needle.replace('RC17', 'RC16')).length - 1
+    );
+    assert.equal(git('rev-parse', `HEAD:${item.path}`).trim(), item.after.blob);
+  }
 });

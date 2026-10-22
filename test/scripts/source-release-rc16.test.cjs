@@ -69,10 +69,10 @@ function pendingReleaseFixture(t) {
     fs.cpSync(path.join(repository, name), destination, { recursive: true });
   }
   fs.writeFileSync(
-    path.join(root, 'scripts/release/source-profile-rc16.json'),
+    path.join(root, 'scripts/release/source-profile-rc17.json'),
     JSON.stringify(pending, null, 2) + '\n'
   );
-  const notes = path.join(root, 'docs/production/RELEASE_NOTES_SOURCE_RC16.md');
+  const notes = path.join(root, 'docs/production/RELEASE_NOTES_SOURCE_RC17.md');
   fs.mkdirSync(path.dirname(notes), { recursive: true });
   fs.writeFileSync(notes, '<!-- rc16-scanner-review\nnull\n-->\n');
   const env = Object.fromEntries(
@@ -118,21 +118,25 @@ function pendingReleaseFixture(t) {
       GITHUB_EVENT_NAME: 'push',
       GITHUB_REF: 'refs/heads/main',
       GH_TOKEN: 'INERT_PENDING_FIXTURE_NEVER_USED_FOR_NETWORK',
-      TAG: 'source-v2.1.0-rc.16',
+      TAG: 'source-v2.1.0-rc.17',
     },
   };
 }
 
 const sha = 'a'.repeat(40);
-const { syntheticServiceProof } =
-  require('./source-codeql-service-fixture-rc16.cjs');
+const {
+  syntheticServiceProof,
+} = require('./source-codeql-service-fixture-rc16.cjs');
 let processedCodeql;
 before(async () => {
   processedCodeql = await syntheticServiceProof({ sha });
 });
 function evaluate(runs, checks, source, ...proof) {
   return evaluateGate(
-    runs, checks, source, proof.length ? proof[0] : processedCodeql
+    runs,
+    checks,
+    source,
+    proof.length ? proof[0] : processedCodeql
   );
 }
 
@@ -202,7 +206,7 @@ test('all workflows/checks, positive processed proof and observed genuine CodeQL
         ...valid.checks,
         {
           head_sha: sha,
-          name: 'Publish qualified rc.16 source prerelease',
+          name: 'Publish qualified rc.17 source prerelease',
           app: actions,
           status: 'in_progress',
         },
@@ -274,7 +278,11 @@ test('all workflows/checks, positive processed proof and observed genuine CodeQL
   ]) {
     const changed = evidence();
     mutate(changed);
-    assert.equal(evaluate(changed.runs, changed.checks, sha, changed.processedCodeql).ready, false);
+    assert.equal(
+      evaluate(changed.runs, changed.checks, sha, changed.processedCodeql)
+        .ready,
+      false
+    );
   }
   assert.equal(
     authenticCodeQL({ ...resultCheck(), app: { ...security, id: 1 } }, sha),
@@ -437,7 +445,7 @@ test('scanner review installation permits only its own record and no executable 
       native: 'fixed',
     },
     after = { ...before, scannerReview: review };
-  const profilePath = 'scripts/release/source-profile-rc16.json';
+  const profilePath = 'scripts/release/source-profile-rc17.json';
   const git = (command, ...args) =>
     command === 'rev-list'
       ? `${sha} ${review.sourceCommit}\n`
@@ -592,12 +600,12 @@ test('rc.16 owns only its new tag/routes/assets and remains blocked pending actu
     'python-codeql-provenance.json',
     'native-compatibility.zip',
     'native-provenance.json',
-    'source-profile-rc16.json',
-    'RELEASE_NOTES_SOURCE_RC16.md',
+    'source-profile-rc17.json',
+    'RELEASE_NOTES_SOURCE_RC17.md',
   ])
     assert(names.includes(name));
   assert(
-    sourceApiUrl('GET', 'git/ref/tags/source-v2.1.0-rc.16').endsWith('rc.16')
+    sourceApiUrl('GET', 'git/ref/tags/source-v2.1.0-rc.17').endsWith('rc.17')
   );
   assert.throws(() => sourceApiUrl('GET', 'git/ref/tags/source-v2.1.0-rc.15'));
   const pending = pendingReleaseFixture(t);
@@ -745,7 +753,7 @@ test('every production admission supplies its immutable Git target before the pe
         assert.equal(context.git('rev-parse', context.target + '^{tree}').trim(), ${JSON.stringify(
           tree
         )});
-        assert.deepEqual(JSON.parse(context.git('show', context.target + ':scripts/release/source-profile-rc16.json')), value);
+        assert.deepEqual(JSON.parse(context.git('show', context.target + ':scripts/release/source-profile-rc17.json')), value);
         throw Error(${JSON.stringify(marker)});
       }
     };
@@ -781,7 +789,7 @@ test('every production admission supplies its immutable Git target before the pe
           GITHUB_EVENT_NAME: 'push',
           GITHUB_REF: 'refs/heads/main',
           GH_TOKEN: 'INERT_TEST_VALUE_NEVER_USED_FOR_NETWORK',
-          TAG: 'source-v2.1.0-rc.16',
+          TAG: 'source-v2.1.0-rc.17',
         },
         timeout: 10000,
       }
@@ -789,4 +797,38 @@ test('every production admission supplies its immutable Git target before the pe
     assert.equal(result.status, 1, `${args.join(' ')} must remain refused`);
     assert.match(result.stderr, new RegExp(marker));
   }
+});
+
+test('only the exact current publisher check is excluded from pending checks', () => {
+  const { runs, checks } = evidence();
+  const self = {
+    head_sha: sha,
+    app: actions,
+    status: 'in_progress',
+    conclusion: null,
+    name: 'Publish qualified rc.17 source prerelease',
+  };
+  assert.equal(evaluate(runs, [...checks, self], sha).ready, true);
+  assert.equal(
+    evaluate(
+      runs,
+      [
+        ...checks,
+        { ...self, name: 'Publish qualified rc.16 source prerelease' },
+      ],
+      sha
+    ).ready,
+    false
+  );
+  assert.equal(
+    evaluate(
+      runs,
+      [
+        ...checks,
+        { ...self, name: 'Publish qualified rc.17 source prerelease extra' },
+      ],
+      sha
+    ).ready,
+    false
+  );
 });

@@ -259,8 +259,8 @@ async function collectAdditionalEvidence() {
       ),
   });
   fs.copyFileSync(
-    'scripts/release/source-profile-rc16.json',
-    path.join(directory, 'source-profile-rc16.json'),
+    'scripts/release/source-profile-rc17.json',
+    path.join(directory, 'source-profile-rc17.json'),
     fs.constants.COPYFILE_EXCL
   );
 }

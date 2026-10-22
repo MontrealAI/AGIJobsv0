@@ -73,7 +73,7 @@ function expectedAssets(tag) {
     'mainnet-deployment-2026-10-12.md',
     'mainnet-deployment-2026-10-18.md',
     'mainnet-deployment-receipts-2026-10-18.json',
-    'RELEASE_NOTES_SOURCE_RC16.md',
+    'RELEASE_NOTES_SOURCE_RC17.md',
     'compiler-warnings-2026-10-13.md',
     'solidity-compiler.json',
     'deployment-addresses.mainnet.json',
@@ -86,7 +86,7 @@ function expectedAssets(tag) {
     'python-codeql-evidence.zip',
     'python-codeql-reviewed-evidence.zip',
     'python-codeql-provenance.json',
-    'source-profile-rc16.json',
+    'source-profile-rc17.json',
     'native-compatibility.zip',
     'native-provenance.json',
   ].sort();
@@ -217,9 +217,11 @@ function verifyJavaScriptAndNativeAssets({
   const historicalProof = verifyHistoricalReviewedCodeql(historicalCodeqlCheck);
   if (
     canonical(provenance.historicalReviewedSourceCodeql) !==
-      canonical(historicalProof)
+    canonical(historicalProof)
   )
-    throw Error('Remote historical f2 Advanced Security evidence differs from authenticated readback');
+    throw Error(
+      'Remote historical f2 Advanced Security evidence differs from authenticated readback'
+    );
   const reviewedCodeql = provenance.reviewedSourceCodeql;
   const claimedChecks = reviewedCodeqlProof(reviewedCodeql);
   const recorded = evaluateCodeql(
@@ -304,7 +306,7 @@ function verifyJavaScriptAndNativeAssets({
   if (
     canonical(
       JSON.parse(
-        fs.readFileSync(path.join(downloaded, 'source-profile-rc16.json'))
+        fs.readFileSync(path.join(downloaded, 'source-profile-rc17.json'))
       )
     ) !== canonical(profile) ||
     canonical(provenance.sourceProfile?.protectedTransitions) !==
@@ -313,6 +315,10 @@ function verifyJavaScriptAndNativeAssets({
       canonical(profile.websiteTransitions) ||
     canonical(provenance.sourceProfile?.integrationTransitions) !==
       canonical(profile.integrationTransitions) ||
+    canonical(provenance.sourceProfile?.telemetryRuntime) !==
+      canonical(profile.telemetryRuntime) ||
+    canonical(provenance.sourceProfile?.javascriptToolchain) !==
+      canonical(profile.javascriptToolchain) ||
     provenance.sourceProfile?.integrationBaseline !==
       profile.integrationBaseline ||
     provenance.sourceProfile?.integrationTree !== profile.integrationTree ||
@@ -362,15 +368,24 @@ function verifyJavaScriptAndNativeAssets({
       'Remote final CodeQL result does not match authenticated GitHub checks'
     );
   serviceEvidence.assertFinalServices(processedCodeqlServices, { sha, tree });
-  const retainedService = readCodeqlServiceAsset(downloaded, provenance, { sha, tree });
+  const retainedService = readCodeqlServiceAsset(downloaded, provenance, {
+    sha,
+    tree,
+  });
   if (canonical(retainedService) !== canonical(processedCodeqlServices))
-    throw Error('Remote processed CodeQL service evidence differs from authenticated readback');
+    throw Error(
+      'Remote processed CodeQL service evidence differs from authenticated readback'
+    );
   serviceEvidence.verifyRawBinding(
     processedCodeqlServices,
     'javascript',
-    execFileSync('unzip', ['-p', path.join(downloaded, 'codeql-evidence.zip'), 'javascript.sarif'], {
-      maxBuffer: 32 * 1024 * 1024,
-    })
+    execFileSync(
+      'unzip',
+      ['-p', path.join(downloaded, 'codeql-evidence.zip'), 'javascript.sarif'],
+      {
+        maxBuffer: 32 * 1024 * 1024,
+      }
+    )
   );
   nativeEvidence.verifyNativeEvidence({
     directory: downloaded,
@@ -399,15 +414,25 @@ function verifyDownloadedAssets(context) {
   serviceEvidence.verifyRawBinding(
     context.processedCodeqlServices,
     'python',
-    execFileSync('unzip', ['-p', path.join(context.downloaded, 'python-codeql-evidence.zip'), 'python.sarif'], {
-      maxBuffer: 32 * 1024 * 1024,
-    })
+    execFileSync(
+      'unzip',
+      [
+        '-p',
+        path.join(context.downloaded, 'python-codeql-evidence.zip'),
+        'python.sarif',
+      ],
+      {
+        maxBuffer: 32 * 1024 * 1024,
+      }
+    )
   );
   return python;
 }
 
 function readCodeqlServiceAsset(directory, provenance, { sha, tree }) {
-  const bytes = fs.readFileSync(path.join(directory, 'codeql-service-evidence.json'));
+  const bytes = fs.readFileSync(
+    path.join(directory, 'codeql-service-evidence.json')
+  );
   if (bytes.length > 4 * 1024 * 1024)
     throw Error('CodeQL service evidence exceeds its byte bound');
   const text = bytes.toString('utf8');
@@ -415,7 +440,9 @@ function readCodeqlServiceAsset(directory, provenance, { sha, tree }) {
     throw Error('CodeQL service evidence must be exact UTF8');
   const retained = JSON.parse(text);
   if (JSON.stringify(retained, null, 2) + '\n' !== text)
-    throw Error('CodeQL service evidence must use its bounded canonical serialization');
+    throw Error(
+      'CodeQL service evidence must use its bounded canonical serialization'
+    );
   const reference = provenance.processedCodeqlServiceEvidence;
   if (
     !exactFields(reference, ['schema', 'source', 'tree', 'file', 'sha256']) ||
@@ -425,7 +452,9 @@ function readCodeqlServiceAsset(directory, provenance, { sha, tree }) {
     reference.file !== 'codeql-service-evidence.json' ||
     reference.sha256 !== crypto.createHash('sha256').update(bytes).digest('hex')
   )
-    throw Error('CodeQL service asset differs from qualified source provenance');
+    throw Error(
+      'CodeQL service asset differs from qualified source provenance'
+    );
   return retained;
 }
 
@@ -568,7 +597,8 @@ function compareScannerReports(actualRaw, reviewedRaw, requiredSources = []) {
   );
   scannerRequire(
     canonical(witness.rawResultHashes) === canonical(actualSummary.results) &&
-      canonical(witness.transportedResultHashes) === canonical(transportedSummary.results),
+      canonical(witness.transportedResultHashes) ===
+        canonical(transportedSummary.results),
     'Scanner transport and raw summary identities disagree'
   );
   return {
@@ -580,22 +610,39 @@ function compareScannerReports(actualRaw, reviewedRaw, requiredSources = []) {
   };
 }
 
-function scannerEvidencePair(directory, requiredSources, finalContext, reviewedContext) {
+function scannerEvidencePair(
+  directory,
+  requiredSources,
+  finalContext,
+  reviewedContext
+) {
   let actualRaw;
   let reviewedRaw;
   const summary = scannerArchive(
     path.join(directory, 'codeql-evidence.zip'),
     requiredSources,
     finalContext,
-    { captureRaw: (raw) => { actualRaw = Buffer.from(raw); } }
+    {
+      captureRaw: (raw) => {
+        actualRaw = Buffer.from(raw);
+      },
+    }
   );
   const reviewed = scannerArchive(
     path.join(directory, 'codeql-reviewed-evidence.zip'),
     requiredSources,
     reviewedContext,
-    { captureRaw: (raw) => { reviewedRaw = Buffer.from(raw); } }
+    {
+      captureRaw: (raw) => {
+        reviewedRaw = Buffer.from(raw);
+      },
+    }
   );
-  const comparison = compareScannerReports(actualRaw, reviewedRaw, requiredSources);
+  const comparison = compareScannerReports(
+    actualRaw,
+    reviewedRaw,
+    requiredSources
+  );
   scannerRequire(
     canonical(summary) === canonical(comparison.actualSummary) &&
       canonical(reviewed) === canonical(comparison.reviewedSummary),
@@ -610,7 +657,13 @@ const scannerFiles = [
   'source-scope-after.json',
   'source-extraction.json',
 ].sort();
-function verifyScannerArchive(files, read, requiredSources, context, capture = {}) {
+function verifyScannerArchive(
+  files,
+  read,
+  requiredSources,
+  context,
+  capture = {}
+) {
   scannerRequire(
     canonical([...files].sort()) === canonical(scannerFiles),
     'Raw scanner archive inventory differs'
@@ -1118,7 +1171,10 @@ function verifyScannerEvidence({
     'Reviewed scanner producer changed'
   );
   const { summary, reviewed, comparison } = scannerEvidencePair(
-    directory, requiredSources, finalContext, reviewedContext
+    directory,
+    requiredSources,
+    finalContext,
+    reviewedContext
   );
   scannerRequire(
     canonical(reviewed) === canonical(review.summary) &&
@@ -1209,7 +1265,10 @@ async function collectScannerEvidence() {
     });
   }
   const pair = scannerEvidencePair(
-    directory, context.requiredSources, finalContext, reviewedContext
+    directory,
+    context.requiredSources,
+    finalContext,
+    reviewedContext
   );
   const proof = {
     schema: 'agijobsv0/raw-codeql-provenance/2',
@@ -1257,13 +1316,19 @@ async function collectScannerEvidence() {
   });
   serviceEvidence.assertFinalServices(processedCodeqlServices, { sha });
   if (canonical(processedCodeqlServices) !== canonical(retainedService))
-    throw Error('Collected CodeQL service evidence differs from authenticated readback');
+    throw Error(
+      'Collected CodeQL service evidence differs from authenticated readback'
+    );
   serviceEvidence.verifyRawBinding(
     processedCodeqlServices,
     'javascript',
-    execFileSync('unzip', ['-p', path.join(directory, 'codeql-evidence.zip'), 'javascript.sarif'], {
-      maxBuffer: 32 * 1024 * 1024,
-    })
+    execFileSync(
+      'unzip',
+      ['-p', path.join(directory, 'codeql-evidence.zip'), 'javascript.sarif'],
+      {
+        maxBuffer: 32 * 1024 * 1024,
+      }
+    )
   );
   fs.writeFileSync(
     path.join(directory, 'codeql-provenance.json'),
@@ -1430,8 +1495,192 @@ function assertTag(ref, sha) {
     throw Error('Release tag belongs to a different commit or object type');
 }
 
+const releaseBodyByteLimit = 4096;
+const notesAsset = 'RELEASE_NOTES_SOURCE_RC17.md';
+const releaseOwners = Object.freeze([
+  Object.freeze({ id: 41898282, login: 'github-actions[bot]', type: 'Bot' }),
+  Object.freeze({ id: 24208299, login: 'MontrealAI', type: 'User' }),
+]);
+function readQualifiedReleaseNotes({ git, sha, directory }) {
+  if (typeof git !== 'function' || !/^[a-f0-9]{40}$/.test(sha || ''))
+    throw Error('Immutable release notes source is required');
+  const sourceBlob = String(
+    git('rev-parse', `${sha}:docs/production/${notesAsset}`)
+  ).trim();
+  const asset = fs.readFileSync(path.join(directory, notesAsset));
+  // Authenticate raw bytes, not UTF-8 text decoded by the shared Git helper.
+  const assetBlob = crypto
+    .createHash('sha1')
+    .update(`blob ${asset.length}\0`)
+    .update(asset)
+    .digest('hex');
+  if (!/^[a-f0-9]{40}$/.test(sourceBlob) || sourceBlob !== assetBlob)
+    throw Error('Full release notes asset differs from immutable Git source');
+  const notes = asset.toString('utf8');
+  if (!Buffer.from(notes, 'utf8').equals(asset))
+    throw Error('Full release notes asset is not valid UTF-8');
+  return notes;
+}
+function releaseBody({ sha, tag, notes }) {
+  if (
+    !/^[a-f0-9]{40}$/.test(sha || '') ||
+    tag !== 'source-v2.1.0-rc.17' ||
+    typeof notes !== 'string' ||
+    !notes.trim() ||
+    Buffer.byteLength(notes, 'utf8') > 8 * 1024 * 1024 ||
+    Buffer.from(notes, 'utf8').toString('utf8') !== notes
+  )
+    throw Error('Invalid source release description inputs');
+  const digest = crypto
+    .createHash('sha256')
+    .update(notes, 'utf8')
+    .digest('hex');
+  const base = 'https://github.com/MontrealAI/AGIJobsv0';
+  const body = [
+    `Qualified source snapshot ${tag}. Production approval remains false.`,
+    '',
+    `Source commit: ${sha}`,
+    `Complete notes: [${notesAsset}](${base}/releases/download/${tag}/${notesAsset})`,
+    `Exact-source notes: [view](${base}/blob/${sha}/docs/production/${notesAsset})`,
+    `Full-notes SHA-256: ${digest}`,
+    '',
+    'The complete notes and all source, compiler, scanner and native evidence remain checksummed release assets. Historical deployment records retain their original identities and limits.',
+    'This source prerelease does not authorize production operation, transactions, signing, funding, activation or migration.',
+    '',
+    `<!-- agijobs-source-release:${sha} -->`,
+    '',
+  ].join('\n');
+  if (Buffer.byteLength(body, 'utf8') > releaseBodyByteLimit)
+    throw Error('Source release description exceeds its UTF-8 byte limit');
+  return body;
+}
+const normalizeReleaseBody = (body) =>
+  typeof body === 'string' ? body.replace(/\r\n/g, '\n').trimEnd() : null;
+function assertOwnedRelease(release, { sha, tag, body, id, draft, tagSha }) {
+  const expected = expectedAssets(tag);
+  if (
+    !Number.isSafeInteger(release?.id) ||
+    release.id < 1 ||
+    (id !== undefined && release.id !== id) ||
+    !releaseOwners.some(
+      (owner) =>
+        owner.id === release.author?.id &&
+        owner.login === release.author?.login &&
+        owner.type === release.author?.type
+    ) ||
+    release.tag_name !== tag ||
+    !(
+      release.target_commitish === sha ||
+      (release.target_commitish === 'main' && tagSha === sha)
+    ) ||
+    release.name !== `${tag} — Develop the strategy. Preserve the mission.` ||
+    typeof release.draft !== 'boolean' ||
+    (draft !== undefined && release.draft !== draft) ||
+    release.prerelease !== true ||
+    normalizeReleaseBody(release.body) !== normalizeReleaseBody(body) ||
+    !Array.isArray(release.assets) ||
+    release.assets.length > expected.length
+  )
+    throw Error('Existing release is not the exact owned source snapshot');
+  const names = new Set(),
+    ids = new Set();
+  for (const asset of release.assets) {
+    if (
+      !Number.isSafeInteger(asset?.id) ||
+      asset.id < 1 ||
+      ids.has(asset.id) ||
+      !expected.includes(asset.name) ||
+      names.has(asset.name)
+    )
+      throw Error('Unexpected or ambiguous existing source release assets');
+    names.add(asset.name);
+    ids.add(asset.id);
+  }
+  return release;
+}
+async function discoverRelease(api, context) {
+  // GitHub's by-tag endpoint returns published releases only, not drafts.
+  const published = await api(
+    'GET',
+    `releases/tags/${context.tag}`,
+    undefined,
+    true
+  );
+  const values = [],
+    seen = new Set();
+  let previousLength;
+  for (let page = 1; page <= 20; page++) {
+    const entries = await api('GET', `releases?per_page=100&page=${page}`);
+    if (
+      !Array.isArray(entries) ||
+      entries.length > 100 ||
+      (previousLength !== undefined &&
+        previousLength < 100 &&
+        entries.length > 0)
+    )
+      throw Error('Incomplete or inconsistent source release pagination');
+    for (const entry of entries) {
+      if (
+        !Number.isSafeInteger(entry?.id) ||
+        entry.id < 1 ||
+        seen.has(entry.id)
+      )
+        throw Error('Duplicate or malformed source release identity');
+      seen.add(entry.id);
+      if (entry.tag_name === context.tag) values.push(entry);
+    }
+    if (entries.length === 0) {
+      if (
+        values.length > 1 ||
+        (published && (values.length !== 1 || published.id !== values[0].id))
+      )
+        throw Error('Ambiguous or inconsistent source release discovery');
+      if (values.length === 0) return null;
+      const listed = assertOwnedRelease(values[0], context);
+      if (Boolean(published) !== !listed.draft)
+        throw Error('Published and draft source release observations differ');
+      if (published)
+        assertOwnedRelease(published, {
+          ...context,
+          id: listed.id,
+          draft: false,
+        });
+      const selected = assertOwnedRelease(
+        await api('GET', `releases/${listed.id}`),
+        { ...context, id: listed.id, draft: listed.draft }
+      );
+      if (canonical(selected.assets) !== canonical(listed.assets))
+        throw Error('Source release assets changed during discovery');
+      return selected;
+    }
+    previousLength = entries.length;
+  }
+  throw Error('Source release pagination exceeds the completeness bound');
+}
+function assertCompleteReleaseAssets(release, tag) {
+  if (
+    canonical(release.assets.map((asset) => asset.name).sort()) !==
+    canonical(expectedAssets(tag))
+  )
+    throw Error('Remote source release asset inventory is incomplete');
+}
+function verifyExactProducerBytes(downloaded, directory, tag) {
+  const names = expectedAssets(tag);
+  for (const location of [downloaded, directory])
+    if (canonical(fs.readdirSync(location).sort()) !== canonical(names))
+      throw Error('Exact producer asset inventory mismatch');
+  for (const name of names) {
+    const digest = (location) =>
+      crypto
+        .createHash('sha256')
+        .update(fs.readFileSync(path.join(location, name)))
+        .digest('hex');
+    if (digest(downloaded) !== digest(directory))
+      throw Error(`Exact producer/readback mismatch: ${name}`);
+  }
+}
 async function publish({ sha, tag, notes, api, upload, verify }) {
-  const marker = `<!-- agijobs-source-release:${sha} -->`;
+  const body = releaseBody({ sha, tag, notes });
   const refPath = `git/ref/tags/${tag}`;
   let ref = await api('GET', refPath, undefined, true);
   if (!ref) {
@@ -1441,24 +1690,26 @@ async function publish({ sha, tag, notes, api, upload, verify }) {
     ref = await api('POST', 'git/refs', { ref: `refs/tags/${tag}`, sha });
   }
   assertTag(ref, sha);
-  let release = await api('GET', `releases/tags/${tag}`, undefined, true);
+  // GitHub ignores target_commitish once the tag exists. Only literal main
+  // may accompany the separately authenticated immutable tag/source binding.
+  const context = { sha, tag, body, tagSha: ref.object.sha };
+  let release = await discoverRelease(api, context);
   if (!release) {
-    release = await api('POST', 'releases', {
-      tag_name: tag,
-      target_commitish: sha,
-      draft: true,
-      prerelease: true,
-      name: `${tag} — Develop the strategy. Preserve the mission.`,
-      body: `${notes.trim()}\n\n${marker}\n`,
-    });
+    release = assertOwnedRelease(
+      await api('POST', 'releases', {
+        tag_name: tag,
+        target_commitish: sha,
+        draft: true,
+        prerelease: true,
+        name: `${tag} — Develop the strategy. Preserve the mission.`,
+        body,
+      }),
+      { ...context, draft: true }
+    );
   }
-  if (
-    release.tag_name !== tag ||
-    release.prerelease !== true ||
-    !release.body?.includes(marker)
-  )
-    throw Error('Existing release is not the owned source snapshot');
+  const id = release.id;
   if (!release.draft) {
+    assertCompleteReleaseAssets(release, tag);
     await verify(false);
     assertTag(await api('GET', refPath), sha);
     return release;
@@ -1466,25 +1717,115 @@ async function publish({ sha, tag, notes, api, upload, verify }) {
   await upload();
   await verify(true);
   assertTag(await api('GET', refPath), sha);
+  release = assertOwnedRelease(await api('GET', `releases/${id}`), {
+    ...context,
+    id,
+    draft: true,
+  });
+  assertCompleteReleaseAssets(release, tag);
   // Once reserved, the tag defines the qualified snapshot. Same-SHA retries
   // remain valid if main advances; an existing tag is never moved or deleted.
-  await api('PATCH', `releases/${release.id}`, {
+  await api('PATCH', `releases/${id}`, {
     draft: false,
     prerelease: true,
     make_latest: 'false',
   });
-  release = await api('GET', `releases/tags/${tag}`);
-  if (
-    release.draft ||
-    release.tag_name !== tag ||
-    !release.prerelease ||
-    !release.body?.includes(marker)
-  )
-    throw Error(
-      'Publication readback does not match the qualified source release'
-    );
+  release = assertOwnedRelease(await api('GET', `releases/tags/${tag}`), {
+    ...context,
+    id,
+    draft: false,
+  });
+  assertCompleteReleaseAssets(release, tag);
+  await verify(false, true);
   assertTag(await api('GET', refPath), sha);
   return release;
+}
+
+async function githubFailureDetails(response, token) {
+  // Keep only bounded validation fields, never request headers, payloads or raw
+  // non-JSON bodies. The caller's credential is redacted even if echoed back.
+  const reader = response.body?.getReader();
+  if (!reader) return {};
+  const chunks = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > 16384) {
+        await reader.cancel();
+        return { truncated: true };
+      }
+      chunks.push(Buffer.from(value));
+    }
+    const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    const safe = (value) => {
+      if (typeof value !== 'string') return undefined;
+      const redacted = value
+        .split(token)
+        .join('[REDACTED]')
+        .replace(/Bearer\s+[^\s"']+/gi, 'Bearer [REDACTED]')
+        .replace(
+          /(?:gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+)/g,
+          '[REDACTED]'
+        )
+        .replace(/[\u0000-\u001f\u007f]/g, ' ');
+      let output = '';
+      for (const point of redacted) {
+        if (Buffer.byteLength(output + point, 'utf8') > 512) break;
+        output += point;
+      }
+      return output;
+    };
+    return {
+      message: safe(parsed?.message),
+      errors: Array.isArray(parsed?.errors)
+        ? parsed.errors
+            .slice(0, 10)
+            .map((item) =>
+              typeof item === 'string'
+                ? { message: safe(item) }
+                : Object.fromEntries(
+                    ['resource', 'field', 'code', 'message'].map((key) => [
+                      key,
+                      safe(item?.[key]),
+                    ])
+                  )
+            )
+        : undefined,
+    };
+  } catch {
+    return { validationResponseUnavailable: true };
+  } finally {
+    reader.releaseLock();
+  }
+}
+function sourceApi({ sha, token, request = fetch }) {
+  return async (method, resource, body, optional = false) => {
+    const response = await request(sourceApiUrl(method, resource, sha), {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      redirect: 'error',
+      signal: AbortSignal.timeout(30000),
+    });
+    if (optional && response.status === 404) return null;
+    if (!response.ok) {
+      const details = await githubFailureDetails(response, token);
+      throw Error(
+        `GitHub ${method} ${resource}: HTTP ${
+          response.status
+        }; ${JSON.stringify(details)}`
+      );
+    }
+    return response.json();
+  };
 }
 
 function producerId(value) {
@@ -1556,7 +1897,7 @@ async function readLatestCodeql(api, sourceSha) {
 
 function sourceApiUrl(method, resource, finalSha) {
   const allowed = {
-    GET: /^(?:git\/ref\/(?:heads\/main|tags\/source-v2\.1\.0-rc\.16)|releases\/tags\/source-v2\.1\.0-rc\.16|actions\/artifacts\/[1-9][0-9]*|actions\/runs\/[1-9][0-9]*\/attempts\/[1-9][0-9]*|check-runs\/[1-9][0-9]*)$/,
+    GET: /^(?:git\/ref\/(?:heads\/main|tags\/source-v2\.1\.0-rc\.17)|releases\/tags\/source-v2\.1\.0-rc\.17|releases\/[1-9][0-9]*|releases\?per_page=100&page=(?:[1-9]|1[0-9]|20)|actions\/artifacts\/[1-9][0-9]*|actions\/runs\/[1-9][0-9]*\/attempts\/[1-9][0-9]*|check-runs\/[1-9][0-9]*)$/,
     POST: /^(?:git\/refs|releases)$/,
     PATCH: /^releases\/[1-9][0-9]*$/,
   };
@@ -1633,7 +1974,7 @@ async function main() {
   if (
     repository !== 'MontrealAI/AGIJobsv0' ||
     !/^[a-f0-9]{40}$/.test(sha || '') ||
-    tag !== 'source-v2.1.0-rc.16' ||
+    tag !== 'source-v2.1.0-rc.17' ||
     !token
   )
     throw Error('Invalid source publication identity or authorization');
@@ -1662,24 +2003,7 @@ async function main() {
   const expected = expectedAssets(tag);
   if (JSON.stringify(files) !== JSON.stringify(expected))
     throw Error('Unexpected or missing source assets');
-  const api = async (method, resource, body, optional = false) => {
-    const response = await fetch(sourceApiUrl(method, resource, sha), {
-      method,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json',
-      },
-      body: body === undefined ? undefined : JSON.stringify(body),
-      redirect: 'error',
-      signal: AbortSignal.timeout(30000),
-    });
-    if (optional && response.status === 404) return null;
-    if (!response.ok)
-      throw Error(`GitHub ${method} ${resource}: HTTP ${response.status}`);
-    return response.json();
-  };
+  const api = sourceApi({ sha, token });
   // Local preflight and remote readback use the same authenticated evidence
   // path. Installed review metadata alone cannot reserve a release tag.
   const verifyEvidence = async (downloaded, draft) => {
@@ -1693,14 +2017,19 @@ async function main() {
     const provenance = JSON.parse(
       fs.readFileSync(path.join(downloaded, 'provenance.json'), 'utf8')
     );
-    const [compilerArtifact, compilerRun, codeql, finalCodeqlChecks, historicalCodeqlCheck] =
-      await Promise.all([
-        api('GET', `actions/artifacts/${artifactId}`),
-        api('GET', `actions/runs/${runId}/attempts/${runAttempt}`),
-        readReviewedCodeql(api, provenance.reviewedSourceCodeql),
-        readLatestCodeql(api, sha),
-        api('GET', `check-runs/${historicalReviewedCodeql.checkId}`),
-      ]);
+    const [
+      compilerArtifact,
+      compilerRun,
+      codeql,
+      finalCodeqlChecks,
+      historicalCodeqlCheck,
+    ] = await Promise.all([
+      api('GET', `actions/artifacts/${artifactId}`),
+      api('GET', `actions/runs/${runId}/attempts/${runAttempt}`),
+      readReviewedCodeql(api, provenance.reviewedSourceCodeql),
+      readLatestCodeql(api, sha),
+      api('GET', `check-runs/${historicalReviewedCodeql.checkId}`),
+    ]);
     const scannerProof = JSON.parse(
       fs.readFileSync(path.join(downloaded, 'codeql-provenance.json'))
     );
@@ -1742,7 +2071,10 @@ async function main() {
         { review: profile.pythonScannerReview }
       ),
     ]);
-    const retainedService = readCodeqlServiceAsset(downloaded, provenance, { sha, tree });
+    const retainedService = readCodeqlServiceAsset(downloaded, provenance, {
+      sha,
+      tree,
+    });
     const processedCodeqlServices = await serviceEvidence.observeFinalServices({
       api,
       git,
@@ -1804,7 +2136,7 @@ async function main() {
     });
     assertPinnedAlphaCheckout(process.cwd(), sha);
   };
-  const verify = async (draft) => {
+  const verify = async (draft, exactProducer = false) => {
     assertPinnedAlphaCheckout(process.cwd(), sha);
     const downloaded = fs.mkdtempSync(
       path.join(
@@ -1815,6 +2147,7 @@ async function main() {
     try {
       cli('release', 'download', tag, '--dir', downloaded);
       await verifyEvidence(downloaded, draft);
+      if (exactProducer) verifyExactProducerBytes(downloaded, directory, tag);
     } finally {
       fs.rmSync(downloaded, { recursive: true, force: true });
     }
@@ -1825,10 +2158,7 @@ async function main() {
     tag,
     api,
     verify,
-    notes: fs.readFileSync(
-      'docs/production/RELEASE_NOTES_SOURCE_RC16.md',
-      'utf8'
-    ),
+    notes: readQualifiedReleaseNotes({ git, sha, directory }),
     upload: async () =>
       cli(
         'release',
@@ -1868,6 +2198,14 @@ module.exports = {
   verifyScannerEvidence,
   producerId,
   sourceApiUrl,
+  sourceApi,
+  githubFailureDetails,
+  releaseBody,
+  readQualifiedReleaseNotes,
+  releaseBodyByteLimit,
+  verifyExactProducerBytes,
+  discoverRelease,
+  assertOwnedRelease,
   readReviewedCodeql,
   readLatestCodeql,
   reviewedCodeqlPagePath,

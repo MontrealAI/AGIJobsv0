@@ -23,6 +23,12 @@ const {
   scannerPolicyContext,
   sourceApiUrl,
   releaseOutputDirectory,
+  releaseBody,
+  readQualifiedReleaseNotes,
+  releaseBodyByteLimit,
+  verifyExactProducerBytes,
+  sourceApi,
+  discoverRelease,
 } = require('../../scripts/release/publish-source-release-rc16.cjs');
 const {
   compilerSourceBaseline,
@@ -37,13 +43,15 @@ const {
 } = require('../../scripts/release/qualify-source-release-rc16.cjs');
 const { profile } = require('../../scripts/release/source-profile-rc16.cjs');
 const sha = 'a'.repeat(40),
-  tag = 'source-v2.1.0-rc.16';
-const { syntheticServiceProof } =
-  require('./source-codeql-service-fixture-rc16.cjs');
+  tag = 'source-v2.1.0-rc.17';
+const {
+  syntheticServiceProof,
+} = require('./source-codeql-service-fixture-rc16.cjs');
 let processedCodeqlServices;
 before(async () => {
   processedCodeqlServices = await syntheticServiceProof({
-    sha, tree: 'c'.repeat(40),
+    sha,
+    tree: 'c'.repeat(40),
     javascriptRaw: Buffer.from(JSON.stringify(scannerDocument())),
   });
 });
@@ -254,16 +262,21 @@ function assetFixture(t) {
     head_sha: historicalReviewedCodeql.sourceSha,
     name: 'CodeQL',
     app: { id: 57789, slug: 'github-advanced-security' },
-    status: 'completed', conclusion: 'success',
-    html_url: 'https://github.com/MontrealAI/AGIJobsv0/runs/' +
+    status: 'completed',
+    conclusion: 'success',
+    html_url:
+      'https://github.com/MontrealAI/AGIJobsv0/runs/' +
       historicalReviewedCodeql.checkId,
   };
   const provenance = {
-    historicalReviewedSourceCodeql:
-      verifyHistoricalReviewedCodeql(historicalCodeqlCheck),
+    historicalReviewedSourceCodeql: verifyHistoricalReviewedCodeql(
+      historicalCodeqlCheck
+    ),
     processedCodeqlServiceEvidence: {
       schema: 'agijobsv0/codeql-service-asset/1',
-      source: sha, tree: 'c'.repeat(40), file: 'codeql-service-evidence.json',
+      source: sha,
+      tree: 'c'.repeat(40),
+      file: 'codeql-service-evidence.json',
       sha256: crypto.createHash('sha256').update(serviceBytes).digest('hex'),
     },
     sha,
@@ -423,7 +436,8 @@ function assetFixture(t) {
     runAttempt: 2,
     runNumber: 10,
     event: 'push',
-    headBranch: id === 20 ? profile.scannerPolicy.reviewedProducer.headBranch : 'main',
+    headBranch:
+      id === 20 ? profile.scannerPolicy.reviewedProducer.headBranch : 'main',
     artifactId: id + 1,
     artifactName: `codeql-security-report-${source}-${id}-2`,
     githubDigest: `sha256:${digest}`,
@@ -514,7 +528,7 @@ function assetFixture(t) {
     JSON.stringify(provenance)
   );
   fs.writeFileSync(
-    path.join(directory, 'source-profile-rc16.json'),
+    path.join(directory, 'source-profile-rc17.json'),
     JSON.stringify(profile)
   );
   fs.writeFileSync(
@@ -739,9 +753,11 @@ test('publication readback requires processed main proof and blocks any observed
   fixture.verify(false, { finalCodeqlChecks: [] });
   for (const processedCodeqlServices of [undefined, {}])
     assert.throws(
-      () => fixture.verify(false, {
-        finalCodeqlChecks: [], processedCodeqlServices,
-      }),
+      () =>
+        fixture.verify(false, {
+          finalCodeqlChecks: [],
+          processedCodeqlServices,
+        }),
       /Positive authenticated/
     );
   fixture.verify(false, { finalCodeqlChecks: [result] });
@@ -1013,7 +1029,7 @@ test('workflow packages every declared immutable release asset', () => {
   assert.ok(workflow.includes(`TAG: ${tag}`));
   assert.ok(workflow.includes('group: source-release-rc16-${{ github.ref }}'));
   assert.ok(workflow.includes('name: source-rc16-${{ github.sha }}'));
-  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC16.md'));
+  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC17.md'));
   for (const prior of [
     'RC7',
     'RC8',
@@ -1040,7 +1056,7 @@ test('workflow packages every declared immutable release asset', () => {
   const notes = fs.readFileSync(
     path.resolve(
       __dirname,
-      '../../docs/production/RELEASE_NOTES_SOURCE_RC16.md'
+      '../../docs/production/RELEASE_NOTES_SOURCE_RC17.md'
     ),
     'utf8'
   );
@@ -1071,7 +1087,7 @@ test('workflow packages every declared immutable release asset', () => {
         'python-codeql-provenance.json',
         'native-compatibility.zip',
         'native-provenance.json',
-        'source-profile-rc16.json',
+        'source-profile-rc17.json',
       ].includes(name)
     )
       continue;
@@ -1183,12 +1199,23 @@ function fixture() {
       if (resource === 'git/ref/heads/main')
         return { object: { sha: state.main } };
       if (resource.startsWith('git/ref/tags/')) return state.ref;
-      if (resource.startsWith('releases/tags/')) return state.release;
+      if (resource.startsWith('releases/tags/'))
+        return state.release?.draft ? null : state.release;
+      if (resource === 'releases?per_page=100&page=1')
+        return state.release ? [structuredClone(state.release)] : [];
+      if (resource === 'releases?per_page=100&page=2') return [];
+      if (resource === 'releases/1') return structuredClone(state.release);
     }
     state.mutations++;
     if (resource === 'git/refs')
       state.ref = { object: { type: 'commit', sha: body.sha } };
-    else if (resource === 'releases') state.release = { id: 1, ...body };
+    else if (resource === 'releases')
+      state.release = {
+        id: 1,
+        ...body,
+        assets: [],
+        author: { id: 41898282, login: 'github-actions[bot]', type: 'Bot' },
+      };
     else if (method === 'PATCH') Object.assign(state.release, body);
     else throw Error('Unexpected API operation');
     if (state.failAfter === state.mutations)
@@ -1203,25 +1230,29 @@ function fixture() {
       api,
       upload: async () => {
         state.uploads++;
+        state.release.assets = expectedAssets(tag).map((name, index) => ({
+          id: index + 1,
+          name,
+        }));
       },
       verify: async () => {
         state.verifies++;
       },
       ...overrides,
     });
-  return { state, run };
+  return { state, run, api };
 }
 test('fresh publication verifies assets before publishing; public retries do not mutate', async () => {
   const { state, run } = fixture();
   await run();
   assert.equal(state.release.draft, false);
-  assert.equal(state.verifies, 1);
+  assert.equal(state.verifies, 2);
   const mutations = state.mutations,
     uploads = state.uploads;
   await run();
   assert.equal(state.mutations, mutations);
   assert.equal(state.uploads, uploads);
-  assert.equal(state.verifies, 2);
+  assert.equal(state.verifies, 3);
 });
 test('interrupted tag, draft, publication responses and upload/download failures can resume at the same SHA', async () => {
   for (const failAfter of [1, 2, 3]) {
@@ -1646,9 +1677,9 @@ f35f728d821a1b30c81e0151d3df138b01db891a0764ef6f2b91f7a5da7c027d  mainnet-deploy
           !name.startsWith('codeql-') &&
           !name.startsWith('native-') &&
           !name.startsWith('python-codeql-') &&
-          name !== 'source-profile-rc16.json'
+          name !== 'source-profile-rc17.json'
       )
-      .map((name) => name.replace('RC16.md', 'RC14.md'))
+      .map((name) => name.replace('RC17.md', 'RC14.md'))
       .sort()
   );
   const retainedFiles = {
@@ -1715,7 +1746,7 @@ test('rc.16 preserves rc.15 notes and states exact computer evidence, settlement
     path.join(root, 'docs/production/RELEASE_NOTES_SOURCE_RC16.md'),
     'utf8'
   );
-  assert.ok(notes.startsWith('# ' + tag));
+  assert.ok(notes.startsWith('# source-v2.1.0-rc.16'));
   for (const required of [
     'Production approval remains false',
     '96 scanner results',
@@ -1732,7 +1763,7 @@ test('rc.16 preserves rc.15 notes and states exact computer evidence, settlement
   ])
     assert.ok(notes.toLowerCase().includes(required.toLowerCase()), required);
   assert.equal(expectedAssets(tag).length, 25);
-  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC16.md'));
+  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC17.md'));
   assert.ok(!expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC15.md'));
 });
 
@@ -2210,6 +2241,10 @@ test('additive native evidence and finite source claims remain bound after resea
       value.sourceProfile.integrationTransitions[0].after.blob = '0'.repeat(40);
     },
     (value) => {
+      value.sourceProfile.telemetryRuntime.transitions[0].after.blob =
+        '0'.repeat(40);
+    },
+    (value) => {
       value.sourceProfile.integrationBaseline = '0'.repeat(40);
     },
     (value) => {
@@ -2308,7 +2343,10 @@ test('publisher authenticates retained local evidence before any tag, draft, upl
       refusal + ' refusal leaves publication effects untouched',
       async () => {
         const calls = [];
-        const directory = path.join(os.tmpdir(), 'inert-rc16-output-' + refusal);
+        const directory = path.join(
+          os.tmpdir(),
+          'inert-rc16-output-' + refusal
+        );
         const marker = 'INERT_LOCAL_' + refusal.toUpperCase() + '_REFUSAL';
         const inertService = Object.freeze({ inertOrchestrationOnly: true });
         const metadata = {
@@ -2377,6 +2415,8 @@ test('publisher authenticates retained local evidence before any tag, draft, upl
             throw Error('INERT_GH_MUST_REMAIN_UNREACHED');
           },
           sourceApiUrl,
+          sourceApi: (options) =>
+            sourceApi({ ...options, request: context.fetch }),
           fetch: async (_url, options) => {
             assert.equal(options.method, 'GET');
             calls.push('local evidence GET');
@@ -2455,7 +2495,7 @@ test('inert JavaScript observation binds the artifact branch for reviewed S1 and
   // Synthetic API metadata only. No scanner archive, result review or actual
   // authenticated observation is created or claimed by this test.
   for (const [branch, finalSource] of [
-    ['fix/processed-codeql-release-proof-20261020', false],
+    ['fix/inherited-codeql-telemetry-runtime-20261021', false],
     ['main', true],
   ]) {
     const fixture = scannerApiFixture();
@@ -2486,6 +2526,13 @@ test('inert JavaScript observation binds the artifact branch for reviewed S1 and
       );
     }
   }
+  const historical = scannerApiFixture();
+  historical.producer.headBranch =
+    'fix/processed-codeql-release-proof-20261020';
+  await assert.rejects(
+    readScannerObservation(historical.api, historical.producer, sha, false),
+    /Scanner producer differs from its exact finite source role/
+  );
 });
 
 test('published readback requires the exact versioned lossless comparison receipt', (t) => {
@@ -2493,32 +2540,53 @@ test('published readback requires the exact versioned lossless comparison receip
   fixture.verify();
   const original = structuredClone(fixture.scannerProof);
   for (const change of [
-    (value) => { delete value.comparison; },
-    (value) => { value.schema = 'agijobsv0/raw-codeql-provenance/1'; },
-    (value) => { value.comparison.witness.inverseReconstructsEntireOriginalRun = false; },
-    (value) => { value.comparison.actualSummary.results = []; },
-    (value) => { value.comparison.transportedSummary.results = []; },
-    (value) => { value.comparison.witness.sourceRunSha256 = '0'.repeat(64); },
+    (value) => {
+      delete value.comparison;
+    },
+    (value) => {
+      value.schema = 'agijobsv0/raw-codeql-provenance/1';
+    },
+    (value) => {
+      value.comparison.witness.inverseReconstructsEntireOriginalRun = false;
+    },
+    (value) => {
+      value.comparison.actualSummary.results = [];
+    },
+    (value) => {
+      value.comparison.transportedSummary.results = [];
+    },
+    (value) => {
+      value.comparison.witness.sourceRunSha256 = '0'.repeat(64);
+    },
   ]) {
     const value = structuredClone(original);
     change(value);
     for (const directory of [fixture.directory, fixture.downloaded]) {
-      fs.writeFileSync(path.join(directory, 'codeql-provenance.json'), JSON.stringify(value));
+      fs.writeFileSync(
+        path.join(directory, 'codeql-provenance.json'),
+        JSON.stringify(value)
+      );
       fixture.checksums(directory);
     }
     assert.throws(() => fixture.verify(), /scanner|reconciliation|provenance/i);
   }
   for (const directory of [fixture.directory, fixture.downloaded]) {
-    fs.writeFileSync(path.join(directory, 'codeql-provenance.json'), JSON.stringify(original));
+    fs.writeFileSync(
+      path.join(directory, 'codeql-provenance.json'),
+      JSON.stringify(original)
+    );
     fixture.checksums(directory);
   }
   fixture.verify();
 });
 
 function outputDirectoryFixture(t) {
-  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'rc16-output-path-')));
+  const root = fs.realpathSync(
+    fs.mkdtempSync(path.join(os.tmpdir(), 'rc16-output-path-'))
+  );
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  const checkout = path.join(root, 'checkout'), directory = path.join(root, 'producer');
+  const checkout = path.join(root, 'checkout'),
+    directory = path.join(root, 'producer');
   fs.mkdirSync(checkout, { mode: 0o700 });
   fs.mkdirSync(directory, { mode: 0o700 });
   return { root: checkout, directory };
@@ -2529,14 +2597,409 @@ test('release output accepts an existing owned private directory outside the che
 });
 test('release output refuses missing and nonprivate directory metadata', (t) => {
   const fixture = outputDirectoryFixture(t);
-  assert.throws(() => releaseOutputDirectory({ ...fixture, directory: null }), /Explicit private/);
+  assert.throws(
+    () => releaseOutputDirectory({ ...fixture, directory: null }),
+    /Explicit private/
+  );
   fs.chmodSync(fixture.directory, 0o755);
   assert.throws(() => releaseOutputDirectory(fixture), /Owned private/);
 });
 test('release output refuses an otherwise private directory inside the checkout', (t) => {
   const fixture = outputDirectoryFixture(t);
-  assert.throws(() => releaseOutputDirectory({ ...fixture, directory: fixture.root }), /outside/);
+  assert.throws(
+    () => releaseOutputDirectory({ ...fixture, directory: fixture.root }),
+    /outside/
+  );
   const child = path.join(fixture.root, 'producer');
   fs.mkdirSync(child, { mode: 0o700 });
-  assert.throws(() => releaseOutputDirectory({ ...fixture, directory: child }), /outside/);
+  assert.throws(
+    () => releaseOutputDirectory({ ...fixture, directory: child }),
+    /outside/
+  );
+});
+
+test('by-tag 404 discovers the sole owned draft without another POST', async () => {
+  const { state, run, api } = fixture();
+  await assert.rejects(
+    run({
+      upload: async () => {
+        throw Error('interrupted');
+      },
+    })
+  );
+  const mutations = state.mutations;
+  assert.equal(await api('GET', `releases/tags/${tag}`), null);
+  state.release.body = state.release.body.replace(/\n/g, '\r\n').trimEnd();
+  state.release.target_commitish = 'main';
+  await run();
+  assert.equal(state.mutations, mutations + 1, 'only final PATCH is allowed');
+  assert.equal(state.release.id, 1);
+});
+
+test('bounded UTF-8 description retains the full-note hash and asset link', async () => {
+  const notes = '# Reviewed notes\n' + 'é🧪 published evidence\n'.repeat(20000);
+  const body = releaseBody({ sha, tag, notes });
+  assert.ok(Buffer.byteLength(body, 'utf8') <= releaseBodyByteLimit);
+  assert.equal(Buffer.from(body).toString('utf8'), body);
+  assert.ok(
+    body.includes(crypto.createHash('sha256').update(notes).digest('hex'))
+  );
+  assert.ok(
+    body.includes(`/releases/download/${tag}/RELEASE_NOTES_SOURCE_RC17.md`)
+  );
+  assert.equal(expectedAssets(tag).length, 25);
+  assert.ok(expectedAssets(tag).includes('RELEASE_NOTES_SOURCE_RC17.md'));
+  const { state, run } = fixture();
+  await run({ notes });
+  assert.equal(state.release.body, body);
+  assert.throws(
+    () => releaseBody({ sha, tag, notes: '\ud800' }),
+    /description inputs/
+  );
+});
+
+test('foreign draft identity, flags, body and unexpected assets fail before mutation', async () => {
+  for (const mutate of [
+    (r) => {
+      r.author.id = 42;
+    },
+    (r) => {
+      r.author.login = 'someone-else';
+    },
+    (r) => {
+      r.author.type = 'User';
+    },
+    (r) => {
+      r.target_commitish = 'b'.repeat(40);
+    },
+    (r) => {
+      r.target_commitish = 'unreviewed-branch';
+    },
+    (r) => {
+      r.prerelease = false;
+    },
+    (r) => {
+      r.draft = 'true';
+    },
+    (r) => {
+      r.body = `unrelated\n<!-- agijobs-source-release:${sha} -->`;
+    },
+    (r) => {
+      r.name = 'Unrelated release';
+    },
+    (r) => {
+      r.assets = [{ id: 8, name: 'unowned.zip' }];
+    },
+    (r) => {
+      r.assets = [
+        { id: 8, name: 'provenance.json' },
+        { id: 9, name: 'provenance.json' },
+      ];
+    },
+  ]) {
+    const { state, run } = fixture();
+    await assert.rejects(
+      run({
+        upload: async () => {
+          throw Error('interrupted');
+        },
+      })
+    );
+    mutate(state.release);
+    const mutations = state.mutations;
+    await assert.rejects(run());
+    assert.equal(state.mutations, mutations);
+    assert.equal(state.uploads, 0);
+  }
+});
+
+test('release-list pagination rejects duplicate identities, tags and inconsistent pages', async () => {
+  const context = {
+    sha,
+    tag,
+    body: releaseBody({ sha, tag, notes: 'Reviewed notes' }),
+  };
+  const valid = {
+    id: 1,
+    tag_name: tag,
+    target_commitish: sha,
+    draft: true,
+    prerelease: true,
+    name: `${tag} — Develop the strategy. Preserve the mission.`,
+    body: context.body,
+    author: { id: 24208299, login: 'MontrealAI', type: 'User' },
+    assets: [],
+  };
+  for (const pages of [
+    [[valid, { ...valid, id: 2 }], []],
+    [[valid, valid], []],
+    [[valid], [{ id: 2, tag_name: 'other' }]],
+    Array.from({ length: 20 }, (_, page) =>
+      Array.from({ length: 100 }, (_, i) => ({
+        id: page * 100 + i + 1,
+        tag_name: 'other',
+      }))
+    ),
+  ]) {
+    await assert.rejects(
+      discoverRelease(async (method, resource) => {
+        assert.equal(method, 'GET');
+        if (resource.startsWith('releases/tags/')) return null;
+        if (resource.startsWith('releases?'))
+          return pages[Number(resource.split('page=').at(-1)) - 1];
+        return valid;
+      }, context),
+      /[Aa]mbiguous|[Dd]uplicate|[Ii]nconsistent|completeness bound/
+    );
+  }
+  for (const change of [{ tag_name: 'other' }, { id: 2 }, { draft: false }]) {
+    await assert.rejects(
+      discoverRelease(async (method, resource) => {
+        if (resource.startsWith('releases/tags/')) return null;
+        if (resource === 'releases?per_page=100&page=1') return [valid];
+        if (resource === 'releases?per_page=100&page=2') return [];
+        return { ...valid, ...change };
+      }, context),
+      /owned source/
+    );
+  }
+});
+
+test('release identity and inventory are rechecked before the publication PATCH', async () => {
+  for (const mutate of [
+    (r) => {
+      r.author.id = 5;
+    },
+    (r) => {
+      r.assets.pop();
+    },
+    (r) => {
+      r.body = 'changed';
+    },
+  ]) {
+    const { state, run } = fixture();
+    await assert.rejects(
+      run({
+        verify: async () => {
+          mutate(state.release);
+        },
+      })
+    );
+    assert.equal(state.release.draft, true);
+    assert.equal(state.mutations, 2);
+  }
+});
+
+test('HTTP validation response is retained without credentials or header data', async () => {
+  const token = 'INERT_TEST_CREDENTIAL';
+  const api = sourceApi({
+    sha,
+    token,
+    request: async (url, options) => {
+      assert.equal(options.headers.Authorization, `Bearer ${token}`);
+      return new Response(
+        JSON.stringify({
+          message: `Validation Failed ${token}`,
+          errors: [
+            {
+              resource: 'Release',
+              field: 'body',
+              code: 'too_long',
+              message: `Bearer ${token} github_pat_mock123`,
+            },
+          ],
+          headers: { Authorization: token },
+          secret: token,
+        }),
+        { status: 422 }
+      );
+    },
+  });
+  await assert.rejects(
+    api('POST', 'releases', { body: 'reviewed' }),
+    (error) => {
+      assert.match(error.message, /HTTP 422/);
+      assert.match(error.message, /too_long/);
+      assert.match(error.message, /"field":"body"/);
+      assert.doesNotMatch(
+        error.message,
+        /INERT_TEST_CREDENTIAL|github_pat_mock123|Authorization|secret/
+      );
+      return true;
+    }
+  );
+  const oversized = sourceApi({
+    sha,
+    token,
+    request: async () => new Response('x'.repeat(20000), { status: 422 }),
+  });
+  await assert.rejects(oversized('POST', 'releases', {}), /truncated/);
+});
+
+test('new publication uses strict producer bytes; existing public retry keeps semantic mode', async () => {
+  const { run } = fixture();
+  const observations = [];
+  const verify = async (...args) => {
+    observations.push(args);
+  };
+  await run({ verify });
+  assert.deepEqual(observations, [[true], [false, true]]);
+  observations.length = 0;
+  await run({ verify });
+  assert.deepEqual(observations, [[false]]);
+});
+test('post-public strict readback compares all 25 files, including retry-compatible evidence', (t) => {
+  const fixture = assetFixture(t);
+  verifyExactProducerBytes(fixture.downloaded, fixture.directory, tag);
+  for (const name of [
+    'provenance.json',
+    'SHA256SUMS.txt',
+    'compiler-evidence.zip',
+    'compiler-provenance.json',
+    'RELEASE_NOTES_SOURCE_RC17.md',
+  ]) {
+    const target = path.join(fixture.downloaded, name);
+    const bytes = fs.readFileSync(target);
+    fs.appendFileSync(target, '\n');
+    assert.throws(
+      () =>
+        verifyExactProducerBytes(fixture.downloaded, fixture.directory, tag),
+      /Exact producer\/readback mismatch/
+    );
+    fs.writeFileSync(target, bytes);
+  }
+});
+
+test('draft read routes are exact, repository scoped and finitely paginated', () => {
+  for (const resource of [
+    'releases?per_page=100&page=1',
+    'releases?per_page=100&page=20',
+    'releases/419650015',
+  ])
+    assert.equal(
+      sourceApiUrl('GET', resource),
+      `https://api.github.com/repos/MontrealAI/AGIJobsv0/${resource}`
+    );
+  for (const resource of [
+    'releases?per_page=100&page=21',
+    'releases?per_page=99&page=1',
+    'releases?per_page=100&page=01',
+    'releases/0',
+    'releases/1/assets',
+    'releases/1?extra=true',
+    'releases/tags/source-v2.1.0-rc.16',
+    'git/ref/tags/source-v2.1.0-rc.16',
+  ])
+    assert.throws(() => sourceApiUrl('GET', resource), /Unsupported/);
+});
+
+test('full notes remain byte-exact against immutable source before description construction', (t) => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'rc17-full-notes-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const notes =
+    '# Full source notes\n' + 'é🧪 complete evidence\n'.repeat(12000);
+  const file = path.join(directory, 'RELEASE_NOTES_SOURCE_RC17.md');
+  fs.writeFileSync(file, notes);
+  const blob = (bytes) =>
+    crypto
+      .createHash('sha1')
+      .update(`blob ${Buffer.byteLength(bytes)}\0`)
+      .update(bytes)
+      .digest('hex');
+  const git = (...args) => {
+    assert.deepEqual(args, [
+      'rev-parse',
+      `${sha}:docs/production/RELEASE_NOTES_SOURCE_RC17.md`,
+    ]);
+    return blob(notes) + '\n';
+  };
+  assert.equal(readQualifiedReleaseNotes({ git, sha, directory }), notes);
+  const body = releaseBody({
+    sha,
+    tag,
+    notes: readQualifiedReleaseNotes({ git, sha, directory }),
+  });
+  assert.ok(
+    body.includes(
+      crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')
+    )
+  );
+  assert.equal(fs.readFileSync(file, 'utf8'), notes);
+  fs.appendFileSync(file, 'not in the qualified source');
+  assert.throws(
+    () => readQualifiedReleaseNotes({ git, sha, directory }),
+    /differs from immutable Git/
+  );
+  const invalid = Buffer.from([0xff]);
+  fs.writeFileSync(file, invalid);
+  assert.throws(
+    () =>
+      readQualifiedReleaseNotes({ git: () => blob(invalid), sha, directory }),
+    /not valid UTF-8/
+  );
+});
+
+test('immutable notes identity rejects lossy UTF-8 substitution through the real Git read path', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rc17-notes-git-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: 'Notes fixture',
+    GIT_AUTHOR_EMAIL: 'notes@example.invalid',
+    GIT_COMMITTER_NAME: 'Notes fixture',
+    GIT_COMMITTER_EMAIL: 'notes@example.invalid',
+  };
+  const command = (args, input) =>
+    execFileSync(
+      'git',
+      ['--no-replace-objects', '-c', 'core.fsmonitor=false', ...args],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        env,
+        input,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }
+    );
+  command(['init', '--quiet']);
+  const sourceCommit = (bytes) => {
+    const blob = command(['hash-object', '-w', '--stdin'], bytes).trim();
+    const production = command(
+      ['mktree'],
+      `100644 blob ${blob}\tRELEASE_NOTES_SOURCE_RC17.md\n`
+    ).trim();
+    const docs = command(
+      ['mktree'],
+      `040000 tree ${production}\tproduction\n`
+    ).trim();
+    const tree = command(['mktree'], `040000 tree ${docs}\tdocs\n`).trim();
+    return command(['commit-tree', tree, '-m', 'Raw notes fixture']).trim();
+  };
+  const git = (...args) => command(args);
+  const file = path.join(root, 'RELEASE_NOTES_SOURCE_RC17.md');
+  const valid = Buffer.from('é🧪 exact Unicode and CRLF\r\n');
+  fs.writeFileSync(file, valid);
+  assert.equal(
+    readQualifiedReleaseNotes({
+      git,
+      sha: sourceCommit(valid),
+      directory: root,
+    }),
+    valid.toString('utf8')
+  );
+  const invalid = Buffer.from([0xff]);
+  const invalidSource = sourceCommit(invalid);
+  // This is exactly the replacement a UTF-8-decoding git show would produce.
+  fs.writeFileSync(file, invalid.toString('utf8'));
+  assert.throws(
+    () =>
+      readQualifiedReleaseNotes({ git, sha: invalidSource, directory: root }),
+    /differs from immutable Git/
+  );
+  fs.writeFileSync(file, invalid);
+  assert.throws(
+    () =>
+      readQualifiedReleaseNotes({ git, sha: invalidSource, directory: root }),
+    /not valid UTF-8/
+  );
 });

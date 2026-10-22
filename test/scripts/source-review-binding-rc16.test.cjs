@@ -16,8 +16,8 @@ const {
   parseScannerReview,
   scannerHistory,
 } = require('../../scripts/release/qualify-source-release-rc16.cjs');
-const notesPath = 'docs/production/RELEASE_NOTES_SOURCE_RC16.md';
-const profilePath = 'scripts/release/source-profile-rc16.json';
+const notesPath = 'docs/production/RELEASE_NOTES_SOURCE_RC17.md';
+const profilePath = 'scripts/release/source-profile-rc17.json';
 const slots = ['notesReview', 'scannerReview', 'pythonScannerReview'];
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const empty = () => Object.fromEntries(slots.map((slot) => [slot, null]));
@@ -86,8 +86,8 @@ function reviewRecords(sourceSha, tree) {
     pythonScannerReview: {
       schema: 'agijobsv0/codeql-python-review/2',
       producerEvent: 'push',
-      producerHeadBranch: 'fix/processed-codeql-release-proof-20261020',
-      producerRef: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+      producerHeadBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+      producerRef: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
       sourceCommit: sourceSha,
       tree,
       producerRunId: 4,

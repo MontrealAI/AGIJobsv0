@@ -90,8 +90,8 @@ function reviewMetadataFixture() {
   const py = {
     schema: 'agijobsv0/codeql-python-review/2',
     producerEvent: 'push',
-    producerHeadBranch: 'fix/processed-codeql-release-proof-20261020',
-    producerRef: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+    producerHeadBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+    producerRef: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
     sourceCommit: source,
     tree,
     producerRunId: 1000000000000001,
@@ -160,7 +160,7 @@ function metadataGit(fixture, nodes, changedPaths = {}) {
     if (command === 'ls-tree')
       return '100644 blob ' + 'd'.repeat(40) + '\t' + args.at(-1) + '\0';
     if (command === 'show') {
-      if (args[0].endsWith(':docs/production/RELEASE_NOTES_SOURCE_RC16.md'))
+      if (args[0].endsWith(':docs/production/RELEASE_NOTES_SOURCE_RC17.md'))
         return '<!-- rc16-scanner-review\nnull\n-->\n';
       const commit = args[0].split(':')[0];
       assert(profiles.has(commit), 'Unknown synthetic profile source');
@@ -181,7 +181,7 @@ function metadataGit(fixture, nodes, changedPaths = {}) {
         changedPaths[from + '..' + to] ||
         (JSON.stringify(profiles.get(from)) === JSON.stringify(profiles.get(to))
           ? []
-          : ['scripts/release/source-profile-rc16.json']);
+          : ['scripts/release/source-profile-rc17.json']);
       return paths.map((name) => name + '\0').join('');
     }
     throw Error('Unexpected synthetic metadata command: ' + command);
@@ -313,7 +313,7 @@ test('synthetic review metadata rejects qualification, pin, executable and peer-
         [{ sha: final, parents: [f.source], profile: both }],
         {
           [f.source + '..' + final]: [
-            'scripts/release/source-profile-rc16.json',
+            'scripts/release/source-profile-rc17.json',
             'SYNTHETIC_METADATA_ONLY.js',
           ],
         }
@@ -476,10 +476,7 @@ function descriptorMetadataOnly() {
       driver: {
         name: 'SYNTHETIC_METADATA_ONLY',
         rules: [{ id: 'metadata/rule-a' }, { id: 'metadata/rule-b' }],
-        notifications: [
-          { id: 'metadata/note-a' },
-          { id: 'metadata/note-b' },
-        ],
+        notifications: [{ id: 'metadata/note-a' }, { id: 'metadata/note-b' }],
       },
       extensions: [
         {
@@ -569,8 +566,14 @@ test('descriptor metadata comparison preserves full records and original arrays'
   }
   assert.throws(() =>
     verifyPythonToolComponents(
-      [{ name: 'a', rules: [] }, { name: 'b', rules: [] }],
-      [{ name: 'b', rules: [] }, { name: 'a', rules: [] }]
+      [
+        { name: 'a', rules: [] },
+        { name: 'b', rules: [] },
+      ],
+      [
+        { name: 'b', rules: [] },
+        { name: 'a', rules: [] },
+      ]
     )
   );
 });

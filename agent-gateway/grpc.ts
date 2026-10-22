@@ -44,6 +44,7 @@ import {
 } from './stakeCoordinator';
 import { getRewardPayouts } from './events';
 import { publishEnergySample } from './telemetry';
+import { copyEnergySample } from './telemetrySample';
 import { serialiseChainJob } from './jobSerialization';
 
 interface ProtoTelemetryPayload {
@@ -1050,9 +1051,13 @@ async function handleRecordTelemetry(
     respondWithError(callback, err, grpc.status.INVALID_ARGUMENT);
     return;
   }
-  let energySamples: unknown[];
+  let energySamples: ReturnType<typeof copyEnergySample>[];
   try {
-    energySamples = parseTelemetrySamples(request.samples);
+    energySamples = parseTelemetrySamples(request.samples).map((sample) => ({
+      ...copyEnergySample(sample),
+      jobId,
+      agent: wallet.address,
+    }));
   } catch (err) {
     respondWithError(callback, err, grpc.status.INVALID_ARGUMENT);
     return;
@@ -1073,17 +1078,11 @@ async function handleRecordTelemetry(
 
   let published = 0;
   for (const sample of energySamples) {
-    if (sample && typeof sample === 'object') {
-      try {
-        await publishEnergySample({
-          ...(sample as Record<string, unknown>),
-          jobId,
-          agent: wallet.address,
-        } as any);
-        published += 1;
-      } catch (err) {
-        console.warn('Failed to publish telemetry sample', err);
-      }
+    try {
+      await publishEnergySample(sample);
+      published += 1;
+    } catch (err) {
+      console.warn('Failed to publish telemetry sample', err);
     }
   }
 
