@@ -4,12 +4,16 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { validateDiscoveryProtectedScope } from './discovery-protected-scope.mjs';
+import {auditInstalledGitRoot,installedGit,validateInstalledProtectedScope} from './discovery-installed-protected-scope.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
+const installedEdition=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version==='2.1.0-rc.18';
+if(installedEdition) auditInstalledGitRoot(root);
 const directory = path.join(root, 'docs/security/remediation-2026-10-19');
 const ledger = JSON.parse(fs.readFileSync(path.join(directory, 'findings.json'), 'utf8'));
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
-const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }).trim();
+const git = (...args) => installedEdition ? installedGit(root,...args)
+  : execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }).trim();
 const key = result => {
   const loc = result.locations[0].physicalLocation;
   return JSON.stringify([result.ruleId, loc.artifactLocation.uri, loc.region]);
@@ -54,7 +58,9 @@ assert.equal(git('show', `${ledger.baseline.commit}:.github/codeql/config.yml`),
 const protectedPath = file => /^(contracts\/|config\/|deployment-config\/|deployment\/|deployments\/)/.test(file) || /(?:compiler-evidence|compiler-provenance|mainnet-deployment|deployment-addresses|configuration-readback|solidity-compiler|ethereum-mainnet)/.test(file) || (/receipts/i.test(file) && /\.json$/.test(file));
 const protectedFiles = git('ls-tree', '-r', '--name-only', ledger.baseline.commit).split('\n').filter(protectedPath);
 const changes = git('diff', '--name-only', ledger.baseline.commit, 'HEAD').split('\n').filter(Boolean);
-const discoveryScope = validateDiscoveryProtectedScope(root, ledger.baseline.commit, changes.filter(protectedPath));
+const discoveryScope = installedEdition
+  ? validateInstalledProtectedScope(root,ledger.baseline.commit,changes.filter(protectedPath))
+  : validateDiscoveryProtectedScope(root, ledger.baseline.commit, changes.filter(protectedPath));
 assert.equal(git('diff', '--name-only', 'HEAD'), '', 'uncommitted tracked changes cannot be bound to HEAD qualification');
 assert.equal(ledger.qualification.productionApproved, false);
 const result = { commit: git('rev-parse', 'HEAD'), tree: git('rev-parse', 'HEAD^{tree}'), baselineResults: 96, counts, protectedFiles: protectedFiles.length, unchangedQueryConfiguration: true, discoveryScope, productionApproved: false };

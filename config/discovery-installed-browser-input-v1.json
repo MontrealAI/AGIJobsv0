@@ -1,0 +1,30 @@
+{
+  "schema": "manager/discovery-browser-input-artifact/v1",
+  "state": "UNSET_PENDING_AUTHENTICATED_ALPHA_ARTIFACT",
+  "repository": "MontrealAI/AGI-Alpha-Agent-v0",
+  "workflowPath": ".github/workflows/successor-capability.yml",
+  "producer": null,
+  "artifact": null,
+  "sourceHash": null,
+  "pageSha256": null,
+  "catalogSha256": null,
+  "inventorySha256": null,
+  "members": {
+    "discovery-continuation/browser-native-requests.json": null,
+    "discovery-continuation/fleet-browser-request.json": null,
+    "discovery-continuation/fleet-browser-workspace.json": null,
+    "discovery-continuation/fleet-native/native-proof.json": null,
+    "discovery-continuation/jobs-browser-request.json": null,
+    "discovery-continuation/jobs-browser-workspace.json": null,
+    "discovery-continuation/journey.json": null,
+    "discovery-continuation/served/index.html": null,
+    "discovery-continuation/served/sources.json": null,
+    "exact-checkout.json": null,
+    "source.json": null
+  },
+  "campaignDigest": null,
+  "missionId": null,
+  "workspaceSha256": null,
+  "requestSha256": null,
+  "transport": null
+}

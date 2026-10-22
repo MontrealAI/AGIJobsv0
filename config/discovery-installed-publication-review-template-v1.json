@@ -1,0 +1,24 @@
+{
+  "schema": "agijobsv0/discovery-installed-publication-review/v1",
+  "status": "UNSELECTED_TEMPLATE_NOT_APPROVAL",
+  "profile": "jobs-discovery-installed-v1",
+  "releaseVersion": "2.1.0-rc.18",
+  "tag": "discovery-v2.1.0-rc.18",
+  "versionReservation": "UNRESERVED_PROPOSAL",
+  "source": null,
+  "selection": null,
+  "alpha": null,
+  "alphaQualification": null,
+  "prerequisite": null,
+  "scannerReviews": {
+    "javascript": null,
+    "python": null,
+    "installedPython": null
+  },
+  "qualityDisposition": {
+    "status": "PENDING_CASE_SPECIFIC_DECISIONS",
+    "cases": []
+  },
+  "reviewReferences": [],
+  "publicationApproved": false
+}

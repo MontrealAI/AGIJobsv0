@@ -102,10 +102,27 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
-      - name: Select the separately versioned rc.17 source profile
+      - name: Select exact rc.17 or Discovery rc.18 applicability
         id: release-version
-        run: node -e "require('node:fs').appendFileSync(process.env.GITHUB_OUTPUT, 'selected=' + (require('./package.json').version === '2.1.0-rc.17') + '\n')"
-      - run: node --test test/scripts/source-codeql-service-rc16.test.cjs test/scripts/source-profile-rc16.test.cjs test/scripts/source-release-rc16.test.cjs test/scripts/source-release-security-rc16-gate.test.cjs test/scripts/source-release-security-rc16-publish.test.cjs test/scripts/source-release-integrated-rc16.test.cjs test/scripts/source-python-scanner-rc16.test.cjs test/scripts/source-python-evidence-rc16.test.cjs test/scripts/source-review-binding-rc16.test.cjs integrations/alpha-agent/tests/transformational-compatibility.test.mjs
+        run: node scripts/release/discovery-installed-release-dispatch.cjs
+      - name: Verify inherited rc.17 fixed-source suite
+        if: steps.release-version.outputs.edition == 'rc17'
+        run: node --test test/scripts/source-codeql-service-rc16.test.cjs test/scripts/source-profile-rc16.test.cjs test/scripts/source-release-rc16.test.cjs test/scripts/source-release-security-rc16-gate.test.cjs test/scripts/source-release-security-rc16-publish.test.cjs test/scripts/source-release-integrated-rc16.test.cjs test/scripts/source-python-scanner-rc16.test.cjs test/scripts/source-python-evidence-rc16.test.cjs test/scripts/source-review-binding-rc16.test.cjs integrations/alpha-agent/tests/transformational-compatibility.test.mjs
+      - name: Verify installed rc.18 source and release route
+        if: steps.release-version.outputs.edition == 'rc18'
+        run: |
+          set -euo pipefail
+          node --test scripts/release/discovery-installed-release.test.cjs integrations/alpha-agent/discovery-installed-module-graph.test.mjs integrations/alpha-agent/discovery-installed-native.test.mjs integrations/alpha-agent/discovery-installed-runtime.test.mjs scripts/release/capture-discovery-browser-input.test.cjs tools/security/discovery-installed-protected-scope.test.mjs
+          PYTHONDONTWRITEBYTECODE=1 python3 -B scripts/release/test-discovery-installed-profile.py
+          PYTHONDONTWRITEBYTECODE=1 python3 -B scripts/release/test-discovery-installed-archive.py
+          node <<'NODE'
+          const fs = require('node:fs'), crypto = require('node:crypto');
+          const hash = name => crypto.createHash('sha256').update(fs.readFileSync(name)).digest('hex');
+          require('./scripts/release/discovery-installed-qualification.cjs').sourceProof({root:process.cwd(),
+            manifestSha256:hash('config/discovery-installed-candidate-v1.json'),
+            verifierSha256:hash('scripts/release/discovery-installed-profile.py'),
+            scopeVerifierSha256:hash('tools/security/discovery-installed-protected-scope.mjs')});
+          NODE
 
   publish:
     name: Publish qualified rc.17 source prerelease

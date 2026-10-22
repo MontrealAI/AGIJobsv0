@@ -1,0 +1,12 @@
+{
+  "schema": "agijobsv0/discovery-installed-alpha/v1",
+  "status": "UNSET_PENDING_FINAL_REVIEWED_MAIN",
+  "repository": "MontrealAI/AGI-Alpha-Agent-v0",
+  "commit": null,
+  "tree": null,
+  "sourceHash": null,
+  "catalogPath": "docs/successor/capabilities/sources.json",
+  "catalogSha256": null,
+  "files": {},
+  "qualification": "NOT_RUN"
+}

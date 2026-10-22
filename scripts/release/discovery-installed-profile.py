@@ -1,0 +1,846 @@
+# SPDX-License-Identifier: MIT
+"""Finite Jobs Discovery installed-profile preparation; never release approval."""
+import argparse
+import hashlib
+import json
+import os
+import pathlib
+import re
+import stat
+import subprocess
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+REPOSITORY = 'MontrealAI/AGIJobsv0'
+PROFILE = 'jobs-discovery-installed-v1'
+PROPOSED_VERSION = '2.1.0-rc.18'
+BASE_COMMIT = '83065adf18a6ee987f8fa479a496a052d35db682'
+BASE_TREE = '77ded62b991e8cca28bfd849593153f61ac72d86'
+PREREQUISITE = '792687d133863783d02972f543f1eaca257b9e9c'
+PREREQUISITE_TREE = '16c29d934e8bb4d36d286fae7fbf3f9b9d506a85'
+FEATURE = '5b85af62078d415c9ced2dd7aa959a0783c19d27'
+RECONCILED_COMMIT = '75d38869ac281f764aa52ff3a45a12ba6faf31e9'
+RECONCILED_TREE = 'fac37bef7c11f57a90fc49d2481a06167ccdc8aa'
+BASELINE = 'config/discovery-lab-source-baseline-v1.json'
+BASELINE_SHA256 = 'd7225ecab094653482593057be4b018e0c61dfb7c1c592baa134dc668fa81a65'
+PREREQUISITE_MANIFEST = 'config/discovery-installed-prerequisite-v1.json'
+PREREQUISITE_SHA256 = '9baa5157a1a8e972811a6e7f3108079743774794f732abdb782468d3a363a364'
+MANIFEST = 'config/discovery-installed-candidate-v1.json'
+VERIFIER = 'scripts/release/discovery-installed-profile.py'
+SCOPE_VERIFIER = 'tools/security/discovery-installed-protected-scope.mjs'
+ALPHA_PIN = 'config/discovery-installed-alpha-v1.json'
+ALPHA_TRANSITION = 'config/discovery-installed-alpha-transition-v1.json'
+UNSET_ALPHA_SHA256 = '01e32d5283b6858c977659701ab32c24a846b502adf1d1363c9f066d633e9207'
+OWNER_REVIEW = 'config/discovery-installed-review-request-v1.json'
+# Filled only after all finite preparation inputs have been inspected.
+# BEGIN FIXED DISCOVERY INSTALLED DELTA
+CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'mode': '100644',
+                                                                    'sha256': '0e5134b9601637ddb78d7ddbc9457bacb69bf20ed0035a06de5f9827dcfadf76'},
+                                                          'before': None,
+                                                          'reason': 'Implement separately gated source-bound '
+                                                                    'installed archive, immutable Alpha '
+                                                                    'transition, operator, retained mission '
+                                                                    'evidence and release qualification'},
+ '.github/workflows/discovery-installed-preparation.yml': {'after': {'mode': '100644',
+                                                                     'sha256': 'ce0ea5a82c09ef62a516ea1ff5d4c33b2405f5f949811ead7d7266ef9195ffa8'},
+                                                           'before': None,
+                                                           'reason': 'Implement separately gated '
+                                                                     'source-bound installed archive, '
+                                                                     'immutable Alpha transition, operator, '
+                                                                     'retained mission evidence and release '
+                                                                     'qualification'},
+ '.github/workflows/discovery-installed-python-analysis.yml': {'after': {'mode': '100644',
+                                                                         'sha256': '43ea91b6a037ebcda101818a2d1a7079e4a4607b685a4142592fc955c0e69863'},
+                                                               'before': None,
+                                                               'reason': 'Implement separately gated '
+                                                                         'source-bound installed archive, '
+                                                                         'immutable Alpha transition, '
+                                                                         'operator, retained mission '
+                                                                         'evidence and release '
+                                                                         'qualification'},
+ '.github/workflows/discovery-installed-release.yml': {'after': {'mode': '100644',
+                                                                 'sha256': '43733211dbdd9ed4d09da95afcaaab663dc26600fe0c309b385e02af96aa28e4'},
+                                                       'before': None,
+                                                       'reason': 'Implement separately gated source-bound '
+                                                                 'installed archive, immutable Alpha '
+                                                                 'transition, operator, retained mission '
+                                                                 'evidence and release qualification'},
+ '.github/workflows/discovery-lab-receiver.yml': {'after': {'mode': '100644',
+                                                            'sha256': '1d745e792b5e3f167be5c5d00e5b94c4aaff5aedba576dc07d66ceeebe0271ff'},
+                                                  'before': None,
+                                                  'reason': 'Preserve exact Discovery receiver and finite '
+                                                            'source-only controls through the prerequisite '
+                                                            'merge'},
+ '.github/workflows/source-release-rc16.yml': {'after': {'mode': '100644',
+                                                         'sha256': '803f353c14ce9b38db2acf7dd9750bdd37ae7b8ffa5066ab1da03d896cb51bec'},
+                                               'before': {'blob': 'c718ae0e9d5297dade30711c3cafdbb2c29358ea',
+                                                          'mode': '100644'},
+                                               'reason': 'Dispatch rc18 to additional installed checks while '
+                                                         'preserving the original rc17 suite and publisher'},
+ 'config/discovery-installed-alpha-transition-v1.json': {'after': {'mode': '100644',
+                                                                   'sha256': '18069c3d2c6a95ce336bbfea1ec3da96fbb9a155fc01804ed2e209eaf0f0f4e9'},
+                                                         'before': None,
+                                                         'reason': 'Implement separately gated source-bound '
+                                                                   'installed archive, immutable Alpha '
+                                                                   'transition, operator, retained mission '
+                                                                   'evidence and release qualification'},
+ 'config/discovery-installed-alpha-v1.json': {'after': {'mode': '100644',
+                                                        'sha256': '01e32d5283b6858c977659701ab32c24a846b502adf1d1363c9f066d633e9207'},
+                                              'before': None,
+                                              'reason': 'Implement separately gated source-bound installed '
+                                                        'archive, immutable Alpha transition, operator, '
+                                                        'retained mission evidence and release '
+                                                        'qualification'},
+ 'config/discovery-installed-browser-input-v1.json': {'after': {'mode': '100644',
+                                                                'sha256': '44198eadbd1634b5eb89ce478e7235e04285dbcb5c81d1be104dee9059312ea0'},
+                                                      'before': None,
+                                                      'reason': 'Implement separately gated source-bound '
+                                                                'installed archive, immutable Alpha '
+                                                                'transition, operator, retained mission '
+                                                                'evidence and release qualification'},
+ 'config/discovery-installed-module-graph-origin-v1.json': {'after': {'mode': '100644',
+                                                                      'sha256': 'e3c62ccb5e8cb591a09d9857bbc5892edd530b7bada50b9d90bc234d5c88dd23'},
+                                                            'before': None,
+                                                            'reason': 'Implement separately gated '
+                                                                      'source-bound installed archive, '
+                                                                      'immutable Alpha transition, operator, '
+                                                                      'retained mission evidence and release '
+                                                                      'qualification'},
+ 'config/discovery-installed-prerequisite-v1.json': {'after': {'mode': '100644',
+                                                               'sha256': '9baa5157a1a8e972811a6e7f3108079743774794f732abdb782468d3a363a364'},
+                                                     'before': None,
+                                                     'reason': 'Implement separately gated source-bound '
+                                                               'installed archive, immutable Alpha '
+                                                               'transition, operator, retained mission '
+                                                               'evidence and release qualification'},
+ 'config/discovery-installed-publication-review-template-v1.json': {'after': {'mode': '100644',
+                                                                              'sha256': 'cff78ea1f379e71a5f96be2ce5df1c03c4f58358dc074107936170564ee17e3a'},
+                                                                    'before': None,
+                                                                    'reason': 'Implement separately gated '
+                                                                              'source-bound installed '
+                                                                              'archive, immutable Alpha '
+                                                                              'transition, operator, '
+                                                                              'retained mission evidence and '
+                                                                              'release qualification'},
+ 'config/discovery-installed-review-request-v1.json': {'after': {'mode': '100644',
+                                                                 'sha256': 'a6a75cdcd8b41ed3ec85079fc74c798f24a4d3ad2e280ddf719df519b283551c'},
+                                                       'before': None,
+                                                       'reason': 'Implement separately gated source-bound '
+                                                                 'installed archive, immutable Alpha '
+                                                                 'transition, operator, retained mission '
+                                                                 'evidence and release qualification'},
+ 'config/discovery-lab-alpha-source.json': {'after': {'mode': '100644',
+                                                      'sha256': 'a463a01423d1b64fa9c5dc793716279890d02e1d4a004202fa3f63ac427dbbe9'},
+                                            'before': None,
+                                            'reason': 'Preserve exact Discovery receiver and finite '
+                                                      'source-only controls through the prerequisite merge'},
+ 'config/discovery-lab-source-baseline-v1.json': {'after': {'mode': '100644',
+                                                            'sha256': 'd7225ecab094653482593057be4b018e0c61dfb7c1c592baa134dc668fa81a65'},
+                                                  'before': None,
+                                                  'reason': 'Preserve exact Discovery receiver and finite '
+                                                            'source-only controls through the prerequisite '
+                                                            'merge'},
+ 'config/discovery-lab-source-candidate-v1.json': {'after': {'mode': '100644',
+                                                             'sha256': 'ebee1b8c2bbdf2d7084d433296d6a4e1fe7bf54b9809e24b75947980e0b7550d'},
+                                                   'before': None,
+                                                   'reason': 'Preserve exact Discovery receiver and finite '
+                                                             'source-only controls through the prerequisite '
+                                                             'merge'},
+ 'docs/successor/DISCOVERY_INSTALLED_RELEASE.md': {'after': {'mode': '100644',
+                                                             'sha256': '8f0a4888eaa12c56d193e106ce1b3373801ca825b1e27ae20fe08e0c6ddc84e1'},
+                                                   'before': None,
+                                                   'reason': 'Implement separately gated source-bound '
+                                                             'installed archive, immutable Alpha transition, '
+                                                             'operator, retained mission evidence and '
+                                                             'release qualification'},
+ 'docs/successor/DISCOVERY_LAB.md': {'after': {'mode': '100644',
+                                               'sha256': '55e75ea1f35de29b2486d819c56e04ac042c6397225a3fbccb74f5435186dc4b'},
+                                     'before': None,
+                                     'reason': 'Preserve exact Discovery receiver and finite source-only '
+                                               'controls through the prerequisite merge'},
+ 'hardhat.config.js': {'after': {'mode': '100644',
+                                 'sha256': '738518441596cb1e6a9c691fa2c2ca68fc158a96f8856ab71f0ebc70ad0590b6'},
+                       'before': {'blob': '8d201a5f8af39ccefa4970e6839584abcc1720ba', 'mode': '100644'},
+                       'reason': 'Preserve exact Discovery receiver and finite source-only controls through '
+                                 'the prerequisite merge'},
+ 'integrations/alpha-agent/DISCOVERY_MODULE_BOUNDARY_NOTICE.txt': {'after': {'mode': '100644',
+                                                                             'sha256': '50c256613d65de0674a2d2a33052a224408d8f02fb6aaf090ac5661b31a12671'},
+                                                                   'before': None,
+                                                                   'reason': 'Include applicable license and '
+                                                                             'pinned attribution for copied '
+                                                                             'Apache module'},
+ 'integrations/alpha-agent/discovery-installed-module-graph-runtime.mjs': {'after': {'mode': '100644',
+                                                                                     'sha256': 'ce8d370d494e347926838ee8d061ea303334b1b1b2e47b486985bd2306dc5feb'},
+                                                                           'before': None,
+                                                                           'reason': 'Implement separately '
+                                                                                     'gated source-bound '
+                                                                                     'installed archive, '
+                                                                                     'immutable Alpha '
+                                                                                     'transition, operator, '
+                                                                                     'retained mission '
+                                                                                     'evidence and release '
+                                                                                     'qualification'},
+ 'integrations/alpha-agent/discovery-installed-module-graph.mjs': {'after': {'mode': '100644',
+                                                                             'sha256': '8d3575ece582c158c30f3cc1c5f438b9b32ad2a31f190d6867acf9712beedad5'},
+                                                                   'before': None,
+                                                                   'reason': 'Implement separately gated '
+                                                                             'source-bound installed '
+                                                                             'archive, immutable Alpha '
+                                                                             'transition, operator, retained '
+                                                                             'mission evidence and release '
+                                                                             'qualification'},
+ 'integrations/alpha-agent/discovery-installed-module-graph.test.mjs': {'after': {'mode': '100644',
+                                                                                  'sha256': 'cf45166b92e7dd6cc618476bb78f340fce5a96ad66954cc1c1efa707b60c40cc'},
+                                                                        'before': None,
+                                                                        'reason': 'Implement separately '
+                                                                                  'gated source-bound '
+                                                                                  'installed archive, '
+                                                                                  'immutable Alpha '
+                                                                                  'transition, operator, '
+                                                                                  'retained mission evidence '
+                                                                                  'and release '
+                                                                                  'qualification'},
+ 'integrations/alpha-agent/discovery-installed-native.mjs': {'after': {'mode': '100644',
+                                                                       'sha256': 'eb8fd61115ba16b0b46f8c37bb652833bf9534154754305812289e2f6f4fc35a'},
+                                                             'before': None,
+                                                             'reason': 'Implement separately gated '
+                                                                       'source-bound installed archive, '
+                                                                       'immutable Alpha transition, '
+                                                                       'operator, retained mission evidence '
+                                                                       'and release qualification'},
+ 'integrations/alpha-agent/discovery-installed-native.test.mjs': {'after': {'mode': '100644',
+                                                                            'sha256': 'e7dca7b272d7cac30a548083b7a4847ee8f0bd5abd86c86313a3fc2c518e779e'},
+                                                                  'before': None,
+                                                                  'reason': 'Implement separately gated '
+                                                                            'source-bound installed archive, '
+                                                                            'immutable Alpha transition, '
+                                                                            'operator, retained mission '
+                                                                            'evidence and release '
+                                                                            'qualification'},
+ 'integrations/alpha-agent/discovery-installed-operator.mjs': {'after': {'mode': '100644',
+                                                                         'sha256': '94954c3372a1896d74c9dca66d354da151a9d1c0880b5f0eac27e83c2ee1446f'},
+                                                               'before': None,
+                                                               'reason': 'Implement separately gated '
+                                                                         'source-bound installed archive, '
+                                                                         'immutable Alpha transition, '
+                                                                         'operator, retained mission '
+                                                                         'evidence and release '
+                                                                         'qualification'},
+ 'integrations/alpha-agent/discovery-installed-runtime.mjs': {'after': {'mode': '100644',
+                                                                        'sha256': 'af41c84aeb5534f97feefab17911a3c5d4ebee5fc45fd72551476fbe64b09732'},
+                                                              'before': None,
+                                                              'reason': 'Implement separately gated '
+                                                                        'source-bound installed archive, '
+                                                                        'immutable Alpha transition, '
+                                                                        'operator, retained mission evidence '
+                                                                        'and release qualification'},
+ 'integrations/alpha-agent/discovery-installed-runtime.test.mjs': {'after': {'mode': '100644',
+                                                                             'sha256': 'c060b25b8f975a843a678c1778859c3902becfd937cfdb6f3820a2d4dd92d398'},
+                                                                   'before': None,
+                                                                   'reason': 'Implement separately gated '
+                                                                             'installed runtime and '
+                                                                             'independently authenticated '
+                                                                             'standalone bootstrap'},
+ 'integrations/alpha-agent/discovery-lab-contract.mjs': {'after': {'mode': '100644',
+                                                                   'sha256': '98c8de8ce2774b7650bf4ee11eeedfb0a69b75fa6d1b080ef823637d77d0ab47'},
+                                                         'before': None,
+                                                         'reason': 'Preserve exact Discovery receiver and '
+                                                                   'finite source-only controls through the '
+                                                                   'prerequisite merge'},
+ 'integrations/alpha-agent/discovery-lab-native-test.mjs': {'after': {'mode': '100644',
+                                                                      'sha256': '21265da0be01079dbc5d83572fae716d4dd4cdcfb39b876c96ff01cb793216ee'},
+                                                            'before': None,
+                                                            'reason': 'Preserve exact Discovery receiver and '
+                                                                      'finite source-only controls through '
+                                                                      'the prerequisite merge'},
+ 'integrations/alpha-agent/discovery-lab-work-request.mjs': {'after': {'mode': '100644',
+                                                                       'sha256': '337fabca02ece2a25b8cc50e56fea5bf5338f2b6f18343eb4a3353a634aefec4'},
+                                                             'before': None,
+                                                             'reason': 'Preserve exact Discovery receiver '
+                                                                       'and finite source-only controls '
+                                                                       'through the prerequisite merge'},
+ 'integrations/alpha-agent/discovery-lab-work-request.test.mjs': {'after': {'mode': '100644',
+                                                                            'sha256': '799ab68c0077ffb7849133ee53d228928ef8d0e20000c813bb3cec30cff4a30d'},
+                                                                  'before': None,
+                                                                  'reason': 'Preserve exact Discovery '
+                                                                            'receiver and finite source-only '
+                                                                            'controls through the '
+                                                                            'prerequisite merge'},
+ 'integrations/alpha-agent/fixtures/discovery-lab-request.json': {'after': {'mode': '100644',
+                                                                            'sha256': '891e11f3fed142db55e36934b4f1b5869200973216bfdd9257789fd66fb0a82f'},
+                                                                  'before': None,
+                                                                  'reason': 'Preserve exact Discovery '
+                                                                            'receiver and finite source-only '
+                                                                            'controls through the '
+                                                                            'prerequisite merge'},
+ 'package-lock.json': {'after': {'mode': '100644',
+                                 'sha256': 'd0cbf0ae222ba683900aa8dcf8a2954dc45e1e6dabcbf993d13ca55636474dec'},
+                       'before': {'blob': '49676e6284cfb6aee1e953338e702b55fc01b3be', 'mode': '100644'},
+                       'reason': 'Select proposed rc18 metadata for the separate installed edition without '
+                                 'changing dependencies'},
+ 'package.json': {'after': {'mode': '100644',
+                            'sha256': '14e369adcc74ff127a4bce92268b5f9e26c054f05d83960ca56b7e9edbbc9094'},
+                  'before': {'blob': 'd69a25b422673d9cb130be61fb45a9f4977317c9', 'mode': '100644'},
+                  'reason': 'Select proposed rc18 metadata for the separate installed edition without '
+                            'changing dependencies'},
+ 'scripts/release/capture-discovery-browser-input.cjs': {'after': {'mode': '100644',
+                                                                   'sha256': '170ef450c718e6a54719a970939d68a3b46b443adb017eadf15e35ab6c7adcfe'},
+                                                         'before': None,
+                                                         'reason': 'Implement separately gated source-bound '
+                                                                   'installed archive, immutable Alpha '
+                                                                   'transition, operator, retained mission '
+                                                                   'evidence and release qualification'},
+ 'scripts/release/capture-discovery-browser-input.test.cjs': {'after': {'mode': '100644',
+                                                                        'sha256': 'bcb2c40c4fb14380cd95639fdea2a140ff27fb13d7bcb9ef1802f57077d9f897'},
+                                                              'before': None,
+                                                              'reason': 'Implement separately gated '
+                                                                        'source-bound installed archive, '
+                                                                        'immutable Alpha transition, '
+                                                                        'operator, retained mission evidence '
+                                                                        'and release qualification'},
+ 'scripts/release/discovery-browser-packet-fixtures.cjs': {'after': {'mode': '100644',
+                                                                     'sha256': '362a7308a78abf086c047dd5e0be3a522f0c28675f4e50eba76d5c14ec37b2dd'},
+                                                           'before': None,
+                                                           'reason': 'Add inert shared packet metadata '
+                                                                     'fixtures without browser or native '
+                                                                     'qualification claims'},
+ 'scripts/release/discovery-installed-package.py': {'after': {'mode': '100644',
+                                                              'sha256': 'dc90730221c301524c147d8a50ea1d2ca6b595b83ad1ec7e3f5d3b01db0bec82'},
+                                                    'before': None,
+                                                    'reason': 'Implement separately gated source-bound '
+                                                              'installed archive, immutable Alpha '
+                                                              'transition, operator, retained mission '
+                                                              'evidence and release qualification'},
+ 'scripts/release/discovery-installed-qualification.cjs': {'after': {'mode': '100644',
+                                                                     'sha256': '669ee99e3913884b4faaaeba291ebfde67ee3e82db845e6061f1e3b4a4e65503'},
+                                                           'before': None,
+                                                           'reason': 'Implement separately gated '
+                                                                     'source-bound installed archive, '
+                                                                     'immutable Alpha transition, operator, '
+                                                                     'retained mission evidence and release '
+                                                                     'qualification'},
+ 'scripts/release/discovery-installed-release-dispatch.cjs': {'after': {'mode': '100644',
+                                                                        'sha256': 'b28b8c29c54abadbe41a22a2ba6e9647a99d70892d61c730497e4fa722bac3bb'},
+                                                              'before': None,
+                                                              'reason': 'Implement separately gated '
+                                                                        'source-bound installed archive, '
+                                                                        'immutable Alpha transition, '
+                                                                        'operator, retained mission evidence '
+                                                                        'and release qualification'},
+ 'scripts/release/discovery-installed-release.test.cjs': {'after': {'mode': '100644',
+                                                                    'sha256': '2741f332447d8aedb55a54341f1c829172b8ec8fad6adba5c0ac53c78bcb9dda'},
+                                                          'before': None,
+                                                          'reason': 'Implement separately gated source-bound '
+                                                                    'installed archive, immutable Alpha '
+                                                                    'transition, operator, retained mission '
+                                                                    'evidence and release qualification'},
+ 'scripts/release/discovery-lab-profile.py': {'after': {'mode': '100644',
+                                                        'sha256': '4da6958cd88f4e596aaa5947f398d2367009bb9bfe487fcfa1d0bf17b4cd348b'},
+                                              'before': None,
+                                              'reason': 'Preserve exact Discovery receiver and finite '
+                                                        'source-only controls through the prerequisite '
+                                                        'merge'},
+ 'scripts/release/freeze-discovery-installed-alpha.py': {'after': {'mode': '100644',
+                                                                   'sha256': '29eca508788d58a09afdfa1b4874676dbb688a4529b75e1a6d65fad15b909613'},
+                                                         'before': None,
+                                                         'reason': 'Implement separately gated source-bound '
+                                                                   'installed archive, immutable Alpha '
+                                                                   'transition, operator, retained mission '
+                                                                   'evidence and release qualification'},
+ 'scripts/release/install-discovery-installed.py': {'after': {'mode': '100644',
+                                                              'sha256': '0e5c5fd49530a55f1e6f14531ede72e143bd1d5b29029ae8c9adc610b48337c2'},
+                                                    'before': None,
+                                                    'reason': 'Implement separately gated installed runtime '
+                                                              'and independently authenticated standalone '
+                                                              'bootstrap'},
+ 'scripts/release/publish-discovery-installed.cjs': {'after': {'mode': '100644',
+                                                               'sha256': '0bc9fd94e83317430adf5500867c40b44d8d813105969381f1affc94e24bfe89'},
+                                                     'before': None,
+                                                     'reason': 'Implement separately gated source-bound '
+                                                               'installed archive, immutable Alpha '
+                                                               'transition, operator, retained mission '
+                                                               'evidence and release qualification'},
+ 'scripts/release/test-discovery-installed-archive.py': {'after': {'mode': '100644',
+                                                                   'sha256': '41800950cd4d7f4ed9e7d89ead7fb3112b54d138ee4dc4b79790188e2dce85cd'},
+                                                         'before': None,
+                                                         'reason': 'Implement separately gated source-bound '
+                                                                   'installed archive, immutable Alpha '
+                                                                   'transition, operator, retained mission '
+                                                                   'evidence and release qualification'},
+ 'scripts/release/test-discovery-installed-profile.py': {'after': {'mode': '100644',
+                                                                   'sha256': 'ade5fbf51d04793808eff5e858fa11ac2842d77af88d6a48dbecdc608ca76857'},
+                                                         'before': None,
+                                                         'reason': 'Implement separately gated source-bound '
+                                                                   'installed archive, immutable Alpha '
+                                                                   'transition, operator, retained mission '
+                                                                   'evidence and release qualification'},
+ 'scripts/release/test-discovery-lab-profile.py': {'after': {'mode': '100644',
+                                                             'sha256': '603f6f26515803bde617f977a2a1cbd9c48e09fafc9b77dcc9f61eb18ca7728f'},
+                                                   'before': None,
+                                                   'reason': 'Preserve exact Discovery receiver and finite '
+                                                             'source-only controls through the prerequisite '
+                                                             'merge'},
+ 'test/scripts/hardhat-test-discovery.test.cjs': {'after': {'mode': '100644',
+                                                            'sha256': '67b50a18fb9d61785080a01518bac6377637763ed76b9a0cfff335729f37114a'},
+                                                  'before': {'blob': '491f41a628672b817995f4ef5e4a0959c80db940',
+                                                             'mode': '100644'},
+                                                  'reason': 'Preserve exact Discovery receiver and finite '
+                                                            'source-only controls through the prerequisite '
+                                                            'merge'},
+ 'test/security/discovery-protected-scope.test.mjs': {'after': {'mode': '100644',
+                                                                'sha256': '725d0fd5683e491aff69d34e64dda4392924aefb9bac7889cba830f834b86927'},
+                                                      'before': None,
+                                                      'reason': 'Preserve exact Discovery receiver and '
+                                                                'finite source-only controls through the '
+                                                                'prerequisite merge'},
+ 'tools/security/discovery-installed-protected-scope.test.mjs': {'after': {'mode': '100644',
+                                                                           'sha256': 'f3f3a12290e6ce7f96ea88085a1d2cd4ea3d6fb2a5632ebf94e1d079ba359972'},
+                                                                 'before': None,
+                                                                 'reason': 'Add separate complete '
+                                                                           'committed-source scanner scope '
+                                                                           'for the installed edition '
+                                                                           'without weakening historical '
+                                                                           'scope'},
+ 'tools/security/discovery-protected-scope.mjs': {'after': {'mode': '100644',
+                                                            'sha256': 'f27bea8586e5d6d11047cb2daa832b618cd186b115525d96da38e9aa4d90d765'},
+                                                  'before': None,
+                                                  'reason': 'Preserve exact Discovery receiver and finite '
+                                                            'source-only controls through the prerequisite '
+                                                            'merge'},
+ 'tools/security/validate-codeql-remediation.mjs': {'after': {'mode': '100644',
+                                                              'sha256': '6bba9bb1bc39a7427f0b443261ae951b960003f558729ef6ab368cdc2a86450a'},
+                                                    'before': {'blob': '9657ecd2c072276276079e55fde51c5b66b8b37c',
+                                                               'mode': '100644'},
+                                                    'reason': 'Add separate complete committed-source '
+                                                              'scanner scope for the installed edition '
+                                                              'without weakening historical scope'}}
+# END FIXED DISCOVERY INSTALLED DELTA
+DENIALS = {'releaseQualified': False, 'publicationApproved': False,
+           'executionApproved': False, 'settlementApproved': False}
+
+
+def require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
+def sha(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def blob(raw):
+    return hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+
+
+def exact(value, keys):
+    return isinstance(value, dict) and set(value) == set(keys)
+
+
+def same(left, right):
+    return json.dumps(left, sort_keys=True, separators=(',', ':'), allow_nan=False) == json.dumps(
+        right, sort_keys=True, separators=(',', ':'), allow_nan=False)
+
+
+def strict_json(raw):
+    def pairs(items):
+        result = {}
+        for key, value in items:
+            require(key not in result, 'Duplicate installed-profile JSON key')
+            result[key] = value
+        return result
+    def constant(value):
+        raise ValueError('Nonfinite installed-profile number: ' + value)
+    return json.loads(raw, object_pairs_hook=pairs, parse_constant=constant)
+
+
+def safe_path(name):
+    return isinstance(name, str) and name and not name.startswith('/') and '\\' not in name and all(
+        part and part not in ('.', '..', '.git') for part in name.split('/')) and not any(ord(c) < 32 for c in name)
+
+
+def read(root, name):
+    require(safe_path(name), 'Unsafe installed source path')
+    root = pathlib.Path(root)
+    target = root / name
+    parent = target.parent
+    while parent != root:
+        require(not parent.is_symlink(), 'Indirect source ancestor')
+        parent = parent.parent
+    if target.is_symlink():
+        return '120000', os.readlink(target).encode()
+    fd = os.open(target, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    try:
+        before = os.fstat(fd)
+        require(stat.S_ISREG(before.st_mode) and before.st_size <= 32_000_000, 'Unbounded or nonregular source')
+        with os.fdopen(fd, 'rb', closefd=False) as stream:
+            raw = stream.read(before.st_size + 1)
+        after = os.fstat(fd)
+        require(len(raw) == before.st_size and all(getattr(before, key) == getattr(after, key) for key in
+                ('st_dev', 'st_ino', 'st_mode', 'st_size', 'st_mtime_ns', 'st_ctime_ns')), 'Source changed during capture')
+        current = target.stat(follow_symlinks=False)
+        require(current.st_dev == before.st_dev and current.st_ino == before.st_ino and current.st_mode == before.st_mode,
+                'Source identity changed during capture')
+        return ('100755' if before.st_mode & 0o111 else '100644'), raw
+    finally:
+        os.close(fd)
+
+
+def tree_digest(entries):
+    tree = {}
+    for name, item in entries.items():
+        require(safe_path(name) and exact(item, ('mode', 'blob')) and item['mode'] in ('100644', '100755', '120000')
+                and re.fullmatch('[0-9a-f]{40}', item['blob']), 'Invalid baseline Git entry')
+        node = tree
+        parts = name.split('/')
+        for part in parts[:-1]:
+            node = node.setdefault(part, {})
+            require('blob' not in node, 'Baseline path collision')
+        require(parts[-1] not in node, 'Baseline path collision')
+        node[parts[-1]] = item
+    def encode(node):
+        raw = b''
+        for name in sorted(node, key=lambda key: key.encode() + (b'/' if 'blob' not in node[key] else b'')):
+            item = node[name]
+            mode, digest = (item['mode'], item['blob']) if 'blob' in item else ('40000', encode(item))
+            raw += mode.encode() + b' ' + name.encode() + b'\0' + bytes.fromhex(digest)
+        return hashlib.sha1(b'tree ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+    return encode(tree)
+
+
+def prerequisite_inventory(root):
+    raw = read(root, BASELINE)[1]
+    require(sha(raw) == BASELINE_SHA256, 'Original Discovery baseline bytes changed')
+    base = strict_json(raw)
+    require(base['repository'] == REPOSITORY and base['commit'] == BASE_COMMIT and base['tree'] == BASE_TREE
+            and tree_digest(base['entries']) == BASE_TREE, 'Original main baseline identity differs')
+    raw = read(root, PREREQUISITE_MANIFEST)[1]
+    require(sha(raw) == PREREQUISITE_SHA256, 'Fixed prerequisite projection differs')
+    record = strict_json(raw)
+    require(exact(record, ('schema', 'repository', 'baseCommit', 'baseTree', 'commit', 'tree', 'ownerHeads', 'qualification', 'changes'))
+            and record['schema'] == 'agijobsv0/discovery-prerequisite-projection/v1'
+            and record['repository'] == REPOSITORY and record['baseCommit'] == BASE_COMMIT and record['baseTree'] == BASE_TREE
+            and record['commit'] == PREREQUISITE and record['tree'] == PREREQUISITE_TREE
+            and record['ownerHeads'] == ['d27d752cf552bc7f45108c962b6501d912d1e715', PREREQUISITE]
+            and record['qualification'] == 'OWNER_STACK_NOT_YET_MAIN_RELEASE_QUALIFIED', 'Prerequisite source identity differs')
+    expected = {name: dict(item) for name, item in base['entries'].items()}
+    for name, change in record['changes'].items():
+        require(safe_path(name) and exact(change, ('before', 'after')) and expected.get(name) == change['before'],
+                'Prerequisite original Git entry differs')
+        if change['after'] is None:
+            del expected[name]
+        else:
+            expected[name] = change['after']
+    require(tree_digest(expected) == PREREQUISITE_TREE, 'Prerequisite projection does not reconstruct the complete owner tree')
+    return expected
+
+
+def select(*, manifest_sha256, verifier_sha256, scope_verifier_sha256, profile=PROFILE):
+    require(profile == PROFILE and all(isinstance(value, str) and re.fullmatch('[0-9a-f]{64}', value)
+            for value in (manifest_sha256, verifier_sha256, scope_verifier_sha256)), 'Explicit externally reviewed installed-profile pins are required')
+    return {'profile': PROFILE, 'manifestSha256': manifest_sha256, 'verifierSha256': verifier_sha256,
+            'scopeVerifierSha256': scope_verifier_sha256}
+
+
+def inventory(root, selection):
+    require(selection == select(manifest_sha256=selection.get('manifestSha256'), verifier_sha256=selection.get('verifierSha256'),
+                                            scope_verifier_sha256=selection.get('scopeVerifierSha256')),
+            'Installed-profile selection fields differ')
+    require(sha(read(root, VERIFIER)[1]) == selection['verifierSha256'], 'Installed-profile verifier differs')
+    require(sha(read(root, SCOPE_VERIFIER)[1]) == selection['scopeVerifierSha256'], 'Installed scope policy differs')
+    raw = read(root, MANIFEST)[1]
+    require(sha(raw) == selection['manifestSha256'], 'Installed-profile manifest differs')
+    manifest = strict_json(raw)
+    require(exact(manifest, ('schema', 'repository', 'profile', 'proposedVersion', 'versionReservation', 'state',
+                            'prerequisite', 'feature', 'reconciledTree', 'changes', 'decisions', 'denials'))
+            and manifest['schema'] == 'agijobsv0/discovery-installed-profile/v1' and manifest['repository'] == REPOSITORY
+            and manifest['profile'] == PROFILE and manifest['proposedVersion'] == PROPOSED_VERSION
+            and manifest['versionReservation'] == 'UNRESERVED_PROPOSAL'
+            and manifest['state'] == 'LOCAL_PREPARATION_NOT_APPROVED'
+            and manifest['prerequisite'] == PREREQUISITE and manifest['feature'] == FEATURE
+            and manifest['reconciledTree'] == RECONCILED_TREE and same(manifest['denials'], DENIALS),
+            'Installed-profile identity, preparation scope or authority differs')
+    require(manifest['decisions'] == {'qualifiedPrerequisiteMain': None, 'finalAlphaPinReview': None,
+            'currentScannerAcceptance': None, 'qualityOwnerDisposition': None, 'exactSourceHostedQualification': None,
+            'publicationApproval': None}, 'Unreviewed decision cannot be installed by preparation metadata')
+    require(manifest['changes'] == CHANGES and CHANGES, 'Exact fixed installed-source delta differs')
+    expected = prerequisite_inventory(root)
+    for name, change in CHANGES.items():
+        require(safe_path(name) and exact(change, ('before', 'after', 'reason'))
+                and expected.get(name) == change['before'] and isinstance(change['reason'], str) and change['reason'].strip(),
+                'Installed-source before entry or attribution differs')
+        require(exact(change['after'], ('mode', 'sha256')) and change['after']['mode'] in ('100644', '100755')
+                and re.fullmatch('[0-9a-f]{64}', change['after']['sha256']), 'Installed-source after identity differs')
+        expected[name] = change['after']
+    expected[MANIFEST] = {'mode': '100644', 'sha256': selection['manifestSha256']}
+    expected[VERIFIER] = {'mode': '100644', 'sha256': selection['verifierSha256']}
+    expected[SCOPE_VERIFIER] = {'mode': '100644', 'sha256': selection['scopeVerifierSha256']}
+    return expected
+
+
+def validate_source(root, selection, paths=None):
+    root = pathlib.Path(root).resolve()
+    expected = inventory(root, selection)
+    directories = {parent.as_posix() for name in expected for parent in pathlib.PurePosixPath(name).parents
+                   if parent.as_posix() != '.'}
+    observed, pending, visited = set(), [(root, '')], 0
+    while pending:
+        directory, prefix = pending.pop()
+        with os.scandir(directory) as entries:
+            for entry in entries:
+                if not prefix and entry.name == '.git':
+                    continue
+                visited += 1
+                require(visited <= len(expected) + len(directories), 'Installed-source inventory has missing or unexpected inputs')
+                name = prefix + entry.name
+                require(safe_path(name), 'Unsafe installed source path')
+                info = entry.stat(follow_symlinks=False)
+                if stat.S_ISDIR(info.st_mode):
+                    require(name in directories, 'Installed-source inventory has missing or unexpected directories')
+                    pending.append((root/name, name+'/'))
+                else:
+                    require(stat.S_ISREG(info.st_mode), 'Nonregular installed source input is unsupported: '+name)
+                    observed.add(name)
+    require(paths is None or set(paths) == observed, 'Supplied paths cannot hide installed source')
+    actual = observed
+    require(actual == set(expected), 'Installed-source inventory has missing or unexpected inputs')
+    observed_entries = {}
+    source_bytes = 0
+    for name, item in expected.items():
+        mode, raw = read(root, name)
+        require(mode == item['mode'] and (sha(raw) if 'sha256' in item else blob(raw)) == item.get('sha256', item.get('blob')),
+                'Installed-source bytes or mode differ: ' + name)
+        observed_entries[name] = {'mode': mode, 'blob': blob(raw)}
+        source_bytes += len(raw)
+    return {'profile': PROFILE, 'proposedVersion': PROPOSED_VERSION, 'inputCount': len(expected),
+            'prerequisiteSource': PREREQUISITE, 'reconciledTree': RECONCILED_TREE,
+            'sourceTree': tree_digest(observed_entries),
+            'sourceBytes': source_bytes,
+            'sourceCostSemantics': 'Unique authenticated input bytes; repeated metadata reads and Python/Git resources are not fully calibrated.',
+            'state': 'LOCAL_SOURCE_VALIDATED_RELEASE_NOT_QUALIFIED', **DENIALS}
+
+
+def validate_tracked_source(root, selection):
+    """Scanner-only complete committed source proof; generated outputs are outside its scope."""
+    root = guard_git_metadata(pathlib.Path(root).resolve())
+    expected = inventory(root, selection)
+    env = {key: value for key, value in os.environ.items() if not key.startswith('GIT_')}
+    env.update(GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_SYSTEM=os.devnull, GIT_CONFIG_GLOBAL=os.devnull,
+               GIT_NO_REPLACE_OBJECTS='1', GIT_NO_LAZY_FETCH='1', GIT_OPTIONAL_LOCKS='0', GIT_ALLOW_PROTOCOL='',
+               GIT_PROTOCOL_FROM_USER='0', GIT_TERMINAL_PROMPT='0', GIT_ATTR_NOSYSTEM='1')
+    actual = subprocess.check_output(['git', '--no-replace-objects', '--no-pager', '-C', str(root),
+        '-c', 'protocol.allow=never', '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath='+os.devnull,
+        '-c', 'core.attributesFile='+os.devnull, 'ls-files', '--cached', '-z'], env=env, timeout=30).decode().rstrip('\0').split('\0')
+    require(len(actual) == len(set(actual)) and set(actual) == set(expected),
+            'Actual complete tracked source differs from installed finite profile')
+    entries, source_bytes = {}, 0
+    for name, item in expected.items():
+        mode, raw = read(root, name)
+        require(mode == item['mode'] and (sha(raw) if 'sha256' in item else blob(raw)) == item.get('sha256', item.get('blob')),
+                'Tracked installed source bytes or mode differ: '+name)
+        entries[name] = {'mode': mode, 'blob': blob(raw)}
+        source_bytes += len(raw)
+    source = {'profile': PROFILE, 'proposedVersion': PROPOSED_VERSION, 'inputCount': len(expected),
+              'prerequisiteSource': PREREQUISITE, 'reconciledTree': RECONCILED_TREE, 'sourceTree': tree_digest(entries),
+              'sourceBytes': source_bytes, 'state': 'TRACKED_SCANNER_SCOPE_ONLY',
+              'generatedFilesOutOfScope': True, 'packageSourceProofRequiredSeparately': True, **DENIALS}
+    return validate_git_source(root, source)
+
+
+def guard_git_metadata(root):
+    """Inspect inert local metadata before Git can read an object or refresh an index."""
+    root = pathlib.Path(root).resolve()
+    metadata = root / '.git'
+    require(not metadata.is_symlink() and metadata.is_dir(), 'An independent ordinary Git checkout is required')
+    require(not any(os.path.lexists(metadata/name) for name in ('commondir', 'gitdir')),
+            'Shared or redirected Git administrative roots are outside the source profile')
+    config = metadata / 'config'
+    fd = os.open(config, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    try:
+        info = os.fstat(fd)
+        require(stat.S_ISREG(info.st_mode) and info.st_size <= 128_000, 'Bounded regular Git configuration is required')
+        with os.fdopen(fd, 'rb', closefd=False) as stream:
+            raw = stream.read(info.st_size + 1)
+        after = os.fstat(fd)
+        current = config.stat(follow_symlinks=False)
+        require(len(raw) == info.st_size and all(getattr(info, key) == getattr(after, key) for key in
+                ('st_dev', 'st_ino', 'st_mode', 'st_size', 'st_mtime_ns', 'st_ctime_ns'))
+                and current.st_dev == info.st_dev and current.st_ino == info.st_ino and current.st_mode == info.st_mode,
+                'Git configuration changed during capture')
+    finally:
+        os.close(fd)
+    config = raw.decode('utf8')
+    require('\0' not in config, 'Unsupported Git configuration encoding')
+    # Git 2.55 checkout can leave an ignored regular file after explicitly
+    # unsetting extensions.worktreeConfig. Never activate or override that mode.
+    require(not re.search(r'\\[ \t]*(?:\r?\n|$)', config), 'Multiline Git configuration is outside this source profile')
+    for line in config.splitlines():
+        if line.lstrip().startswith('['):
+            require(re.fullmatch(r'\s*\[[^\]\r\n]+\]\s*(?:[;#].*)?', line) is not None,
+                    'Inline or unsupported Git section framing is refused')
+        match = re.match(r'^\s*worktreeconfig(?:\s|=|[;#]|$)(.*)$', line, re.IGNORECASE)
+        if match:
+            tail = line.lstrip()[len('worktreeconfig'):].strip()
+            require(tail.startswith('='), 'Bare worktreeConfig activates unsupported configuration')
+            value = re.split(r'[;#]', tail[1:], maxsplit=1)[0].strip().lower()
+            require(value in ('false', 'no', 'off', '0'), 'Active or unknown worktreeConfig is unsupported')
+    # Official checkout writes this inert setting. Permit only its literal
+    # disabled form, never a general gc section or an active duplicate.
+    gc_sections, gc_values, in_gc = 0, 0, False
+    for line in config.splitlines():
+        section = re.match(r'^\s*\[\s*([\w.-]+)', line)
+        if section:
+            in_gc = section[1].lower() == 'gc'
+            if in_gc:
+                gc_sections += 1
+                require(gc_sections == 1 and re.fullmatch(r'\s*\[\s*gc\s*\]\s*(?:[;#].*)?', line, re.IGNORECASE),
+                        'Only one unsubsectioned checkout gc section is supported')
+        elif in_gc and line.strip() and not line.lstrip().startswith(('#', ';')):
+            gc_values += 1
+            require(gc_values == 1 and re.fullmatch(r'\s*auto\s*=\s*0\s*(?:[;#].*)?', line, re.IGNORECASE),
+                    'Checkout gc metadata must contain only one literal auto=0')
+    require(gc_sections == gc_values, 'Checkout gc section requires explicit literal auto=0')
+    ignored = metadata / 'config.worktree'
+    if os.path.lexists(ignored):
+        ignored_fd = os.open(ignored, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        try:
+            before = os.fstat(ignored_fd)
+            require(stat.S_ISREG(before.st_mode) and before.st_size <= 128_000,
+                    'Ignored worktree metadata must remain a bounded regular file')
+            with os.fdopen(ignored_fd, 'rb', closefd=False) as stream:
+                ignored_raw = stream.read(before.st_size + 1)
+            after = os.fstat(ignored_fd)
+            require(len(ignored_raw) == before.st_size and all(getattr(before, key) == getattr(after, key)
+                    for key in ('st_dev', 'st_ino', 'st_mode', 'st_size', 'st_mtime_ns', 'st_ctime_ns')),
+                    'Ignored worktree metadata changed during capture')
+        finally:
+            os.close(ignored_fd)
+    for section in re.findall(r'^\s*\[\s*([\w.-]+)', config, re.MULTILINE):
+        require(section.lower() in ('core', 'remote', 'branch', 'extensions', 'http', 'gc'), 'Unsupported local Git configuration section')
+    require(not re.search(r'^\s*(?:fsmonitor|worktree|hookspath|attributesfile|uploadpack|receivepack|promisor|'
+                          r'partialclone|alternaterefscommand|sshcommand|gitproxy|vcs)\s*=', config, re.IGNORECASE | re.MULTILINE),
+            'Executable, redirected or lazy-fetch Git metadata is unsupported')
+    packs = metadata / 'objects/pack'
+    require(not packs.exists() or not any(item.name.endswith('.promisor') for item in packs.iterdir()),
+            'Promisor object packs are outside the offline source profile')
+    require(not (metadata / 'objects/info/alternates').exists(), 'Indirect object stores are outside the source profile')
+    return root
+
+
+def validate_git_source(root, source):
+    root = guard_git_metadata(root)
+    env = {key: value for key, value in os.environ.items() if not key.startswith('GIT_')}
+    env.update({'GIT_CONFIG_NOSYSTEM': '1', 'GIT_CONFIG_SYSTEM': os.devnull, 'GIT_CONFIG_GLOBAL': os.devnull,
+                'GIT_NO_REPLACE_OBJECTS': '1', 'GIT_OPTIONAL_LOCKS': '0', 'GIT_NO_LAZY_FETCH': '1',
+                'GIT_ALLOW_PROTOCOL': '', 'GIT_PROTOCOL_FROM_USER': '0', 'GIT_TERMINAL_PROMPT': '0',
+                'GIT_ATTR_NOSYSTEM': '1'})
+    def git(*args):
+        return subprocess.run(['git', '--no-replace-objects', '--no-pager', '-C', str(root),
+            '-c', 'protocol.allow=never', '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath='+os.devnull,
+            '-c', 'core.attributesFile='+os.devnull, *args], env=env, check=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30).stdout.decode().strip()
+    require(pathlib.Path(git('rev-parse', '--show-toplevel')).resolve() == root, 'Installed Git root differs')
+    require(not git('for-each-ref', '--format=%(refname)', 'refs/replace'), 'Replaced source history is unsupported')
+    graft = pathlib.Path(git('rev-parse', '--git-path', 'info/grafts'))
+    require(not (graft if graft.is_absolute() else root/graft).exists(), 'Grafted source history is unsupported')
+    head = git('rev-parse', 'HEAD')
+    require(re.fullmatch('[0-9a-f]{40}', head) and git('rev-parse', 'HEAD^{tree}') == source['sourceTree'],
+            'Installed Git tree differs from complete captured source')
+    head_entries = {}
+    for line in git('ls-tree', '-rz', 'HEAD').rstrip('\0').split('\0'):
+        metadata, name = line.split('\t', 1)
+        mode, kind, digest = metadata.split()
+        require(kind == 'blob', 'Unsupported installed Git object')
+        head_entries[name] = {'mode': mode, 'blob': digest}
+    index = {}
+    for line in git('ls-files', '--stage', '-z').rstrip('\0').split('\0'):
+        metadata, name = line.split('\t', 1)
+        mode, digest, stage = metadata.split()
+        require(stage == '0' and name not in index, 'Conflicted installed index')
+        index[name] = {'mode': mode, 'blob': digest}
+    require(index == head_entries, 'Installed index differs from captured HEAD')
+    # Public owner commits, not an unpublished local merge's metadata SHA,
+    # are the ancestry obligations. The full reconciled bytes are separately frozen.
+    for ancestor in (BASE_COMMIT, PREREQUISITE, FEATURE):
+        require(git('merge-base', ancestor, head) == ancestor, 'Required owner source ancestry is absent')
+    return {**source, 'sourceCommit': head, 'gitAndIndexVerified': True}
+
+
+def alpha_state(root):
+    raw = read(root, ALPHA_PIN)[1]
+    pin = strict_json(raw)
+    transition = strict_json(read(root, ALPHA_TRANSITION)[1])
+    require(exact(transition, ('schema', 'status', 'fromPinSha256', 'toPinSha256', 'reviewSha256', 'reviewRaw', 'fromSource'))
+            and transition['schema'] == 'agijobsv0/discovery-alpha-pin-transition/v1'
+            and transition['fromPinSha256'] == UNSET_ALPHA_SHA256, 'Alpha transition framing differs')
+    if pin.get('status') == 'UNSET_PENDING_FINAL_REVIEWED_MAIN':
+        require(sha(raw) == UNSET_ALPHA_SHA256, 'Unset predecessor Alpha pin differs')
+        require(transition == {'schema': 'agijobsv0/discovery-alpha-pin-transition/v1', 'status': 'UNSET_PENDING_REVIEW',
+                'fromPinSha256': UNSET_ALPHA_SHA256, 'toPinSha256': None, 'reviewSha256': None,
+                'reviewRaw': None, 'fromSource': None}, 'Unset transition cannot claim a completed source review')
+        return pin
+    require(exact(pin, ('schema', 'status', 'repository', 'commit', 'tree', 'sourceHash', 'catalogPath',
+                       'catalogSha256', 'catalogMode', 'files', 'fileModes', 'qualification', 'reviewSha256'))
+            and pin['schema'] == 'agijobsv0/discovery-installed-alpha/v1'
+            and pin['repository'] == 'MontrealAI/AGI-Alpha-Agent-v0'
+            and pin['status'] == 'REVIEWED_FINAL_SOURCE'
+            and pin['qualification'] == 'PENDING_FINAL_SOURCE_NATIVE_COMPATIBILITY'
+            and pin['catalogPath'] == 'docs/successor/capabilities/sources.json', 'Frozen Alpha pin fields differ')
+    require(all(isinstance(pin[key], str) and re.fullmatch('[0-9a-f]{40}', pin[key]) for key in ('commit', 'tree'))
+            and all(isinstance(pin[key], str) and re.fullmatch('[0-9a-f]{64}', pin[key])
+                    for key in ('sourceHash', 'catalogSha256', 'reviewSha256'))
+            and pin['catalogMode'] in ('100644', '100755'), 'Frozen Alpha identity differs')
+    require(isinstance(pin['files'], dict) and 41 <= len(pin['files']) <= 64
+            and set(pin['files']) == set(pin['fileModes'])
+            and all(safe_path(name) and isinstance(digest, str) and re.fullmatch('[0-9a-f]{64}', digest)
+                    and pin['fileModes'][name] in ('100644', '100755') for name, digest in pin['files'].items()),
+            'Frozen Alpha captured input map differs')
+    require(transition['status'] == 'REVIEWED_PIN_PROPOSAL' and transition['toPinSha256'] == sha(raw)
+            and transition['reviewSha256'] == pin['reviewSha256']
+            and isinstance(transition['reviewRaw'], str) and sha(transition['reviewRaw'].encode()) == pin['reviewSha256'],
+            'Frozen pin does not match its separately selected review and immutable predecessor')
+    review = strict_json(transition['reviewRaw'])
+    require(review.get('schema') == 'agijobsv0/discovery-alpha-source-review/v1'
+            and review.get('decision') == 'ACCEPTED_FOR_INSTALLED_SOURCE'
+            and review.get('repository') == pin['repository']
+            and all(review.get(key) == pin[key] for key in ('commit', 'tree', 'sourceHash', 'catalogSha256'))
+            and isinstance(review.get('evidence'), list) and review['evidence']
+            and all(isinstance(item, str) and item.startswith('https://github.com/MontrealAI/AGI-Alpha-Agent-v0/')
+                    for item in review['evidence']), 'Case-specific frozen Alpha review differs')
+    source = transition['fromSource']
+    require(exact(source, ('tree', 'manifestSha256', 'verifierSha256', 'scopeVerifierSha256'))
+            and re.fullmatch('[0-9a-f]{40}', source['tree'])
+            and all(re.fullmatch('[0-9a-f]{64}', source[key]) for key in ('manifestSha256', 'verifierSha256', 'scopeVerifierSha256')),
+            'Alpha transition lacks the exact whole-source predecessor proof')
+    return pin
+
+
+def readiness(root, selection, paths=None, require_git=False):
+    source = validate_source(root, selection, paths)
+    if require_git:
+        source = validate_git_source(root, source)
+    pin = alpha_state(root)
+    request = strict_json(read(root, OWNER_REVIEW)[1])
+    require(request['status'] == 'UNACCEPTED_PROPOSAL_ONLY' and request['trueUnclearedQualityWarnings'] == 8
+            and request['acceptedRecordsChanged'] is False, 'Owner review request cannot claim acceptance')
+    return {**source, 'nativeAcceptance': 'NOT_RUN', 'alphaPin': 'UNSET' if pin['status'].startswith('UNSET') else 'REVIEWED_FINAL_SOURCE', 'versionReservation': 'UNRESERVED_PROPOSAL',
+            'moduleGraphSha256': CHANGES['integrations/alpha-agent/discovery-installed-module-graph.mjs']['after']['sha256'],
+            'holds': ['QUALIFIED_PREREQUISITE_MAIN_REQUIRED',
+                      'FINAL_REVIEWED_ALPHA_MAIN_PIN_REQUIRED' if pin['status'].startswith('UNSET')
+                      else 'INSTALLED_ARCHIVE_NATIVE_QUALIFICATION_REQUIRED',
+                      'FRESH_FINAL_SOURCE_SCANNER_ACCEPTANCE_REQUIRED', 'EIGHT_TRUE_QUALITY_OWNER_DISPOSITIONS_REQUIRED',
+                      'EXACT_FINAL_SOURCE_HOSTED_QUALIFICATION_REQUIRED', 'EXPLICIT_PUBLICATION_PROFILE_APPROVAL_REQUIRED']}
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--root', type=pathlib.Path, default=ROOT)
+    parser.add_argument('--manifest-sha256', required=True)
+    parser.add_argument('--verifier-sha256', required=True)
+    parser.add_argument('--scope-verifier-sha256', required=True)
+    parser.add_argument('--require-shippable', action='store_true')
+    parser.add_argument('--require-git', action='store_true')
+    args = parser.parse_args()
+    result = readiness(args.root, select(manifest_sha256=args.manifest_sha256, verifier_sha256=args.verifier_sha256,
+             scope_verifier_sha256=args.scope_verifier_sha256), require_git=args.require_git)
+    print(json.dumps(result, sort_keys=True))
+    if args.require_shippable:
+        raise SystemExit('Shipping refused: ' + ', '.join(result['holds']))

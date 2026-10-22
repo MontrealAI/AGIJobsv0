@@ -1,0 +1,410 @@
+{
+  "schema": "agijobsv0/discovery-prerequisite-projection/v1",
+  "repository": "MontrealAI/AGIJobsv0",
+  "baseCommit": "83065adf18a6ee987f8fa479a496a052d35db682",
+  "baseTree": "77ded62b991e8cca28bfd849593153f61ac72d86",
+  "commit": "792687d133863783d02972f543f1eaca257b9e9c",
+  "tree": "16c29d934e8bb4d36d286fae7fbf3f9b9d506a85",
+  "ownerHeads": [
+    "d27d752cf552bc7f45108c962b6501d912d1e715",
+    "792687d133863783d02972f543f1eaca257b9e9c"
+  ],
+  "qualification": "OWNER_STACK_NOT_YET_MAIN_RELEASE_QUALIFIED",
+  "changes": {
+    ".github/workflows/apps-images.yml": {
+      "before": {
+        "mode": "100644",
+        "blob": "14cab78934e4b7fd6aeb1f717e6ccbce588b2594"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "ca04e6c0f35ccbb9a2a3083649decb576088f5bd"
+      }
+    },
+    ".github/workflows/ci.yml": {
+      "before": {
+        "mode": "100644",
+        "blob": "9dd4242442010d65ad2d6328494b13aa813b06f8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "1b32c2d03bf61107aa5ecd6664e5346cb73c1fe3"
+      }
+    },
+    ".github/workflows/contracts.yml": {
+      "before": {
+        "mode": "100644",
+        "blob": "7d35388b5ccf8e9b9e21cab9a13eb918d9555f68"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "f9250dcb52ca99e904efc48a6c3d2de211a717c5"
+      }
+    },
+    ".github/workflows/culture-ci.yml": {
+      "before": {
+        "mode": "100644",
+        "blob": "861d287aa1fd21e2d99455d8e3a4d5f922fd18e8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "91ce8db0e44c6f77dc349ce7f76714c4807c2100"
+      }
+    },
+    ".github/workflows/escrow-replay-regression.yml": {
+      "before": {
+        "mode": "100644",
+        "blob": "3a3bb2f3f19808415572e92014f14c63a1d1de71"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "b61c8ac0bb530afac74de5e367e9cb3ca46b74c6"
+      }
+    },
+    ".github/workflows/pages.yml": {
+      "before": {
+        "mode": "100644",
+        "blob": "e6bebe9ccdfab552420b89cbfc7e8eec49073bd3"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "5eba7f3aeb6e19fd645672488914110205b3c28c"
+      }
+    },
+    ".github/workflows/production-rehearsal.yml": {
+      "before": {
+        "mode": "100644",
+        "blob": "e1fa3f4a6b4548d08855c3f9204fedb6a3ee9b6e"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "f263f8979070da4bbbb4f066ed6159a78db462f5"
+      }
+    },
+    ".github/workflows/source-release-rc16.yml": {
+      "before": {
+        "mode": "100644",
+        "blob": "af73f3dcbaaf6569ab1a99a3b5fbfb7093f62afa"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "c718ae0e9d5297dade30711c3cafdbb2c29358ea"
+      }
+    },
+    ".github/workflows/static-analysis.yml": {
+      "before": {
+        "mode": "100644",
+        "blob": "da884644bf8b483c5ab6a643ce491c40b87898f6"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "24572633149841e9fd7c0cb9e7f8bda42cbffa0b"
+      }
+    },
+    ".github/workflows/torch-tests.yml": {
+      "before": {
+        "mode": "100644",
+        "blob": "787b12a259b865b42c7f346ee84768ca2014bfd5"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "0d7f44ad10d966ece8e8ee3e391ae61db10dd7d9"
+      }
+    },
+    "CHANGELOG.md": {
+      "before": {
+        "mode": "100644",
+        "blob": "9d08b12d9c10dbeb59edcac19b02243f23a6d1c1"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "862a0a221178006cc1ab2e0d5324b09f25698356"
+      }
+    },
+    "agent-gateway/grpc.ts": {
+      "before": {
+        "mode": "100644",
+        "blob": "1a3bd59a11ba285721042e2a26c62ddf84412bd8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "372babae69016980584217053e8e0d5631472bb5"
+      }
+    },
+    "agent-gateway/operator.ts": {
+      "before": {
+        "mode": "100644",
+        "blob": "c994de63bd1b4f18eeb756001fafd127245bb2b6"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "2a09ee0ffd4d73124f1fec59d519533157dfe204"
+      }
+    },
+    "agent-gateway/routes.ts": {
+      "before": {
+        "mode": "100644",
+        "blob": "b2670fd4b6c4b6f55dc41f91b7bbbfb3883dea0c"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "3ba1337dd5c4cfa6f3ce9f6819cae2701e701af5"
+      }
+    },
+    "agent-gateway/telemetry.ts": {
+      "before": {
+        "mode": "100644",
+        "blob": "d0a245d0442cd858ae9c553d6bcf6717709f8336"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "42bdd6a33d84f666b1ae7e89fcbfab54e21f20d4"
+      }
+    },
+    "agent-gateway/telemetryQueue.ts": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "dae7b081ce344acd3c7cd87aae240069a0499df8"
+      }
+    },
+    "agent-gateway/telemetrySample.ts": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "7809789c04e84dd9d5d5fdac40336b84cb6b6492"
+      }
+    },
+    "docs/operator-telemetry.md": {
+      "before": {
+        "mode": "100644",
+        "blob": "f50a122157a7f21cd98c24c7d12abd0fabdac7a8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "bd324cfa1f06236147fd6869fd296b49e64f0aba"
+      }
+    },
+    "docs/production/RELEASE_NOTES_SOURCE_RC17.md": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "82ae7b2610581d815931f6cb43babfce09ef1bd9"
+      }
+    },
+    "package-lock.json": {
+      "before": {
+        "mode": "100644",
+        "blob": "744cbc050a95bc12e0634a8b54357bf897a5eeda"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "49676e6284cfb6aee1e953338e702b55fc01b3be"
+      }
+    },
+    "package.json": {
+      "before": {
+        "mode": "100644",
+        "blob": "0a9c9335a2a130c85744991d0d0f4c27188ae3c4"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "d69a25b422673d9cb130be61fb45a9f4977317c9"
+      }
+    },
+    "scripts/release/publish-source-release-rc16.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "2e7f347efbc39c5c8a7e578a1ce7517903da6a8a"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "bf19f60dbf38f0c8118304a7232a38cf8eb8ad0d"
+      }
+    },
+    "scripts/release/qualify-source-release-rc16.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "ab4f85cd38c7c1f9825da416b8c210d7f1a8de8f"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "f14e815124f0afddd24b16dd61231453f5ba1985"
+      }
+    },
+    "scripts/release/source-native-evidence-rc16.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "b27ac5a85cb7650519db1d9da4e9ec381d13c616"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "791063e17e61365fc7f956d391e54677474a2cef"
+      }
+    },
+    "scripts/release/source-native-gates-rc16.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "3c857923b165abf1cfe5ca56bf61d7d0c80e3b79"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "0669be1411ca7a9036b078378e1985f46fd19b43"
+      }
+    },
+    "scripts/release/source-profile-rc16.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "c404a769260301cc52f0c948e91241ab6f4a87a7"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "aff9b6e0c83b86e3f7f041ee7c8210aab777f2e1"
+      }
+    },
+    "scripts/release/source-profile-rc17.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "ab4e194fbfe3bcbc5dd563197ea2d1e2156440e3"
+      }
+    },
+    "scripts/release/source-scanner-gates-rc16.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "6c72c824a971b3222f432a26be6efab2bbcdf5e8"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "a4231db80eec618f29d9979e257fd41b1c0410d0"
+      }
+    },
+    "scripts/release/source-scanner-review-bindings-rc16.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "b3e8e5a8f2d07a5d8fa2bf9e54bbea1eac1a65ef"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "97e54f013fee1aa66ea8554fd1785255a5c1a154"
+      }
+    },
+    "test/gateway/authPrincipal.test.js": {
+      "before": {
+        "mode": "100644",
+        "blob": "bd3789d060d1ecb7b89c7c93a9b320e53c65746b"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "831b88894bbceb3f4a6b9bd900130db46c415a29"
+      }
+    },
+    "test/gateway/submissionContract.test.js": {
+      "before": {
+        "mode": "100644",
+        "blob": "81a4ad7e8cd4d65b51e424f210691ff4198b9e17"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "e9c1af3d056310f9e6388ff4a04035ebb6a96752"
+      }
+    },
+    "test/scripts/hardhat-test-discovery.test.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "25707f312769272f1f88a6d12b1c709ac07d0ae9"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "491f41a628672b817995f4ef5e4a0959c80db940"
+      }
+    },
+    "test/scripts/source-profile-rc16.test.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "a350a0ad3075d693ca64b23d262e9412941aa3c1"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "529be68b87723d02f9c062cc6e2779b3e3395a21"
+      }
+    },
+    "test/scripts/source-python-evidence-rc16.test.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "0951455836d7900407337389b6d913fedd333966"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "25e8bb13c3a11ec7140236109e6df492fe249971"
+      }
+    },
+    "test/scripts/source-python-scanner-rc16.test.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "716a295b5e7a7c63b4d99f26deb32f159632b2b5"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "5925744a03cd2372328f839ce91ea3054d2181e9"
+      }
+    },
+    "test/scripts/source-release-integrated-rc16.test.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "44fed3f85aa7fcef4028f4b1a33d84149b0f3bc0"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "cabb8a18822bcac939a0411ba232f6efac84ac7d"
+      }
+    },
+    "test/scripts/source-release-rc16.test.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "cbbf13b7ddfabff059c65612f6934d76eaaded1e"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "fa931f142214c56f5804291036b37fcc2a34f8e3"
+      }
+    },
+    "test/scripts/source-release-security-rc16-gate.test.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "e2f5d6c2d21dc84d43a15f2151e429dcf774a92d"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "586b3ced53b7699f4aaf891e710de729112e352b"
+      }
+    },
+    "test/scripts/source-release-security-rc16-publish.test.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "b7d9df4584ac871933dedf8f3aa21e4da68bde26"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "a5813ebbff529c49a9635715bc9438e589b9044f"
+      }
+    },
+    "test/scripts/source-review-binding-rc16.test.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "6351c595e6711fce744c5d63da933683b5db1c1b"
+      },
+      "after": {
+        "mode": "100644",
+        "blob": "091e0894448261c8ba63ab5ff94d0ca63e28f09e"
+      }
+    },
+    "test/scripts/telemetryRecovery.test.cjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "blob": "438526676642a67be0c65504aa939b6fdc9d3124"
+      }
+    }
+  }
+}

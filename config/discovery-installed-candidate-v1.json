@@ -1,0 +1,477 @@
+{
+  "schema": "agijobsv0/discovery-installed-profile/v1",
+  "repository": "MontrealAI/AGIJobsv0",
+  "profile": "jobs-discovery-installed-v1",
+  "proposedVersion": "2.1.0-rc.18",
+  "versionReservation": "UNRESERVED_PROPOSAL",
+  "state": "LOCAL_PREPARATION_NOT_APPROVED",
+  "prerequisite": "792687d133863783d02972f543f1eaca257b9e9c",
+  "feature": "5b85af62078d415c9ced2dd7aa959a0783c19d27",
+  "reconciledTree": "fac37bef7c11f57a90fc49d2481a06167ccdc8aa",
+  "changes": {
+    ".github/codeql/config-discovery-installed-python.yml": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "0e5134b9601637ddb78d7ddbc9457bacb69bf20ed0035a06de5f9827dcfadf76"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    ".github/workflows/discovery-installed-preparation.yml": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "ce0ea5a82c09ef62a516ea1ff5d4c33b2405f5f949811ead7d7266ef9195ffa8"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    ".github/workflows/discovery-installed-python-analysis.yml": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "43ea91b6a037ebcda101818a2d1a7079e4a4607b685a4142592fc955c0e69863"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    ".github/workflows/discovery-installed-release.yml": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "43733211dbdd9ed4d09da95afcaaab663dc26600fe0c309b385e02af96aa28e4"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    ".github/workflows/discovery-lab-receiver.yml": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "1d745e792b5e3f167be5c5d00e5b94c4aaff5aedba576dc07d66ceeebe0271ff"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    ".github/workflows/source-release-rc16.yml": {
+      "before": {
+        "mode": "100644",
+        "blob": "c718ae0e9d5297dade30711c3cafdbb2c29358ea"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "803f353c14ce9b38db2acf7dd9750bdd37ae7b8ffa5066ab1da03d896cb51bec"
+      },
+      "reason": "Dispatch rc18 to additional installed checks while preserving the original rc17 suite and publisher"
+    },
+    "config/discovery-installed-alpha-transition-v1.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "18069c3d2c6a95ce336bbfea1ec3da96fbb9a155fc01804ed2e209eaf0f0f4e9"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "config/discovery-installed-alpha-v1.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "01e32d5283b6858c977659701ab32c24a846b502adf1d1363c9f066d633e9207"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "config/discovery-installed-browser-input-v1.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "44198eadbd1634b5eb89ce478e7235e04285dbcb5c81d1be104dee9059312ea0"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "config/discovery-installed-module-graph-origin-v1.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "e3c62ccb5e8cb591a09d9857bbc5892edd530b7bada50b9d90bc234d5c88dd23"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "config/discovery-installed-prerequisite-v1.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "9baa5157a1a8e972811a6e7f3108079743774794f732abdb782468d3a363a364"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "config/discovery-installed-publication-review-template-v1.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "cff78ea1f379e71a5f96be2ce5df1c03c4f58358dc074107936170564ee17e3a"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "config/discovery-installed-review-request-v1.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "a6a75cdcd8b41ed3ec85079fc74c798f24a4d3ad2e280ddf719df519b283551c"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "config/discovery-lab-alpha-source.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "a463a01423d1b64fa9c5dc793716279890d02e1d4a004202fa3f63ac427dbbe9"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "config/discovery-lab-source-baseline-v1.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "d7225ecab094653482593057be4b018e0c61dfb7c1c592baa134dc668fa81a65"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "config/discovery-lab-source-candidate-v1.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "ebee1b8c2bbdf2d7084d433296d6a4e1fe7bf54b9809e24b75947980e0b7550d"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "docs/successor/DISCOVERY_INSTALLED_RELEASE.md": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "8f0a4888eaa12c56d193e106ce1b3373801ca825b1e27ae20fe08e0c6ddc84e1"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "docs/successor/DISCOVERY_LAB.md": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "55e75ea1f35de29b2486d819c56e04ac042c6397225a3fbccb74f5435186dc4b"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "hardhat.config.js": {
+      "before": {
+        "blob": "8d201a5f8af39ccefa4970e6839584abcc1720ba",
+        "mode": "100644"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "738518441596cb1e6a9c691fa2c2ca68fc158a96f8856ab71f0ebc70ad0590b6"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "integrations/alpha-agent/DISCOVERY_MODULE_BOUNDARY_NOTICE.txt": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "50c256613d65de0674a2d2a33052a224408d8f02fb6aaf090ac5661b31a12671"
+      },
+      "reason": "Include applicable license and pinned attribution for copied Apache module"
+    },
+    "integrations/alpha-agent/discovery-installed-module-graph-runtime.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "ce8d370d494e347926838ee8d061ea303334b1b1b2e47b486985bd2306dc5feb"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "integrations/alpha-agent/discovery-installed-module-graph.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "8d3575ece582c158c30f3cc1c5f438b9b32ad2a31f190d6867acf9712beedad5"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "integrations/alpha-agent/discovery-installed-module-graph.test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "cf45166b92e7dd6cc618476bb78f340fce5a96ad66954cc1c1efa707b60c40cc"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "integrations/alpha-agent/discovery-installed-native.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "eb8fd61115ba16b0b46f8c37bb652833bf9534154754305812289e2f6f4fc35a"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "integrations/alpha-agent/discovery-installed-native.test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "e7dca7b272d7cac30a548083b7a4847ee8f0bd5abd86c86313a3fc2c518e779e"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "integrations/alpha-agent/discovery-installed-operator.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "94954c3372a1896d74c9dca66d354da151a9d1c0880b5f0eac27e83c2ee1446f"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "integrations/alpha-agent/discovery-installed-runtime.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "af41c84aeb5534f97feefab17911a3c5d4ebee5fc45fd72551476fbe64b09732"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "integrations/alpha-agent/discovery-installed-runtime.test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "c060b25b8f975a843a678c1778859c3902becfd937cfdb6f3820a2d4dd92d398"
+      },
+      "reason": "Implement separately gated installed runtime and independently authenticated standalone bootstrap"
+    },
+    "integrations/alpha-agent/discovery-lab-contract.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "98c8de8ce2774b7650bf4ee11eeedfb0a69b75fa6d1b080ef823637d77d0ab47"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "integrations/alpha-agent/discovery-lab-native-test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "21265da0be01079dbc5d83572fae716d4dd4cdcfb39b876c96ff01cb793216ee"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "integrations/alpha-agent/discovery-lab-work-request.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "337fabca02ece2a25b8cc50e56fea5bf5338f2b6f18343eb4a3353a634aefec4"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "integrations/alpha-agent/discovery-lab-work-request.test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "799ab68c0077ffb7849133ee53d228928ef8d0e20000c813bb3cec30cff4a30d"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "integrations/alpha-agent/fixtures/discovery-lab-request.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "891e11f3fed142db55e36934b4f1b5869200973216bfdd9257789fd66fb0a82f"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "package-lock.json": {
+      "before": {
+        "mode": "100644",
+        "blob": "49676e6284cfb6aee1e953338e702b55fc01b3be"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "d0cbf0ae222ba683900aa8dcf8a2954dc45e1e6dabcbf993d13ca55636474dec"
+      },
+      "reason": "Select proposed rc18 metadata for the separate installed edition without changing dependencies"
+    },
+    "package.json": {
+      "before": {
+        "mode": "100644",
+        "blob": "d69a25b422673d9cb130be61fb45a9f4977317c9"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "14e369adcc74ff127a4bce92268b5f9e26c054f05d83960ca56b7e9edbbc9094"
+      },
+      "reason": "Select proposed rc18 metadata for the separate installed edition without changing dependencies"
+    },
+    "scripts/release/capture-discovery-browser-input.cjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "170ef450c718e6a54719a970939d68a3b46b443adb017eadf15e35ab6c7adcfe"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "scripts/release/capture-discovery-browser-input.test.cjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "bcb2c40c4fb14380cd95639fdea2a140ff27fb13d7bcb9ef1802f57077d9f897"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "scripts/release/discovery-browser-packet-fixtures.cjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "362a7308a78abf086c047dd5e0be3a522f0c28675f4e50eba76d5c14ec37b2dd"
+      },
+      "reason": "Add inert shared packet metadata fixtures without browser or native qualification claims"
+    },
+    "scripts/release/discovery-installed-package.py": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "dc90730221c301524c147d8a50ea1d2ca6b595b83ad1ec7e3f5d3b01db0bec82"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "scripts/release/discovery-installed-qualification.cjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "669ee99e3913884b4faaaeba291ebfde67ee3e82db845e6061f1e3b4a4e65503"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "scripts/release/discovery-installed-release-dispatch.cjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "b28b8c29c54abadbe41a22a2ba6e9647a99d70892d61c730497e4fa722bac3bb"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "scripts/release/discovery-installed-release.test.cjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "2741f332447d8aedb55a54341f1c829172b8ec8fad6adba5c0ac53c78bcb9dda"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "scripts/release/discovery-lab-profile.py": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "4da6958cd88f4e596aaa5947f398d2367009bb9bfe487fcfa1d0bf17b4cd348b"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "scripts/release/freeze-discovery-installed-alpha.py": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "29eca508788d58a09afdfa1b4874676dbb688a4529b75e1a6d65fad15b909613"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "scripts/release/install-discovery-installed.py": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "0e5c5fd49530a55f1e6f14531ede72e143bd1d5b29029ae8c9adc610b48337c2"
+      },
+      "reason": "Implement separately gated installed runtime and independently authenticated standalone bootstrap"
+    },
+    "scripts/release/publish-discovery-installed.cjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "0bc9fd94e83317430adf5500867c40b44d8d813105969381f1affc94e24bfe89"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "scripts/release/test-discovery-installed-archive.py": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "41800950cd4d7f4ed9e7d89ead7fb3112b54d138ee4dc4b79790188e2dce85cd"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "scripts/release/test-discovery-installed-profile.py": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "ade5fbf51d04793808eff5e858fa11ac2842d77af88d6a48dbecdc608ca76857"
+      },
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+    },
+    "scripts/release/test-discovery-lab-profile.py": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "603f6f26515803bde617f977a2a1cbd9c48e09fafc9b77dcc9f61eb18ca7728f"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "test/scripts/hardhat-test-discovery.test.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "491f41a628672b817995f4ef5e4a0959c80db940"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "67b50a18fb9d61785080a01518bac6377637763ed76b9a0cfff335729f37114a"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "test/security/discovery-protected-scope.test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "725d0fd5683e491aff69d34e64dda4392924aefb9bac7889cba830f834b86927"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "tools/security/discovery-installed-protected-scope.test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "f3f3a12290e6ce7f96ea88085a1d2cd4ea3d6fb2a5632ebf94e1d079ba359972"
+      },
+      "reason": "Add separate complete committed-source scanner scope for the installed edition without weakening historical scope"
+    },
+    "tools/security/discovery-protected-scope.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "f27bea8586e5d6d11047cb2daa832b618cd186b115525d96da38e9aa4d90d765"
+      },
+      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+    },
+    "tools/security/validate-codeql-remediation.mjs": {
+      "before": {
+        "blob": "9657ecd2c072276276079e55fde51c5b66b8b37c",
+        "mode": "100644"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "6bba9bb1bc39a7427f0b443261ae951b960003f558729ef6ab368cdc2a86450a"
+      },
+      "reason": "Add separate complete committed-source scanner scope for the installed edition without weakening historical scope"
+    }
+  },
+  "decisions": {
+    "qualifiedPrerequisiteMain": null,
+    "finalAlphaPinReview": null,
+    "currentScannerAcceptance": null,
+    "qualityOwnerDisposition": null,
+    "exactSourceHostedQualification": null,
+    "publicationApproval": null
+  },
+  "denials": {
+    "releaseQualified": false,
+    "publicationApproved": false,
+    "executionApproved": false,
+    "settlementApproved": false
+  }
+}

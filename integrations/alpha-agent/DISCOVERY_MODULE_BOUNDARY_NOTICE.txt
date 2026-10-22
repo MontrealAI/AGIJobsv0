@@ -1,0 +1,24 @@
+Discovery module boundary attribution and license notice
+
+integrations/alpha-agent/discovery-installed-module-graph.mjs is an unmodified
+copy of discovery-lab/release/module-closure.mjs from MontrealAI/AGI-Fleet-Linux
+at local source commit e4bc09db09f7b2b0bf5e1fd20dfd88d6791fe5ad.
+The complete module SHA-256 is:
+8d3575ece582c158c30f3cc1c5f438b9b32ad2a31f190d6867acf9712beedad5
+
+The module retains its Apache-2.0 SPDX header. The complete Apache License,
+Version 2.0 text is included at integrations/alpha-agent/vendor/alpha/LICENSE.
+Those 11,357 bytes exactly match MontrealAI/AGI-Alpha-Agent-v0 LICENSE at
+public commit f73820b4873364a67b36d6a46f30977aeff5946e, Git blob
+261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64, SHA-256:
+c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4
+
+The root LICENSE retains the Jobs MIT license. Individual source headers and
+this copied module's Apache license remain applicable to their own files.
+Source attribution does not transfer qualification, approval or authority.
+
+The separately named discovery-installed-module-graph-runtime.mjs adapts this
+base for the actual Jobs receiver, which hashes its own source with node:fs.
+Only that fixed receiver parent is allowed this builtin; Alpha parents are not.
+The adapted file SHA-256 and exact base identity are recorded in
+config/discovery-installed-module-graph-origin-v1.json. Both retain Apache-2.0.

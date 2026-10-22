@@ -1,0 +1,9 @@
+{
+  "schema": "agijobsv0/discovery-alpha-pin-transition/v1",
+  "status": "UNSET_PENDING_REVIEW",
+  "fromPinSha256": "01e32d5283b6858c977659701ab32c24a846b502adf1d1363c9f066d633e9207",
+  "toPinSha256": null,
+  "reviewSha256": null,
+  "reviewRaw": null,
+  "fromSource": null
+}
