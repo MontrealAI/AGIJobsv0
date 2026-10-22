@@ -11,6 +11,7 @@ import {
   Histogram,
 } from 'prom-client';
 import { EnergySample } from '../shared/energyMonitor';
+import { TelemetryQueue } from './telemetryQueue';
 import { orchestratorWallet, agents, FETCH_TIMEOUT_MS } from './utils';
 import {
   isOracleContractConfigured,
@@ -34,14 +35,10 @@ const REQUIRE_TELEMETRY_SIGNATURE =
   process.env.ENERGY_ORACLE_REQUIRE_SIGNATURE === 'true';
 
 const TELEMETRY_DIR = path.resolve(__dirname, '../storage/telemetry');
-const TELEMETRY_OUTBOX = path.join(TELEMETRY_DIR, 'telemetry-queue.json');
 const PLANNER_TRACE_PATH = path.join(TELEMETRY_DIR, 'planner-traces.jsonl');
 const RUNNER_TRACE_PATH = path.join(TELEMETRY_DIR, 'runner-traces.jsonl');
 const GAS_METRICS_PATH = path.join(TELEMETRY_DIR, 'gas-metrics.jsonl');
 
-let queue: EnergySample[] = [];
-let loaded = false;
-let flushing = false;
 let flushTimer: NodeJS.Timeout | null = null;
 let warnedNoOracle = false;
 let warnedNoContract = false;
@@ -127,6 +124,9 @@ const telemetryQueueGauge = new Gauge({
   help: 'Number of telemetry samples queued for flush.',
   registers: [prometheusRegistry],
 });
+const telemetryOutbox = new TelemetryQueue(TELEMETRY_DIR, (length) =>
+  telemetryQueueGauge.set(length)
+);
 
 const validationFailureGauge = new Gauge({
   name: 'agi_gateway_validation_failure_rate',
@@ -1131,31 +1131,6 @@ async function requestTelemetryAnchor(): Promise<void> {
   }
 }
 
-async function loadQueue(): Promise<void> {
-  if (loaded) return;
-  loaded = true;
-  try {
-    const raw = await fs.promises.readFile(TELEMETRY_OUTBOX, 'utf8');
-    queue = JSON.parse(raw) as EnergySample[];
-  } catch (err: any) {
-    if (err.code !== 'ENOENT') {
-      console.warn('Failed to load telemetry queue', err);
-    }
-    queue = [];
-  }
-  telemetryQueueGauge.set(queue.length);
-}
-
-async function persistQueue(): Promise<void> {
-  ensureDir(path.dirname(TELEMETRY_OUTBOX));
-  await fs.promises.writeFile(
-    TELEMETRY_OUTBOX,
-    JSON.stringify(queue, null, 2),
-    'utf8'
-  );
-  telemetryQueueGauge.set(queue.length);
-}
-
 async function resolveSignerMetadata(): Promise<{
   address: string;
   ens?: string;
@@ -1298,35 +1273,19 @@ async function sendToOracle(
 }
 
 export async function publishEnergySample(sample: EnergySample): Promise<void> {
-  await loadQueue();
-  queue.push(sample);
-  await persistQueue();
+  await telemetryOutbox.enqueue(sample);
 }
 
 export async function flushTelemetry(): Promise<void> {
-  await loadQueue();
-  if (flushing) return;
-  if (queue.length === 0) return;
-  flushing = true;
-  const snapshot = [...queue];
   try {
-    const result = await sendToOracle(snapshot);
-    if (result.processed > 0) {
-      queue = queue.slice(result.processed);
-      await persistQueue();
-    }
-    if (!result.success) {
-      throw result.error ?? new Error('Telemetry submission incomplete');
-    }
+    await telemetryOutbox.flush(sendToOracle);
   } catch (err) {
     console.warn('Failed to flush telemetry', err);
-  } finally {
-    flushing = false;
   }
 }
 
 export async function startTelemetryService(): Promise<void> {
-  await loadQueue();
+  await telemetryOutbox.load();
   if (flushTimer) return;
   flushTimer = setInterval(() => {
     flushTelemetry().catch((err) => console.warn('telemetry flush error', err));
@@ -1341,7 +1300,7 @@ export function stopTelemetryService(): void {
 }
 
 export function telemetryQueueLength(): number {
-  return queue.length;
+  return telemetryOutbox.length;
 }
 
 export function getPrometheusRegistry(): Registry {

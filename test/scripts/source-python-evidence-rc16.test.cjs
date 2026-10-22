@@ -35,7 +35,7 @@ const rawNames = [
   'source-scope-before.json',
 ];
 
-const reviewedBranch = 'fix/processed-codeql-release-proof-20261020';
+const reviewedBranch = 'fix/inherited-codeql-telemetry-runtime-20261021';
 function metadata(sha = source, id = 7, headBranch = 'main') {
   const run = {
     id,
@@ -123,8 +123,8 @@ function review(fixture, tree = reviewedTree) {
   return {
     schema: 'agijobsv0/codeql-python-review/2',
     producerEvent: 'push',
-    producerHeadBranch: 'fix/processed-codeql-release-proof-20261020',
-    producerRef: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+    producerHeadBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+    producerRef: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
     sourceCommit: fixture.run.head_sha,
     tree,
     producerRunId: fixture.run.id,
@@ -1101,29 +1101,51 @@ test('ordinary Python comparison metadata retains full records, component positi
   const reviewed = ordinaryPythonComparisonMetadata();
   const changedRecord = clone(reviewed);
   changedRecord.toolComponents[0].rules[0].text = 'changed ordinary metadata';
-  assert.throws(() => verifyPythonSemanticSummary(changedRecord, reviewed), /complete independently reviewed toolComponents/);
+  assert.throws(
+    () => verifyPythonSemanticSummary(changedRecord, reviewed),
+    /complete independently reviewed toolComponents/
+  );
   const movedComponent = clone(reviewed);
   movedComponent.toolComponents.reverse();
-  assert.throws(() => verifyPythonSemanticSummary(movedComponent, reviewed), /complete independently reviewed toolComponents/);
+  assert.throws(
+    () => verifyPythonSemanticSummary(movedComponent, reviewed),
+    /complete independently reviewed toolComponents/
+  );
   const duplicate = clone(reviewed);
-  duplicate.toolComponents[0].rules[1].id = duplicate.toolComponents[0].rules[0].id;
+  duplicate.toolComponents[0].rules[1].id =
+    duplicate.toolComponents[0].rules[0].id;
   const reorderedDuplicate = clone(duplicate);
   reorderedDuplicate.toolComponents[0].rules.reverse();
-  assert.throws(() => verifyPythonSemanticSummary(reorderedDuplicate, duplicate), /complete independently reviewed toolComponents/);
+  assert.throws(
+    () => verifyPythonSemanticSummary(reorderedDuplicate, duplicate),
+    /complete independently reviewed toolComponents/
+  );
   const lostMultiplicity = clone(reviewed);
   lostMultiplicity.toolComponents[0].rules.pop();
-  assert.throws(() => verifyPythonSemanticSummary(lostMultiplicity, reviewed), /complete independently reviewed toolComponents/);
+  assert.throws(
+    () => verifyPythonSemanticSummary(lostMultiplicity, reviewed),
+    /complete independently reviewed toolComponents/
+  );
 });
 
 test('ordinary Python comparison metadata compares every remaining outer field exactly', () => {
   const reviewed = ordinaryPythonComparisonMetadata();
   for (const change of [
-    (value) => { value.outerMetadata.values.reverse(); },
-    (value) => { value.newOuterMetadata = 'not silently ignored'; },
-    (value) => { delete value.outerMetadata; },
+    (value) => {
+      value.outerMetadata.values.reverse();
+    },
+    (value) => {
+      value.newOuterMetadata = 'not silently ignored';
+    },
+    (value) => {
+      delete value.outerMetadata;
+    },
   ]) {
     const current = clone(reviewed);
     change(current);
-    assert.throws(() => verifyPythonSemanticSummary(current, reviewed), /complete Python scanner semantics differ/);
+    assert.throws(
+      () => verifyPythonSemanticSummary(current, reviewed),
+      /complete Python scanner semantics differ/
+    );
   }
 });

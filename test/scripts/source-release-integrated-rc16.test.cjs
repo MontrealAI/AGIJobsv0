@@ -694,7 +694,25 @@ test('mandatory scanner manifest is derived from actual pinned receiver Git sour
     ].sort()
   );
   assert.equal(required.length, 89);
-  assert(profile.scannerReceiverPaths.every((file) => required.includes(file)));
+  const declaredOrRelease = new Set([
+    ...required,
+    ...profile.scannerRequiredPaths,
+  ]);
+  assert(
+    profile.scannerReceiverPaths.every((file) => declaredOrRelease.has(file))
+  );
+  const telemetry = profile.telemetryRuntime.transitions
+    .map((item) => item.path)
+    .filter(
+      (file) => file.startsWith('agent-gateway/') && file.endsWith('.ts')
+    );
+  assert.equal(telemetry.length, 6);
+  assert(
+    telemetry.every(
+      (file) =>
+        !required.includes(file) && profile.scannerRequiredPaths.includes(file)
+    )
+  );
   assert.equal(new Set(required).size, required.length);
 });
 
@@ -825,6 +843,38 @@ test('actual Git source and retained SARIF bind both mandatory extraction lists 
     verify().producer.requiredExtractedFiles.length,
     required.length
   );
+  for (const file of profile.telemetryRuntime.transitions
+    .map((item) => item.path)
+    .filter(
+      (name) => name.startsWith('agent-gateway/') && name.endsWith('.ts')
+    )) {
+    const changedDocument = structuredClone(document);
+    for (const invocation of changedDocument.runs[0].invocations)
+      for (const note of invocation.toolExecutionNotifications || [])
+        if (
+          note.descriptor?.id === 'js/diagnostics/successfully-extracted-files'
+        )
+          note.locations = (note.locations || []).filter(
+            (location) =>
+              location.physicalLocation?.artifactLocation?.uri !== file
+          );
+    const changedRaw = Buffer.from(JSON.stringify(changedDocument));
+    const changed = {
+      ...records,
+      'javascript.sarif': changedRaw,
+      'source-extraction.json': JSON.stringify({
+        ...report,
+        sarifSha256: sha256(changedRaw),
+        successfulExtractionFiles: extracted(changedDocument.runs[0]),
+      }),
+    };
+    assert.throws(
+      () => verify(changed),
+      extracted(baseline).includes(file)
+        ? /lost baseline source coverage/
+        : /missing integration source extraction/
+    );
+  }
   for (const [member, mutate] of [
     [
       'source-scope-before.json',
@@ -1203,8 +1253,8 @@ test('quality acknowledgement rejects unknown or security rule IDs and keeps Pyt
     producerRunId: 1,
     producerRunAttempt: 1,
     producerEvent: 'push',
-    producerHeadBranch: 'fix/processed-codeql-release-proof-20261020',
-    producerRef: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+    producerHeadBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+    producerRef: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
     artifactId: 2,
     artifactName: `python-codeql-security-report-${f.review.sourceCommit}-1-1`,
     archiveSha256: 'a'.repeat(64),

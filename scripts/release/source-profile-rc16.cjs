@@ -6,6 +6,10 @@ const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const integrationTransitionsSha256 =
   '1363ebe715ffc6405f70261924ff41313073f72dd0d03bd68440235cac78af02';
+const telemetryRuntimeSha256 =
+  'e0d4553adeb20a21871297fed43b0682846571e6cbe7e9a5554fa2e6072df982';
+const javascriptToolchainSha256 =
+  '5d56e40e135fc1bb97125578fa00bbee5211acffa0f66e2b05052514f03cfa87';
 const historical = require('./qualify-source-release.cjs');
 
 function freeze(value) {
@@ -113,12 +117,12 @@ const nativeCompatibility = freeze({
       'b5f8e704aaab345f9d6503c854d38910ddfabbf98fe674c48b051097812b07f4',
   },
 });
-const scannerPolicy = freeze({
+const historicalScannerPolicy = freeze({
   referenceTransportSchema: 'agijobsv0/codeql-lossless-reference-transport/1',
   reviewedProducer: {
     event: 'push',
-    headBranch: 'fix/processed-codeql-release-proof-20261020',
-    ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+    headBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+    ref: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
   },
   qualityReview: {
     schema: 'agijobsv0/nonsecurity-quality-review/1',
@@ -145,7 +149,21 @@ const scannerPolicy = freeze({
     'source-scope-before.json',
   ],
 });
+const scannerPolicy = freeze({
+  ...historicalScannerPolicy,
+  producerCommit: '24f5f20785758c11edd765bea894f08ce745b047',
+  producerTree: '4906643b9c715a4bc0a6ad30b5e06d9e1a276681',
+  workflowSha256:
+    '51d61187c7425ea23d27d7e43ada934fe301778e99c8ae03108d5f94d1ced8fb',
+  workflowBlob: '24572633149841e9fd7c0cb9e7f8bda42cbffa0b',
+});
 const scannerReceiverPaths = Object.freeze([
+  'agent-gateway/grpc.ts',
+  'agent-gateway/operator.ts',
+  'agent-gateway/routes.ts',
+  'agent-gateway/telemetry.ts',
+  'agent-gateway/telemetryQueue.ts',
+  'agent-gateway/telemetrySample.ts',
   'integrations/alpha-agent/four-repo-computer-lifecycle.cjs',
   'integrations/alpha-agent/four-repo-computer-receipt.mjs',
   'integrations/alpha-agent/pinned-alpha-checkout.cjs',
@@ -162,6 +180,12 @@ const scannerReceiverPaths = Object.freeze([
   'website/assets/computer-mission-copy.mjs',
 ]);
 const scannerRequiredPaths = Object.freeze([
+  'agent-gateway/grpc.ts',
+  'agent-gateway/operator.ts',
+  'agent-gateway/routes.ts',
+  'agent-gateway/telemetry.ts',
+  'agent-gateway/telemetryQueue.ts',
+  'agent-gateway/telemetrySample.ts',
   'scripts/release/emit-codeql-review-rc16.cjs',
   'scripts/release/source-codeql-service-rc16.cjs',
   'integrations/alpha-agent/four-repo-computer-lifecycle.cjs',
@@ -195,8 +219,8 @@ const pythonScannerPolicy = freeze({
   reviewSchema: 'agijobsv0/codeql-python-review/2',
   reviewedProducer: {
     event: 'push',
-    headBranch: 'fix/processed-codeql-release-proof-20261020',
-    ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+    headBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+    ref: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
   },
   producerCommit: 'cb30d7453b36eaca040c139e06fd9668b300c5f4',
   producerTree: '19d86f484ed11de23bb54d11b193ea868d2de88e',
@@ -378,6 +402,272 @@ function verifyIntegrationTransitions(
   return transitions.map((item) => item.path);
 }
 
+// The aggregate composes the untouched historical and isolation proofs with
+// one exact two-path durability correction.
+// These proofs do not install a review or qualify publication.
+const historicalTelemetryRuntimeSha256 =
+  'ff6f82ddd6738d3a0e7481fdd4cd1fc065853b68bc1a20e1defbfaccefea792c';
+const isolationTelemetryRuntimeSha256 =
+  'e2a605cfc233ba1cad6061b514aaadc2175a067cd67a1696012a04f3a3bb7137';
+function telemetryProof(value) {
+  const { baseline, baselineTree, source, tree, transitions } = value;
+  return { baseline, baselineTree, source, tree, transitions };
+}
+function validateTelemetryProof(value, count, allowDeletion = false) {
+  fields(
+    value,
+    ['baseline', 'baselineTree', 'source', 'tree', 'transitions'],
+    'Malformed telemetry runtime proof'
+  );
+  requireValue(
+    ['baseline', 'baselineTree', 'source', 'tree'].every((field) =>
+      /^[a-f0-9]{40}$/.test(value[field] || '')
+    ) &&
+      Array.isArray(value.transitions) &&
+      value.transitions.length === count,
+    'Exact telemetry runtime source and finite transition count are required'
+  );
+  const seen = new Set();
+  for (const item of value.transitions) {
+    fields(item, ['path', 'before', 'after'], 'Malformed telemetry transition');
+    requireValue(
+      typeof item.path === 'string' &&
+        !protectedPath(item.path) &&
+        !seen.has(item.path),
+      'Protected or duplicate telemetry runtime transition'
+    );
+    seen.add(item.path);
+    for (const identity of [item.before, item.after]) {
+      if (identity === null) continue;
+      fields(identity, ['mode', 'blob'], 'Malformed telemetry blob identity');
+      requireValue(
+        identity.mode === '100644' && /^[a-f0-9]{40}$/.test(identity.blob),
+        'Telemetry source must retain its exact regular file mode'
+      );
+    }
+    requireValue(
+      (allowDeletion || item.after !== null) && !same(item.before, item.after),
+      'Telemetry source deletion or unchanged transition is prohibited'
+    );
+  }
+  return value;
+}
+function validateTelemetryRuntime(value = profile.telemetryRuntime) {
+  fields(
+    value,
+    [
+      'baseline',
+      'baselineTree',
+      'source',
+      'tree',
+      'transitions',
+      'historical',
+      'followup',
+      'durability',
+    ],
+    'Malformed telemetry runtime scope'
+  );
+  requireValue(
+    createHash('sha256').update(JSON.stringify(value)).digest('hex') ===
+      telemetryRuntimeSha256,
+    'Exact telemetry runtime scope commitment differs'
+  );
+  validateTelemetryProof(telemetryProof(value), 12);
+  validateTelemetryProof(value.historical, 11);
+  requireValue(
+    createHash('sha256')
+      .update(JSON.stringify(value.historical))
+      .digest('hex') === historicalTelemetryRuntimeSha256,
+    'Historical eleven-transition telemetry proof commitment differs'
+  );
+  validateTelemetryProof(value.followup, 4, true);
+  requireValue(
+    createHash('sha256')
+      .update(JSON.stringify(value.followup))
+      .digest('hex') === isolationTelemetryRuntimeSha256,
+    'Historical four-path isolation proof commitment differs'
+  );
+  validateTelemetryProof(value.durability, 2);
+  requireValue(
+    value.baseline === value.historical.baseline &&
+      value.baselineTree === value.historical.baselineTree &&
+      value.followup.baseline === value.historical.source &&
+      value.followup.baselineTree === value.historical.tree &&
+      value.durability.baseline === value.followup.source &&
+      value.durability.baselineTree === value.followup.tree &&
+      value.durability.source === value.source &&
+      value.durability.tree === value.tree,
+    'Telemetry historical, isolation and durability proofs do not compose'
+  );
+  return value;
+}
+function verifyTelemetryProofTransitions(beforeTree, afterTree, value) {
+  requireValue(
+    beforeTree instanceof Map && afterTree instanceof Map,
+    'Telemetry runtime inputs must be complete tree maps'
+  );
+  for (const item of value.transitions)
+    requireValue(
+      same(beforeTree.get(item.path) ?? null, item.before) &&
+        same(afterTree.get(item.path) ?? null, item.after),
+      'Exact telemetry runtime blob or mode differs: ' + item.path
+    );
+  return value.transitions.map((item) => item.path);
+}
+function verifyTelemetryTransitions(
+  beforeTree,
+  afterTree,
+  value = profile.telemetryRuntime
+) {
+  validateTelemetryRuntime(value);
+  return verifyTelemetryProofTransitions(beforeTree, afterTree, value);
+}
+function verifyTelemetryOrigin(git, value = profile.telemetryRuntime) {
+  validateTelemetryRuntime(value);
+  for (const proof of [
+    value.historical,
+    value.followup,
+    value.durability,
+    value,
+  ]) {
+    requireValue(
+      text(git('rev-parse', `${proof.source}^{tree}`)).trim() === proof.tree &&
+        text(git('rev-parse', `${proof.baseline}^{tree}`)).trim() ===
+          proof.baselineTree,
+      'Telemetry source or baseline tree differs from its immutable origin'
+    );
+    git('merge-base', '--is-ancestor', proof.baseline, proof.source);
+    const before = parseTree(git('ls-tree', '-rz', proof.baseline));
+    const after = parseTree(git('ls-tree', '-rz', proof.source));
+    const paths = verifyTelemetryProofTransitions(before, after, proof);
+    requireValue(
+      same(changedPaths(before, after), [...paths].sort()),
+      'Complete telemetry runtime origin transition inventory differs'
+    );
+  }
+  return value;
+}
+
+function validateJavascriptToolchain(value = profile.javascriptToolchain) {
+  fields(
+    value,
+    [
+      'schema',
+      'baseline',
+      'baselineTree',
+      'source',
+      'tree',
+      'transition',
+      'historicalPolicy',
+      'bundle',
+      'cleanupToolcacheBundles',
+    ],
+    'Malformed finite JavaScript toolchain proof'
+  );
+  requireValue(
+    createHash('sha256').update(JSON.stringify(value)).digest('hex') ===
+      javascriptToolchainSha256,
+    'Exact JavaScript toolchain proof commitment differs'
+  );
+  requireValue(
+    same(value.historicalPolicy, historicalScannerPolicy) &&
+      value.source === scannerPolicy.producerCommit &&
+      value.tree === scannerPolicy.producerTree &&
+      value.transition.path === scannerPolicy.workflowPath &&
+      value.transition.before.mode === '100644' &&
+      value.transition.before.blob === historicalScannerPolicy.workflowBlob &&
+      value.transition.after.mode === '100644' &&
+      value.transition.after.blob === scannerPolicy.workflowBlob &&
+      same(
+        {
+          ...scannerPolicy,
+          producerCommit: historicalScannerPolicy.producerCommit,
+          producerTree: historicalScannerPolicy.producerTree,
+          workflowSha256: historicalScannerPolicy.workflowSha256,
+          workflowBlob: historicalScannerPolicy.workflowBlob,
+        },
+        historicalScannerPolicy
+      ),
+    'JavaScript toolchain proof changes the historical policy beyond its exact producer pin'
+  );
+  return value;
+}
+function verifyJavascriptToolchainOrigin(
+  git,
+  value = profile.javascriptToolchain
+) {
+  validateJavascriptToolchain(value);
+  const prior = value.historicalPolicy;
+  for (const [source, tree] of [
+    [prior.producerCommit, prior.producerTree],
+    [value.baseline, value.baselineTree],
+    [value.source, value.tree],
+  ])
+    requireValue(
+      text(git('rev-parse', `${source}^{tree}`)).trim() === tree,
+      'JavaScript toolchain immutable source tree differs'
+    );
+  git('merge-base', '--is-ancestor', prior.producerCommit, value.baseline);
+  git('merge-base', '--is-ancestor', value.baseline, value.source);
+  const before = parseTree(git('ls-tree', '-rz', value.baseline));
+  const after = parseTree(git('ls-tree', '-rz', value.source));
+  const previous = parseTree(git('ls-tree', '-rz', prior.producerCommit));
+  const item = value.transition;
+  requireValue(
+    same(before.get(item.path), item.before) &&
+      same(previous.get(item.path), item.before) &&
+      same(after.get(item.path), item.after) &&
+      same(changedPaths(before, after), [item.path]),
+    'Complete finite JavaScript workflow transition differs'
+  );
+  for (const [source, policy] of [
+    [prior.producerCommit, prior],
+    [value.baseline, prior],
+    [value.source, scannerPolicy],
+  ]) {
+    const tree = parseTree(git('ls-tree', '-rz', source));
+    for (const [name, blob, digest] of [
+      [policy.workflowPath, policy.workflowBlob, policy.workflowSha256],
+      [policy.configPath, policy.configBlob, policy.configSha256],
+    ])
+      requireValue(
+        tree.get(name)?.mode === '100644' &&
+          tree.get(name)?.blob === blob &&
+          createHash('sha256')
+            .update(git('show', `${source}:${name}`))
+            .digest('hex') === digest,
+        'JavaScript historical or active workflow/config identity differs: ' +
+          name
+      );
+    requireValue(
+      tree.get(policy.historicalConfigPath)?.mode === '100644' &&
+        createHash('sha256')
+          .update(git('show', `${source}:${policy.historicalConfigPath}`))
+          .digest('hex') === policy.historicalConfigSha256,
+      'JavaScript historical CodeQL configuration differs'
+    );
+  }
+  return value;
+}
+function normalizeJavascriptToolchain(
+  afterTree,
+  value = profile.javascriptToolchain
+) {
+  validateJavascriptToolchain(value);
+  requireValue(
+    afterTree instanceof Map,
+    'Complete JavaScript workflow tree required'
+  );
+  const item = value.transition;
+  requireValue(
+    same(afterTree.get(item.path), item.after),
+    'Exact JavaScript toolchain workflow blob or mode differs'
+  );
+  const normalized = new Map(afterTree);
+  normalized.set(item.path, item.before);
+  return normalized;
+}
+
 const releaseTriggerTransitions = freeze([
   {
     path: '.github/workflows/apps-images.yml',
@@ -469,10 +759,10 @@ const previousReleaseRecords = freeze({
 });
 const releaseChangelog = freeze({
   before: { mode: '100644', blob: '9d08b12d9c10dbeb59edcac19b02243f23a6d1c1' },
-  after: { mode: '100644', blob: 'a21f8f1b067d439369ba8a99637623351ab9d0f7' },
+  after: { mode: '100644', blob: '862a0a221178006cc1ab2e0d5324b09f25698356' },
 });
 function verifyReleaseDelta(beforeTree, afterTree) {
-  const normalized = new Map(afterTree);
+  const normalized = normalizeJavascriptToolchain(afterTree);
   for (const item of releaseTriggerTransitions) {
     requireValue(
       same(afterTree.get(item.path), item.after),
@@ -482,6 +772,7 @@ function verifyReleaseDelta(beforeTree, afterTree) {
   }
   const websitePaths = verifyWebsiteTransitions(beforeTree, normalized);
   const integrationPaths = verifyIntegrationTransitions(beforeTree, normalized);
+  const telemetryPaths = verifyTelemetryTransitions(beforeTree, afterTree);
   requireValue(
     same(beforeTree.get('CHANGELOG.md'), releaseChangelog.before) &&
       same(afterTree.get('CHANGELOG.md'), releaseChangelog.after),
@@ -501,7 +792,11 @@ function verifyReleaseDelta(beforeTree, afterTree) {
         !before && after?.mode === '100644',
         'Release addition is not a new regular file: ' + name
       );
-    else if (!websitePaths.includes(name) && !integrationPaths.includes(name)) {
+    else if (
+      !websitePaths.includes(name) &&
+      !integrationPaths.includes(name) &&
+      !telemetryPaths.includes(name)
+    ) {
       requireValue(
         allowedExistingPaths.includes(name),
         'Unexpected implementation-to-release change: ' + name
@@ -599,6 +894,8 @@ function validateProfile(value = profile) {
       'transitions',
       'websiteTransitions',
       'integrationTransitions',
+      'telemetryRuntime',
+      'javascriptToolchain',
       'nativeCompatibility',
       'scannerRequiredPaths',
       'scannerReceiverPaths',
@@ -624,6 +921,8 @@ function validateProfile(value = profile) {
       value[name] === expected,
       'rc.16 immutable baseline differs: ' + name
     );
+  validateTelemetryRuntime(value.telemetryRuntime);
+  validateJavascriptToolchain(value.javascriptToolchain);
   requireValue(
     Array.isArray(value.transitions) && value.transitions.length === 18,
     'Exactly eighteen protected implementation transitions are required'
@@ -704,8 +1003,11 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     profile.sourceConvergenceBaseline,
     profile.pythonScannerBaseline,
     scannerPolicy.producerCommit,
+    profile.telemetryRuntime.source,
   ])
     git('merge-base', '--is-ancestor', baseline, sha);
+  verifyTelemetryOrigin(git);
+  verifyJavascriptToolchainOrigin(git);
   requireValue(
     text(
       git('rev-parse', `${profile.implementationBaseline}^{tree}`)
@@ -840,6 +1142,8 @@ function verifySourceScope({ git, sha, version, lock, policy }) {
     protectedTransitions: profile.transitions,
     websiteTransitions: profile.websiteTransitions,
     integrationTransitions: profile.integrationTransitions,
+    telemetryRuntime: profile.telemetryRuntime,
+    javascriptToolchain: profile.javascriptToolchain,
     releaseChanges,
     nativeCompatibility: profile.nativeCompatibility,
     scannerRequiredPaths: profile.scannerRequiredPaths,
@@ -929,6 +1233,12 @@ module.exports = {
   verifyProtectedTransitions,
   verifyWebsiteTransitions,
   verifyIntegrationTransitions,
+  validateTelemetryRuntime,
+  validateJavascriptToolchain,
+  verifyJavascriptToolchainOrigin,
+  normalizeJavascriptToolchain,
+  verifyTelemetryTransitions,
+  verifyTelemetryOrigin,
   verifyReleaseDelta,
   verifyVersionOnly,
   LEGACY_WORKFLOW_GUARD,

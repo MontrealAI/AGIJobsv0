@@ -434,7 +434,7 @@ function inertScannerReviewMetadata(source, tree) {
       runAttempt: 1,
       runNumber: 1,
       event: 'push',
-      headBranch: 'fix/processed-codeql-release-proof-20261020',
+      headBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
       artifactId: 2,
       artifactName: `codeql-security-report-${source}-1-1`,
       githubDigest: 'sha256:' + 'a'.repeat(64),

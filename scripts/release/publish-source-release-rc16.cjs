@@ -315,6 +315,10 @@ function verifyJavaScriptAndNativeAssets({
       canonical(profile.websiteTransitions) ||
     canonical(provenance.sourceProfile?.integrationTransitions) !==
       canonical(profile.integrationTransitions) ||
+    canonical(provenance.sourceProfile?.telemetryRuntime) !==
+      canonical(profile.telemetryRuntime) ||
+    canonical(provenance.sourceProfile?.javascriptToolchain) !==
+      canonical(profile.javascriptToolchain) ||
     provenance.sourceProfile?.integrationBaseline !==
       profile.integrationBaseline ||
     provenance.sourceProfile?.integrationTree !== profile.integrationTree ||

@@ -90,8 +90,8 @@ function reviewMetadataFixture() {
   const py = {
     schema: 'agijobsv0/codeql-python-review/2',
     producerEvent: 'push',
-    producerHeadBranch: 'fix/processed-codeql-release-proof-20261020',
-    producerRef: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+    producerHeadBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+    producerRef: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
     sourceCommit: source,
     tree,
     producerRunId: 1000000000000001,

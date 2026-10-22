@@ -114,6 +114,7 @@ import {
   submitDeliverable,
 } from './agentActions';
 import { serialiseChainJob } from './jobSerialization';
+import { copyEnergySample, EnergySampleInputError } from './telemetrySample';
 
 const app = express();
 // Bound work before parsing request bodies, verifying signatures, or I/O.
@@ -1834,6 +1835,32 @@ app.post(
       (payload as { metrics?: unknown }).metrics ??
       (payload as { telemetry?: unknown }).telemetry ??
       payload;
+    let samples: ReturnType<typeof copyEnergySample>[];
+    try {
+      const rawSamples: unknown[] = [];
+      for (const field of ['samples', 'energySamples']) {
+        if (body[field] === undefined) continue;
+        if (!Array.isArray(body[field])) throw new EnergySampleInputError(field);
+        rawSamples.push(...(body[field] as unknown[]));
+      }
+      for (const field of ['sample', 'energySample']) {
+        if (body[field] !== undefined) rawSamples.push(body[field]);
+      }
+      samples = rawSamples.map((sample) => ({
+        ...copyEnergySample(sample),
+        jobId: req.params.id,
+        agent: wallet.address,
+      }));
+    } catch (err) {
+      res.status(400).json({
+        error:
+          err instanceof EnergySampleInputError
+            ? err.message
+            : 'Invalid telemetry sample',
+        code: 'INVALID_TELEMETRY_SAMPLE',
+      });
+      return;
+    }
     const record = recordTelemetryReport({
       jobId: req.params.id,
       agent: wallet.address,
@@ -1858,36 +1885,13 @@ app.post(
       status: typeof body.status === 'string' ? body.status : undefined,
     });
 
-    const samples: unknown[] = [];
-    if (Array.isArray((body as { samples?: unknown }).samples)) {
-      samples.push(...((body as { samples: unknown[] }).samples || []));
-    }
-    if (Array.isArray((body as { energySamples?: unknown }).energySamples)) {
-      samples.push(
-        ...((body as { energySamples: unknown[] }).energySamples || [])
-      );
-    }
-    if ((body as { sample?: unknown }).sample) {
-      samples.push((body as { sample: unknown }).sample);
-    }
-    if ((body as { energySample?: unknown }).energySample) {
-      samples.push((body as { energySample: unknown }).energySample);
-    }
-
     let published = 0;
     for (const sample of samples) {
-      if (sample && typeof sample === 'object') {
-        try {
-          const enriched = {
-            ...(sample as Record<string, unknown>),
-            jobId: req.params.id,
-            agent: wallet.address,
-          };
-          await publishEnergySample(enriched as any);
-          published += 1;
-        } catch (err) {
-          console.warn('Failed to publish telemetry sample', err);
-        }
+      try {
+        await publishEnergySample(sample);
+        published += 1;
+      } catch (err) {
+        console.warn('Failed to publish telemetry sample', err);
       }
     }
 

@@ -117,12 +117,382 @@ function addReviewedPython(r) {
 }
 
 function addCurrentReleaseMetadata(r) {
+  const toolchain = p.profile.javascriptToolchain.transition;
+  r.put(
+    toolchain.path,
+    command(ROOT, ['cat-file', 'blob', toolchain.after.blob])
+  );
+  for (const item of p.profile.telemetryRuntime.transitions)
+    r.put(item.path, command(ROOT, ['cat-file', 'blob', item.after.blob]));
   for (const [name, identity] of Object.entries(p.previousReleaseRecords))
     r.put(name, command(ROOT, ['cat-file', 'blob', identity.blob]));
   for (const item of p.releaseTriggerTransitions)
     r.put(item.path, fs.readFileSync(path.join(ROOT, item.path)));
   r.put('CHANGELOG.md', fs.readFileSync(path.join(ROOT, 'CHANGELOG.md')));
 }
+
+test('telemetry scope binds its genuine complete origin and rejects inventory, blob and mode drift', () => {
+  const scope = p.profile.telemetryRuntime;
+  const git = (...args) => command(ROOT, args);
+  assert.equal(p.verifyTelemetryOrigin(git), scope);
+  const before = p.parseTree(git('ls-tree', '-rz', scope.baseline));
+  const after = p.parseTree(git('ls-tree', '-rz', scope.source));
+  const paths = p.verifyTelemetryTransitions(before, after);
+  assert.equal(paths.length, 12);
+  assert.equal(
+    paths.filter((name) => name.startsWith('agent-gateway/')).length,
+    6
+  );
+  for (const name of paths) {
+    const changed = new Map(after);
+    changed.set(name, { ...changed.get(name), blob: '0'.repeat(40) });
+    assert.throws(
+      () => p.verifyTelemetryTransitions(before, changed),
+      /blob or mode/
+    );
+    changed.set(name, { ...after.get(name), mode: '100755' });
+    assert.throws(
+      () => p.verifyTelemetryTransitions(before, changed),
+      /blob or mode/
+    );
+    changed.delete(name);
+    assert.throws(
+      () => p.verifyTelemetryTransitions(before, changed),
+      /blob or mode/
+    );
+  }
+  for (const mutate of [
+    (value) => value.transitions.pop(),
+    (value) => value.transitions.reverse(),
+    (value) =>
+      value.transitions.push({
+        ...value.transitions[0],
+        path: 'agent-gateway/another.ts',
+      }),
+    (value) => {
+      value.source = scope.baseline;
+    },
+    (value) => {
+      value.transitions[0].after.blob = '0'.repeat(40);
+    },
+  ]) {
+    const changed = clone(scope);
+    mutate(changed);
+    assert.throws(
+      () => p.validateTelemetryRuntime(changed),
+      /scope commitment/
+    );
+  }
+  const alteredOrigin = (...args) =>
+    args[0] === 'rev-parse' && args[1] === `${scope.source}^{tree}`
+      ? '0'.repeat(40)
+      : git(...args);
+  assert.throws(
+    () => p.verifyTelemetryOrigin(alteredOrigin),
+    /immutable origin/
+  );
+  const receiverPaths = paths.filter((name) =>
+    name.startsWith('agent-gateway/')
+  );
+  assert(
+    receiverPaths.every((name) => p.profile.scannerRequiredPaths.includes(name))
+  );
+  assert(
+    receiverPaths.every((name) => p.profile.scannerReceiverPaths.includes(name))
+  );
+});
+
+test('historical telemetry proof composes only with the exact discovery follow-up', () => {
+  const scope = p.profile.telemetryRuntime;
+  const historical = scope.historical;
+  const followup = scope.followup;
+  const git = (...args) => command(ROOT, args);
+  assert.equal(
+    createHash('sha256').update(JSON.stringify(historical)).digest('hex'),
+    'ff6f82ddd6738d3a0e7481fdd4cd1fc065853b68bc1a20e1defbfaccefea792c'
+  );
+  assert.equal(historical.transitions.length, 11);
+  assert.equal(followup.transitions.length, 4);
+  assert.deepEqual(
+    followup.transitions.map((item) => item.path),
+    [
+      '.github/workflows/ci.yml',
+      'test/gateway/telemetryRecovery.test.cjs',
+      'test/scripts/hardhat-test-discovery.test.cjs',
+      'test/scripts/telemetryRecovery.test.cjs',
+    ]
+  );
+  const removed = followup.transitions[1];
+  const added = followup.transitions[3];
+  assert.equal(removed.after, null);
+  assert.equal(added.before, null);
+  assert.deepEqual(removed.before, added.after);
+  assert.equal(followup.baseline, historical.source);
+  assert.equal(followup.baselineTree, historical.tree);
+  assert.equal(followup.source, scope.durability.baseline);
+  assert.equal(followup.tree, scope.durability.baselineTree);
+  assert.equal(scope.durability.source, scope.source);
+  assert.equal(scope.durability.tree, scope.tree);
+  for (const field of ['historical', 'followup', 'durability']) {
+    for (const mutate of [
+      (proof) => {
+        proof.source = proof.baseline;
+      },
+      (proof) => {
+        proof.tree = '0'.repeat(40);
+      },
+      (proof) => {
+        proof.transitions.pop();
+      },
+      (proof) => {
+        proof.transitions.reverse();
+      },
+      (proof) => {
+        proof.transitions.push({
+          ...proof.transitions[0],
+          path: 'agent-gateway/unreviewed.ts',
+        });
+      },
+      (proof) => {
+        proof.transitions[0].after.blob = '0'.repeat(40);
+      },
+      (proof) => {
+        proof.transitions[0].after.mode = '100755';
+      },
+    ]) {
+      const changed = clone(scope);
+      mutate(changed[field]);
+      assert.throws(
+        () => p.validateTelemetryRuntime(changed),
+        /scope commitment/
+      );
+    }
+    const proof = scope[field];
+    for (const name of ['baseline', 'source']) {
+      const alteredTree = (...args) =>
+        args[0] === 'rev-parse' && args[1] === `${proof[name]}^{tree}`
+          ? '0'.repeat(40)
+          : git(...args);
+      assert.throws(
+        () => p.verifyTelemetryOrigin(alteredTree),
+        /immutable origin/
+      );
+    }
+    const wrongAncestry = (...args) => {
+      if (
+        args[0] === 'merge-base' &&
+        args[2] === proof.baseline &&
+        args[3] === proof.source
+      )
+        throw new Error('injected nonancestor');
+      return git(...args);
+    };
+    assert.throws(
+      () => p.verifyTelemetryOrigin(wrongAncestry),
+      /injected nonancestor/
+    );
+  }
+  const extraRuntime = 'agent-gateway/unreviewed.ts';
+  const extraBlob = '0'.repeat(40);
+  for (const proof of [historical, followup, scope.durability]) {
+    const unexpectedFile = (...args) => {
+      const result = git(...args);
+      return args[0] === 'ls-tree' && args[2] === proof.source
+        ? result + `100644 blob ${extraBlob}\t${extraRuntime}\0`
+        : result;
+    };
+    assert.throws(
+      () => p.verifyTelemetryOrigin(unexpectedFile),
+      /transition inventory/
+    );
+  }
+  const discovery = followup.transitions[2];
+  const beforeTree = p.parseTree(git('ls-tree', '-rz', followup.baseline));
+  const afterTree = p.parseTree(git('ls-tree', '-rz', followup.source));
+  for (const item of followup.transitions) {
+    for (const [key, original] of [
+      ['before', beforeTree],
+      ['after', afterTree],
+    ]) {
+      for (const replacement of [
+        null,
+        { mode: '100644', blob: '0'.repeat(40) },
+        { mode: '100755', blob: item[key]?.blob || extraBlob },
+      ]) {
+        if (JSON.stringify(replacement) === JSON.stringify(item[key])) continue;
+        const changed = new Map(original);
+        if (replacement === null) changed.delete(item.path);
+        else changed.set(item.path, replacement);
+        const corrupted = (...args) => {
+          if (
+            args[0] === 'ls-tree' &&
+            args[2] === followup[key === 'before' ? 'baseline' : 'source']
+          )
+            return [...changed]
+              .map(
+                ([name, identity]) =>
+                  `${identity.mode} blob ${identity.blob}\t${name}\0`
+              )
+              .join('');
+          return git(...args);
+        };
+        assert.throws(
+          () => p.verifyTelemetryOrigin(corrupted),
+          /blob or mode|transition inventory/
+        );
+      }
+    }
+  }
+  assert.equal(
+    discovery.after.blob,
+    git('hash-object', 'test/scripts/hardhat-test-discovery.test.cjs').trim()
+  );
+});
+
+test('telemetry durability admits only its two exact paths after the preserved isolation proof', () => {
+  const scope = p.profile.telemetryRuntime;
+  const git = (...args) => command(ROOT, args);
+  assert.equal(
+    createHash('sha256').update(JSON.stringify(scope.followup)).digest('hex'),
+    'e2a605cfc233ba1cad6061b514aaadc2175a067cd67a1696012a04f3a3bb7137'
+  );
+  assert.deepEqual(
+    scope.durability.transitions.map((item) => item.path),
+    [
+      'agent-gateway/telemetryQueue.ts',
+      'test/scripts/telemetryRecovery.test.cjs',
+    ]
+  );
+  const before = p.parseTree(git('ls-tree', '-rz', scope.durability.baseline));
+  const after = p.parseTree(git('ls-tree', '-rz', scope.durability.source));
+  for (const item of scope.durability.transitions) {
+    assert.deepEqual(item.before, before.get(item.path));
+    assert.deepEqual(item.after, after.get(item.path));
+    assert.equal(item.after.blob, git('hash-object', item.path).trim());
+    for (const [side, original] of [
+      ['before', before],
+      ['after', after],
+    ]) {
+      for (const replacement of [
+        null,
+        { mode: '100644', blob: '0'.repeat(40) },
+        { mode: '100755', blob: item[side].blob },
+      ]) {
+        const changed = new Map(original);
+        if (replacement === null) changed.delete(item.path);
+        else changed.set(item.path, replacement);
+        const corrupted = (...args) => {
+          if (
+            args[0] === 'ls-tree' &&
+            args[2] ===
+              scope.durability[side === 'before' ? 'baseline' : 'source']
+          )
+            return [...changed]
+              .map(
+                ([name, identity]) =>
+                  `${identity.mode} blob ${identity.blob}\t${name}\0`
+              )
+              .join('');
+          return git(...args);
+        };
+        assert.throws(
+          () => p.verifyTelemetryOrigin(corrupted),
+          /blob or mode|transition inventory/
+        );
+      }
+    }
+  }
+  const final = new Map(after);
+  const oldQueue = scope.durability.transitions[0];
+  final.set(oldQueue.path, oldQueue.before);
+  assert.throws(
+    () =>
+      p.verifyTelemetryTransitions(
+        p.parseTree(git('ls-tree', '-rz', scope.baseline)),
+        final
+      ),
+    /blob or mode/
+  );
+  assert.equal(p.verifyTelemetryOrigin(git), scope);
+});
+
+function finiteTelemetryAdmission(t, p) {
+  const pending = pendingProfileFixture(p.profile);
+  const runtime = profileFixtureRuntime(pending);
+  const r = repository(t);
+  shareObjects(r);
+  r.git('read-tree', p.profile.telemetryRuntime.source);
+  addCurrentReleaseMetadata(r);
+  r.put(
+    'scripts/release/source-profile-rc17.json',
+    JSON.stringify(pending, null, 2) + '\n'
+  );
+  const source = r.commit([
+    p.profile.telemetryRuntime.source,
+    p.profile.javascriptToolchain.source,
+  ]);
+  const args = (sha) => ({
+    git: r.git,
+    sha,
+    version: p.profile.releaseVersion,
+    lock: JSON.parse(r.git('show', `${sha}:package-lock.json`)),
+    policy: JSON.parse(r.git('show', `${sha}:config/solidity-compiler.json`)),
+  });
+  assert.equal(
+    runtime.verifySourceScope(args(source)).productionApproved,
+    false
+  );
+  r.put(
+    'agent-gateway/unreviewed-runtime.ts',
+    'export const unreviewed = true;\n'
+  );
+  const extra = r.commit(source);
+  assert.throws(
+    () => runtime.verifySourceScope(args(extra)),
+    /Unexpected implementation-to-release change: agent-gateway\/unreviewed-runtime.ts/
+  );
+  r.git('read-tree', source);
+  r.put('.github/workflows/ci.yml', 'name: substituted CI\n');
+  const alteredCI = r.commit(source);
+  assert.throws(
+    () => runtime.verifySourceScope(args(alteredCI)),
+    /Exact telemetry runtime blob or mode differs/
+  );
+  r.git('read-tree', source);
+  r.put(
+    'test/gateway/telemetryRecovery.test.cjs',
+    command(ROOT, [
+      'cat-file',
+      'blob',
+      p.profile.telemetryRuntime.historical.transitions.at(-1).after.blob,
+    ])
+  );
+  const restoredOldSuite = r.commit(source);
+  assert.throws(
+    () => runtime.verifySourceScope(args(restoredOldSuite)),
+    /Unexpected implementation-to-release change: test\/gateway\/telemetryRecovery.test.cjs/
+  );
+  assert.throws(() => runtime.verifyPublicationReview(), /pending/);
+}
+
+test('finite telemetry admission preserves the rejection of an extra runtime file and altered CI commands', (t) => {
+  finiteTelemetryAdmission(t, p);
+});
+
+test('finite telemetry admission remains independent of installed inert review metadata', (t) => {
+  const source = command(ROOT, ['rev-parse', 'HEAD']).trim();
+  const tree = command(ROOT, ['rev-parse', `${source}^{tree}`]).trim();
+  const reviews = inertProfileReviews(source, tree);
+  const installed = {
+    ...clone(p.profile),
+    scannerReview: reviews.scannerReview,
+    pythonScannerReview: reviews.pythonScannerReview,
+  };
+  const runtime = profileFixtureRuntime(installed);
+  assert.notEqual(runtime.profile.scannerReview, null);
+  assert.notEqual(runtime.profile.pythonScannerReview, null);
+  finiteTelemetryAdmission(t, runtime);
+});
 
 test('actual Git trees require the complete finite protected transition set', (t) => {
   const r = repository(t);
@@ -279,6 +649,7 @@ test('complete source verifier accepts only finite release plumbing over the act
       p.profile.scannerPolicy.producerCommit,
       p.profile.sourceConvergenceBaseline,
       p.profile.pythonScannerBaseline,
+      p.profile.telemetryRuntime.source,
     ]),
     version: p.profile.releaseVersion,
     lock: afterLock,
@@ -290,8 +661,9 @@ test('complete source verifier accepts only finite release plumbing over the act
   assert.equal(result.scannerReview, null);
   assert.equal(result.pythonScannerReview, null);
   assert.deepEqual(result.pythonScannerPolicy, p.profile.pythonScannerPolicy);
-  assert.equal(result.scannerRequiredPaths.length, 28);
-  assert.equal(result.scannerReceiverPaths.length, 14);
+  assert.equal(result.scannerRequiredPaths.length, 34);
+  assert.equal(result.scannerReceiverPaths.length, 20);
+  assert.deepEqual(result.telemetryRuntime, p.profile.telemetryRuntime);
   assert.equal(result.pythonScannerRequiredPaths.length, 8);
   assert.equal(result.protectedTransitions.length, 18);
   assert.deepEqual(result.websiteTransitions, p.websiteTransitions);
@@ -414,11 +786,12 @@ test('actual Git website transitions admit only the two exact reviewed byte and 
       ...Object.keys(p.previousReleaseRecords),
       'CHANGELOG.md',
       ...p.profile.integrationTransitions.map((item) => item.path),
+      ...p.profile.telemetryRuntime.transitions.map((item) => item.path),
     ].sort()
   );
   assert.throws(
     () => p.verifyReleaseDelta(beforeTree, beforeTree),
-    /website blob or mode|release trigger/
+    /website blob or mode|release trigger|toolchain workflow/
   );
   for (const inventory of [
     p.websiteTransitions.slice(1),
@@ -741,8 +1114,8 @@ test('Python producer retains original owner bytes plus exact service evidence a
     reviewSchema: 'agijobsv0/codeql-python-review/2',
     reviewedProducer: {
       event: 'push',
-      headBranch: 'fix/processed-codeql-release-proof-20261020',
-      ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+      headBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+      ref: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
     },
     producerCommit: formattedProducer,
     producerTree: actualTree,
@@ -845,6 +1218,153 @@ test('actual Git integration transitions reject substituted security/runtime byt
   );
 });
 
+test('JavaScript toolchain proof pins one complete workflow transition and preserves all historical policies', () => {
+  const proof = p.profile.javascriptToolchain;
+  const git = (...args) => command(ROOT, args);
+  const after = p.parseTree(git('ls-tree', '-rz', proof.source));
+  const baselineProfile = JSON.parse(
+    git('show', `${proof.baseline}:scripts/release/source-profile-rc17.json`)
+  );
+  assert.equal(p.verifyJavascriptToolchainOrigin(git), proof);
+  assert.deepEqual(proof.historicalPolicy, baselineProfile.scannerPolicy);
+  const oldWorkflow = git('show', `${proof.baseline}:${proof.transition.path}`);
+  const pinnedWorkflow = git(
+    'show',
+    `${proof.source}:${proof.transition.path}`
+  );
+  const environment =
+    "        env:\n          # Preserve the reviewed producer's toolcache diagnostics.\n          CODEQL_ACTION_CLEANUP_TOOLCACHE_BUNDLES: 'false'\n";
+  const tools = '          tools: ' + proof.bundle.url + '\n';
+  assert.equal(pinnedWorkflow.split(environment).length, 2);
+  assert.equal(pinnedWorkflow.split(tools).length, 2);
+  assert.equal(
+    pinnedWorkflow.replace(environment, '').replace(tools, ''),
+    oldWorkflow
+  );
+  const normalized = p.normalizeJavascriptToolchain(after);
+  assert.deepEqual(
+    normalized.get(proof.transition.path),
+    proof.transition.before
+  );
+  assert.equal(normalized.size, after.size);
+  assert(
+    p
+      .verifyReleaseDelta(
+        p.parseTree(git('ls-tree', '-rz', p.profile.implementationBaseline)),
+        after
+      )
+      .includes(proof.transition.path)
+  );
+  assert.equal(p.profile.integrationTransitions.length, 43);
+  assert.deepEqual(
+    p.profile.integrationTransitions,
+    baselineProfile.integrationTransitions
+  );
+  for (const [name, identity] of after)
+    if (name !== proof.transition.path)
+      assert.deepEqual(normalized.get(name), identity);
+  assert.deepEqual(
+    p.profile.telemetryRuntime,
+    baselineProfile.telemetryRuntime
+  );
+  assert.deepEqual(
+    p.profile.pythonScannerPolicy,
+    baselineProfile.pythonScannerPolicy
+  );
+  for (const mutate of [
+    (value) => {
+      value.baselineTree = '0'.repeat(40);
+    },
+    (value) => {
+      value.source = value.baseline;
+    },
+    (value) => {
+      value.transition.path = '.github/workflows/another.yml';
+    },
+    (value) => {
+      value.transition.after.blob = '0'.repeat(40);
+    },
+    (value) => {
+      value.transition.after.mode = '100755';
+    },
+    (value) => {
+      value.historicalPolicy.workflowSha256 = '0'.repeat(64);
+    },
+    (value) => {
+      value.bundle.version = '2.27.3';
+    },
+    (value) => {
+      value.bundle.url += '?unreviewed';
+    },
+    (value) => {
+      value.cleanupToolcacheBundles = true;
+    },
+  ]) {
+    const changed = clone(proof);
+    mutate(changed);
+    assert.throws(
+      () => p.validateJavascriptToolchain(changed),
+      /proof commitment/
+    );
+  }
+  for (const replacement of [
+    null,
+    proof.transition.before,
+    { mode: '100755', blob: proof.transition.after.blob },
+  ]) {
+    const changed = new Map(after);
+    if (replacement === null) changed.delete(proof.transition.path);
+    else changed.set(proof.transition.path, replacement);
+    assert.throws(
+      () => p.normalizeJavascriptToolchain(changed),
+      /workflow blob or mode/
+    );
+  }
+  for (const source of [
+    proof.historicalPolicy.producerCommit,
+    proof.baseline,
+    proof.source,
+  ]) {
+    const wrongTree = (...args) =>
+      args[0] === 'rev-parse' && args[1] === `${source}^{tree}`
+        ? '0'.repeat(40)
+        : git(...args);
+    assert.throws(
+      () => p.verifyJavascriptToolchainOrigin(wrongTree),
+      /immutable source tree/
+    );
+  }
+  const extraSource = (...args) => {
+    const output = git(...args);
+    return args[0] === 'ls-tree' && args[2] === proof.source
+      ? output +
+          `100644 blob ${'0'.repeat(40)}\t.github/workflows/unreviewed.yml\0`
+      : output;
+  };
+  assert.throws(
+    () => p.verifyJavascriptToolchainOrigin(extraSource),
+    /finite JavaScript workflow transition/
+  );
+  const wrongAncestry = (...args) => {
+    if (args[0] === 'merge-base') throw new Error('injected nonancestor');
+    return git(...args);
+  };
+  assert.throws(
+    () => p.verifyJavascriptToolchainOrigin(wrongAncestry),
+    /injected nonancestor/
+  );
+  const changedHistoricalConfig = (...args) =>
+    args[0] === 'show' &&
+    args[1] ===
+      `${proof.baseline}:${proof.historicalPolicy.historicalConfigPath}`
+      ? 'substituted historical query policy\n'
+      : git(...args);
+  assert.throws(
+    () => p.verifyJavascriptToolchainOrigin(changedHistoricalConfig),
+    /historical CodeQL configuration/
+  );
+});
+
 test('scanner producer pins must name the same immutable workflow bytes as the release', (t) => {
   const r = repository(t);
   const configPath = '.github/codeql/fixture.yml';
@@ -888,9 +1408,9 @@ test('scanner producer pins must name the same immutable workflow bytes as the r
 
 // These fixtures exercise only review metadata admission. They contain no
 // scanner archive, SARIF report, authenticated API observation or authority.
-function pendingProfileFixture() {
+function pendingProfileFixture(value = p.profile) {
   return {
-    ...clone(p.profile),
+    ...clone(value),
     scannerReview: null,
     pythonScannerReview: null,
   };
@@ -923,8 +1443,8 @@ function inertProfileReviews(sourceCommit, tree) {
   assert.equal(policy.reviewSchema, 'agijobsv0/codeql-python-review/2');
   assert.deepEqual(policy.reviewedProducer, {
     event: 'push',
-    headBranch: 'fix/processed-codeql-release-proof-20261020',
-    ref: 'refs/heads/fix/processed-codeql-release-proof-20261020',
+    headBranch: 'fix/inherited-codeql-telemetry-runtime-20261021',
+    ref: 'refs/heads/fix/inherited-codeql-telemetry-runtime-20261021',
   });
   return {
     notesReview: {
@@ -1129,6 +1649,19 @@ test('production metadata admission preserves the actual installed profile and e
       provenance: { sourceProfile: retained },
     });
   assert.doesNotThrow(() => compare(sourceProfile));
+  const substitutedRuntime = clone(sourceProfile);
+  substitutedRuntime.telemetryRuntime.transitions[0].after.blob = '0'.repeat(
+    40
+  );
+  assert.throws(() => compare(substitutedRuntime), /finite source profile/);
+  const omittedToolchain = clone(sourceProfile);
+  delete omittedToolchain.javascriptToolchain;
+  assert.throws(() => compare(omittedToolchain), /finite source profile/);
+  const substitutedToolchain = clone(sourceProfile);
+  substitutedToolchain.javascriptToolchain.transition.after.blob = '0'.repeat(
+    40
+  );
+  assert.throws(() => compare(substitutedToolchain), /finite source profile/);
   for (const field of ['scannerReview', 'pythonScannerReview']) {
     const altered = clone(sourceProfile);
     altered[field] = null;
