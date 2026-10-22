@@ -463,3 +463,34 @@ test('ordinary branches after an economic freeze regain strict source checks', (
   f.commit('source drift');
   assert.throws(() => f.check(merged), /Protected source changed/);
 });
+
+test('installed generated comparison accepts the same normalized outputs and rejects unrelated tracked drift', (t) => {
+  const f = fixture(t),
+    other = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'agi-installed-generated-test-')
+    );
+  t.after(() => fs.rmSync(other, { recursive: true, force: true }));
+  execFileSync('git', ['clone', '--quiet', '--no-hardlinks', f.root, other]);
+  f.write('config/network.json', 'normalized output\n');
+  fs.writeFileSync(
+    path.join(other, 'config/network.json'),
+    'normalized output\n'
+  );
+  const accepted = _test.compareGeneratedSources(f.root, other, {
+    allTracked: true,
+  });
+  assert.deepEqual(accepted.generated, ['config/network.json']);
+  f.write('README.md', 'unreviewed source drift\n');
+  assert.throws(
+    () => _test.compareGeneratedSources(f.root, other, { allTracked: true }),
+    /Generated tracked-file changes differ/
+  );
+  fs.writeFileSync(
+    path.join(other, 'README.md'),
+    'different unreviewed source drift\n'
+  );
+  assert.throws(
+    () => _test.compareGeneratedSources(f.root, other, { allTracked: true }),
+    /README.md/
+  );
+});

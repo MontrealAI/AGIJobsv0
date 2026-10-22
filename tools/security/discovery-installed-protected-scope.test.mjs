@@ -2,7 +2,7 @@
 // Fixed policy identities plus real callers in a disposable copy of the committed source.
 import test,{before,after} from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync,mkdtempSync,rmSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdtempSync,rmSync} from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
@@ -52,4 +52,14 @@ test('actual dependency preservation admits only the complete fixed installed so
   assert.equal(value.installedSourceScope.sourceCommit,value.head);
   assert.equal(value.installedSourceScope.publicationApproved,false);
   assert.equal(Object.keys(value.selectedDependencyIdentitiesPreserved).length,7);
+});
+
+test('working package metadata cannot downgrade installed source protection',()=>{
+  const file=path.join(isolatedRoot,'package.json'),raw=readFileSync(file);
+  try {
+    const changed=JSON.parse(raw);changed.version='2.1.0-rc.17';writeFileSync(file,JSON.stringify(changed));
+    assert.throws(()=>execFileSync(process.execPath,['scripts/security/check-dependency-preservation.cjs','source'],
+      {cwd:isolatedRoot,env:{...process.env,DEPENDENCY_PRESERVATION_BASE_SHA:'ba67d5d19ef7d9ac643f99f2b8f49c160714fdf6'},
+      encoding:'utf8',timeout:90000,maxBuffer:2000000,stdio:['ignore','pipe','pipe']}),/Tracked installed source bytes or mode differ: package.json/);
+  } finally {writeFileSync(file,raw);}
 });

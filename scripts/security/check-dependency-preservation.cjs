@@ -137,6 +137,17 @@ function verifyReviewedSource({ root, baseline, head, bytes, digest }) {
   return checkpoint;
 }
 
+function installedEditionForCommit(root) {
+  return (
+    git(
+      ['ls-tree', '--name-only', 'HEAD', '--', 'package.json'],
+      root
+    ).trim() === 'package.json' &&
+    JSON.parse(git(['show', 'HEAD:package.json'], root)).version ===
+      '2.1.0-rc.18'
+  );
+}
+
 function checkSource(options = {}) {
   return checkSourceImpl(options, reviewedRecord());
 }
@@ -205,10 +216,7 @@ function checkSourceImpl(
   const reconcileReviewedSource =
     reviewedReachable &&
     (baseline === record.dependencyBaseline || baselineWithinFreeze);
-  const packageFile = path.join(root, 'package.json');
-  const installedEdition =
-    fs.existsSync(packageFile) &&
-    JSON.parse(fs.readFileSync(packageFile, 'utf8')).version === '2.1.0-rc.18';
+  const installedEdition = installedEditionForCommit(root);
   let installedSourceScope = null;
   if (installedEdition) {
     const script = `import {pathToFileURL} from 'node:url';
@@ -286,20 +294,36 @@ console.log(JSON.stringify(p.validateInstalledProtectedScope(root,p.INSTALLED_PR
   };
 }
 
-function compareGeneratedSources(root, worktree) {
-  const files = names(git(['ls-files', '-z'], root)).filter(protectedPath);
+function compareGeneratedSources(root, worktree, { allTracked = false } = {}) {
+  const selected = allTracked ? () => true : protectedPath;
+  const files = names(git(['ls-files', '-z'], root)).filter(selected);
   const generated = names(git(['diff', '--name-only', '-z'], worktree)).filter(
-    protectedPath
+    selected
   );
   const local = names(git(['diff', '--name-only', '-z'], root)).filter(
-    protectedPath
+    selected
   );
   assert.deepEqual(
     local.sort(),
     generated.sort(),
-    'Generated protected-file changes differ from baseline'
+    allTracked
+      ? 'Generated tracked-file changes differ from baseline'
+      : 'Generated protected-file changes differ from baseline'
   );
   for (const name of files) {
+    if (allTracked) {
+      const actual = fs.lstatSync(path.join(root, name)),
+        expected = fs.lstatSync(path.join(worktree, name));
+      assert(
+        actual.isFile() && expected.isFile(),
+        'Generated comparison requires regular source files: ' + name
+      );
+      assert.equal(
+        Boolean(actual.mode & 0o111),
+        Boolean(expected.mode & 0o111),
+        'Generated source mode differs: ' + name
+      );
+    }
     assert.deepEqual(
       fs.readFileSync(path.join(root, name)),
       fs.readFileSync(path.join(worktree, name)),
@@ -317,7 +341,8 @@ function compareGeneratedSources(root, worktree) {
 }
 
 function checkGenerated() {
-  const result = checkSource();
+  const installedEdition = installedEditionForCommit(ROOT);
+  let result = installedEdition ? null : checkSource();
   assert(
     !process.env.NODE_OPTIONS && !process.env.NODE_PATH,
     'Unexpected Node preload settings'
@@ -328,15 +353,41 @@ function checkGenerated() {
   const worktree = path.join(temp, 'source');
   let added = false;
   try {
-    git([
-      'worktree',
-      'add',
-      '--quiet',
-      '--detach',
-      worktree,
-      result.generatedSourceBaseline,
-    ]);
-    added = true;
+    if (installedEdition) {
+      const head = git(['rev-parse', 'HEAD']).trim();
+      git(['diff', '--cached', '--quiet', head]);
+      git([
+        'clone',
+        '--quiet',
+        '--no-hardlinks',
+        '--local',
+        '--no-checkout',
+        ROOT,
+        worktree,
+      ]);
+      git(['checkout', '--quiet', '--detach', head], worktree);
+      result = checkSource({ root: worktree });
+      assert.equal(
+        result.head,
+        head,
+        'Generated source snapshot differs from the selected commit'
+      );
+      assert.equal(
+        git(['rev-parse', 'HEAD']).trim(),
+        head,
+        'Source HEAD moved during committed capture'
+      );
+    } else {
+      git([
+        'worktree',
+        'add',
+        '--quiet',
+        '--detach',
+        worktree,
+        result.generatedSourceBaseline,
+      ]);
+      added = true;
+    }
     fs.symlinkSync(
       path.join(ROOT, 'node_modules'),
       path.join(worktree, 'node_modules'),
@@ -374,13 +425,25 @@ function checkGenerated() {
         env: { PATH: process.env.PATH, HOME: process.env.HOME, CI: '1' },
       }
     );
-    const { files, generated } = compareGeneratedSources(ROOT, worktree);
+    const { files, generated } = compareGeneratedSources(ROOT, worktree, {
+      allTracked: installedEdition,
+    });
+    if (installedEdition) {
+      assert.equal(
+        git(['rev-parse', 'HEAD']).trim(),
+        result.head,
+        'Source HEAD moved during generation'
+      );
+      git(['diff', '--cached', '--quiet', result.head]);
+    }
     return {
       ...result,
       mode: 'generated',
       comparedFiles: files.length,
       baselineGeneratorReproduced: true,
       baselineEnsNormalizationReproduced: true,
+      committedSourceSnapshotVerified: installedEdition,
+      completeTrackedGeneratedComparison: installedEdition,
       generatedFiles: generated.map((name) => ({
         path: name,
         sha256: sha256(fs.readFileSync(path.join(ROOT, name))),
