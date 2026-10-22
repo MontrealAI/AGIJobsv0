@@ -32,7 +32,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "46e407daaf771596192920420e2b90736956c3f0ee3940de43f2bbdc04f42893"
+        "sha256": "55e75ea1f35de29b2486d819c56e04ac042c6397225a3fbccb74f5435186dc4b"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -80,7 +80,7 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "627627fc5b0bd4273b56fa392ad4e24c1145f1661451ff629f60a8c02ea87e58"
+        "sha256": "603f6f26515803bde617f977a2a1cbd9c48e09fafc9b77dcc9f61eb18ca7728f"
       },
       "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
     },
@@ -104,6 +104,28 @@
         "sha256": "a9bea3725ba78204609bb7f446d1b79ead911137d1ff4486177dba64a235f175"
       },
       "reason": "Replace blanket no-change assertion only with exact three additive configurations plus complete source-package proof; preserve the96 findings and every deployed-source/scanner gate."
+    },
+    "hardhat.config.js": {
+      "before": {
+        "mode": "100644",
+        "blob": "8d201a5f8af39ccefa4970e6839584abcc1720ba"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "738518441596cb1e6a9c691fa2c2ca68fc158a96f8856ab71f0ebc70ad0590b6"
+      },
+      "reason": "Exclude only the new Discovery node:test suite from native Mocha discovery; all other selection and mandatory dedicated Node execution remain enforced."
+    },
+    "test/scripts/hardhat-test-discovery.test.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "25707f312769272f1f88a6d12b1c709ac07d0ae9"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "9887b51bbc81599ff9a725b0f81747c8f9b1f3de3219015d789125216438b7dd"
+      },
+      "reason": "Exercise actual aggregate and explicit Hardhat selection plus mandatory exact-source dedicated Discovery execution; preserve existing isolation/native-suite checks."
     }
   }
 }

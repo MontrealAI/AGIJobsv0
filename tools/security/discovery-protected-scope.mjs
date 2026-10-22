@@ -11,7 +11,7 @@ export const DISCOVERY_PROTECTED_ADDITIONS = Object.freeze([
   'config/discovery-lab-source-candidate-v1.json'
 ]);
 export const DISCOVERY_SCOPE_ORIGIN = '285034830b6cddc47c7e1002ee85a8b008b9763d';
-export const REVIEWED_DISCOVERY_POLICY = Object.freeze({manifest:'ec51bd530870b2efc15cacd798143a534f1d601fcc0bea2e08524a14b5f1bfe3', verifier:'f2b52a77f73131baf3a8004201c403488846860581bc45feea375a557ea8fb81'});
+export const REVIEWED_DISCOVERY_POLICY = Object.freeze({manifest:'ebee1b8c2bbdf2d7084d433296d6a4e1fe7bf54b9809e24b75947980e0b7550d', verifier:'4da6958cd88f4e596aaa5947f398d2367009bb9bfe487fcfa1d0bf17b4cd348b'});
 export function assertReviewedDiscoveryPolicy(pins) {
   assert.equal(pins.manifest, REVIEWED_DISCOVERY_POLICY.manifest, 'Discovery manifest differs from independently reviewed fixed bytes');
   assert.equal(pins.verifier, REVIEWED_DISCOVERY_POLICY.verifier, 'Discovery verifier differs from independently reviewed fixed bytes');
@@ -64,7 +64,7 @@ export function validateDiscoveryProtectedScope(root, baselineCommit, changes) {
   assertReviewedDiscoveryPolicy(pins);
   // Reuse the separately reviewed finite verifier; observe actual tracked inputs,
   // not its expected set. The profile checks all baseline blobs/modes, each new
-  // byte and the single exact validator transition, and can never publish.
+  // byte and the three exact validator/test-isolation transitions, and can never publish.
   // Generated build/test reports are not tracked source; package qualification
   // and the pre-build candidate workflow still reject unexpected source files.
   const script = `import hashlib,json,pathlib,runpy,subprocess,sys

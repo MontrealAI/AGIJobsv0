@@ -90,14 +90,16 @@ class DiscoverySourceProfile(unittest.TestCase):
             with self.assertRaises(ValueError):P['read'](ROOT,name)
         with self.assertRaises(ValueError):P['tree_digest']({'a':{'mode':'100644','blob':'1'*40},'a/b':{'mode':'100644','blob':'2'*40}})
 
-    def test_validator_transition_requires_exact_single_path_and_original_git_blob(self):
+    def test_reviewed_transitions_require_exact_paths_and_original_git_blobs(self):
         self.changed_manifest(lambda m:m['transitions'].clear())
         self.changed_manifest(lambda m:m['transitions'].update({'package.json': next(iter(m['transitions'].values()))}))
-        self.changed_manifest(lambda m:m['transitions']['tools/security/validate-codeql-remediation.mjs']['before'].update({'blob':'a'*40}))
-        self.changed_manifest(lambda m:m['transitions']['tools/security/validate-codeql-remediation.mjs']['after'].update({'mode':'100755'}))
-    def test_validator_transition_bytes_remain_bound_to_the_reviewed_manifest(self):
-        name='tools/security/validate-codeql-remediation.mjs'
-        self.replaced(name,(ROOT/name).read_bytes()+b'\n',self.rejection)
+        for name in P['TRANSITIONS']:
+            self.changed_manifest(lambda m:m['transitions'].pop(name))
+            self.changed_manifest(lambda m:m['transitions'][name]['before'].update({'blob':'a'*40}))
+            self.changed_manifest(lambda m:m['transitions'][name]['after'].update({'mode':'100755'}))
+    def test_reviewed_transition_bytes_remain_bound_to_the_reviewed_manifest(self):
+        for name in P['TRANSITIONS']:
+            self.replaced(name,(ROOT/name).read_bytes()+b'\n',self.rejection)
 
     def test_real_staged_directory_enumeration_refuses_a_rogue_file(self):
         with tempfile.TemporaryDirectory(prefix='discovery-inventory-probe-') as folder:

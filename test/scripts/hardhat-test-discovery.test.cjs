@@ -250,12 +250,106 @@ test('security regressions stay isolated and mandatory in their source-bound wor
   const { all, selected } = await discover();
   assert.ok(all.includes(path.join(root, file)));
   assert.ok(!selected.includes(path.join(root, file)));
-  const workflow = yaml.load(fs.readFileSync(path.join(root, '.github/workflows/security-remediation.yml'), 'utf8'));
+  const workflow = yaml.load(
+    fs.readFileSync(
+      path.join(root, '.github/workflows/security-remediation.yml'),
+      'utf8'
+    )
+  );
   const job = workflow.jobs.regressions;
   assert.ok(job && !job.if && !job['continue-on-error']);
-  const step = job.steps.find((step) => (step.run || '').includes(`node --test ${file}`));
+  const step = job.steps.find((step) =>
+    (step.run || '').includes(`node --test ${file}`)
+  );
   assert.ok(step && !step.if && !step['continue-on-error']);
   assert.match(step.run, /set -eo pipefail/);
-  const install = job.steps.findIndex((step) => (step.run || '').includes('./scripts/ci/npm-ci.sh') && !step.if && !step['continue-on-error']);
+  const install = job.steps.findIndex(
+    (step) =>
+      (step.run || '').includes('./scripts/ci/npm-ci.sh') &&
+      !step.if &&
+      !step['continue-on-error']
+  );
   assert.ok(install >= 0 && install < job.steps.indexOf(step));
+
+  const discoveryFile = 'test/security/discovery-protected-scope.test.mjs';
+  const absolute = path.join(root, discoveryFile);
+  assert.ok(
+    all.includes(absolute),
+    'real Hardhat discovery must see the new security suite'
+  );
+  assert.ok(
+    !selected.includes(absolute),
+    'the new node:test suite must not reach Mocha'
+  );
+  assert.deepEqual(
+    (await discover([absolute])).selected,
+    [],
+    'explicit Hardhat selection must also stay isolated'
+  );
+  const discovery = yaml.load(
+    fs.readFileSync(
+      path.join(root, '.github/workflows/discovery-lab-receiver.yml'),
+      'utf8'
+    )
+  );
+  const policy = discovery.jobs.policy;
+  assert.ok(
+    policy && !Object.hasOwn(policy, 'if') && !policy['continue-on-error'],
+    'Discovery policy must remain mandatory'
+  );
+  const invocations = policy.steps.filter((item) =>
+    (item.run || '').split('\n').some((line) => {
+      const words = line.trim().split(/\s+/);
+      return (
+        words[0] === 'node' &&
+        words[1] === '--test' &&
+        words.includes(discoveryFile) &&
+        !/[;&|]/.test(line)
+      );
+    })
+  );
+  assert.equal(
+    invocations.length,
+    1,
+    'the excluded suite must have one dedicated node:test invocation'
+  );
+  const invocation = invocations[0];
+  assert.ok(
+    !Object.hasOwn(invocation, 'if') && !invocation['continue-on-error'],
+    'Discovery regressions must not be optional'
+  );
+  assert.match(invocation.run, /set -euo pipefail/);
+  assert.match(
+    invocation.run,
+    /test "\$\(git rev-parse HEAD\)" = "\$EXPECTED_SOURCE"/
+  );
+  assert.equal(
+    invocation.env.EXPECTED_SOURCE,
+    '${{ github.event.pull_request.head.sha || github.sha }}'
+  );
+  const checkout = policy.steps.find((item) =>
+    (item.uses || '').startsWith('actions/checkout@')
+  );
+  assert.ok(
+    checkout &&
+      !Object.hasOwn(checkout, 'if') &&
+      !checkout['continue-on-error'] &&
+      policy.steps.indexOf(checkout) < policy.steps.indexOf(invocation),
+    'the source-bound checkout must be mandatory and precede regressions'
+  );
+  assert.equal(
+    checkout.with.ref,
+    invocation.env.EXPECTED_SOURCE,
+    'dedicated tests must use the selected exact head'
+  );
+  const setup = policy.steps.findIndex(
+    (item) =>
+      (item.uses || '').startsWith('actions/setup-node@') &&
+      !Object.hasOwn(item, 'if') &&
+      !item['continue-on-error']
+  );
+  assert.ok(
+    setup >= 0 && setup < policy.steps.indexOf(invocation),
+    'the native Node runtime must be installed before regressions'
+  );
 });
