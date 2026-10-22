@@ -132,7 +132,7 @@ function captureOptionalInstalledFile(root,name) {
 function boundedInstalledInput(root,name) {
   return captureInstalledFile(root,name,{maximum:2_000_000}).raw;
 }
-function installedSourceProof(root,changes) {
+function installedSourceProof(root,changes,metadataOnly=false) {
   const name='tools/security/discovery-installed-protected-scope.mjs';
   const captured=captureInstalledFile(root,name,{maximum:2_000_000,expectedMode:'100644'});
   assert.equal(captured.blob,git(['rev-parse','HEAD:'+name],root).trim(),
@@ -142,12 +142,40 @@ function installedSourceProof(root,changes) {
     "const raw=fs.readFileSync(0);assert.ok(raw.length<=2000000);",
     "const control=await import('data:text/javascript;base64,'+raw.toString('base64'));",
     "const root=process.argv[1];control.auditInstalledGitRoot(root);",
-    "const result=control.validateInstalledProtectedScope(root,control.INSTALLED_PROTECTED_BASELINE,JSON.parse(process.argv[2]));",
-    "assert.equal(result.scopeVerifierSha256,createHash('sha256').update(raw).digest('hex'));",
+    metadataOnly?"const result={gitMetadataVerified:true};":
+      "const result=control.validateInstalledProtectedScope(root,control.INSTALLED_PROTECTED_BASELINE,JSON.parse(process.argv[2]));",
+    metadataOnly?'':"assert.equal(result.scopeVerifierSha256,createHash('sha256').update(raw).digest('hex'));",
     "console.log(JSON.stringify(result));",
   ].join('\n');
   return JSON.parse(execFileSync(process.execPath,['--input-type=module','-e',script,root,JSON.stringify(changes)],
     {input:captured.raw,env:cleanEnv(),encoding:'utf8',timeout:90_000,maxBuffer:2_000_000}));
+}
+function captureCommittedSource(root,snapshot,head,baseTip,readGit=git) {
+  assert.match(head,/^[a-f0-9]{40}$/);assert.match(baseTip,/^[a-f0-9]{40}$/);
+  assert.ok(path.isAbsolute(snapshot)&&!fs.existsSync(snapshot),'An absent private committed snapshot is required');
+  const parent=path.dirname(snapshot);assert.equal(fs.realpathSync(parent),parent,'Snapshot parent must be direct');
+  const bundle=path.join(parent,'committed-source.bundle');assert.ok(!fs.existsSync(bundle));
+  assertSourceCommitAndIndex(root,head,readGit);
+  assert.equal(readGit(['for-each-ref','--format=%(refname)','refs/replace'],root,GIT_SECURITY_CONTEXT.installed).trim(),
+    '','Replaced source history is unsupported');
+  const graft=readGit(['rev-parse','--git-path','info/grafts'],root,GIT_SECURITY_CONTEXT.installed).trim();
+  assert.ok(!fs.existsSync(path.resolve(root,graft)),'Grafted source history is unsupported');
+  assert.equal(readGit(['rev-parse','--verify',baseTip+'^{commit}'],root,GIT_SECURITY_CONTEXT.installed).trim(),baseTip);
+  // A bundle is a private object archive, not a clone/fetch transport. Both
+  // export and direct import retain the installed context's protocol refusal.
+  readGit(['bundle','create','--quiet',bundle,'HEAD','--all'],root,GIT_SECURITY_CONTEXT.installed);
+  assertSourceCommitAndIndex(root,head,readGit);
+  const heads=readGit(['bundle','list-heads',bundle,'HEAD'],root,GIT_SECURITY_CONTEXT.installed).trim();
+  assert.equal(heads,head+' HEAD','Committed bundle differs from selected HEAD');
+  readGit(['init','--quiet','--template=','--object-format=sha1',snapshot],parent,GIT_SECURITY_CONTEXT.installed);
+  readGit(['bundle','verify',bundle],snapshot,GIT_SECURITY_CONTEXT.installed);
+  readGit(['bundle','unbundle',bundle],snapshot,GIT_SECURITY_CONTEXT.installed);
+  assert.equal(readGit(['cat-file','-t',head],snapshot,GIT_SECURITY_CONTEXT.installed).trim(),'commit');
+  assert.equal(readGit(['cat-file','-t',baseTip],snapshot,GIT_SECURITY_CONTEXT.installed).trim(),'commit');
+  readGit(['update-ref','refs/remotes/origin/main',baseTip,'0'.repeat(40)],snapshot,GIT_SECURITY_CONTEXT.installed);
+  readGit(['checkout','--quiet','--detach',head],snapshot,GIT_SECURITY_CONTEXT.installed);
+  assertSourceCommitAndIndex(snapshot,head,readGit);
+  assertSourceCommitAndIndex(root,head,readGit);
 }
 function assertSourceCommitAndIndex(root,head,readGit=git) {
   assert.match(head,/^[a-f0-9]{40}$/,'An immutable selected source commit is required');
@@ -242,7 +270,7 @@ function verifySelectedDependencyIdentities(before,after) {
   return preserved;
 }
 function verifyGeneratedMutationSets(local,generated,admitted,allTracked=false) {
-  assert.ok(Array.isArray(local)&&Array.isArray(generated)&&admitted instanceof Set);
+  assert.ok(Array.isArray(local) && Array.isArray(generated) && (admitted instanceof Set));
   for(const list of [local,generated])assert.equal(new Set(list).size,list.length,'Duplicate generated mutation');
   assert.ok(generated.every(name=>!admitted.has(name)),'Baseline generator overlaps an intentional installed source transition');
   assert.ok(local.every(name=>!admitted.has(name)),'Generation changed an admitted installed source input');
@@ -585,8 +613,12 @@ function checkGenerated() {
   try {
     if(installedEdition) {
       assertSourceCommitAndIndex(ROOT,head);
-      git(['clone','--quiet','--no-hardlinks','--local','--no-checkout',ROOT,snapshot]);
-      git(['checkout','--quiet','--detach',head],snapshot);
+      assert.equal(installedSourceProof(ROOT,[],true).gitMetadataVerified,true);
+      const requestedBase=process.env.DEPENDENCY_PRESERVATION_BASE_SHA;
+      if(process.env.GITHUB_ACTIONS==='true')assert.ok(requestedBase,'PR base SHA is required in Actions');
+      if(requestedBase!==undefined)assert.match(requestedBase,/^[a-f0-9]{40}$/i,'Invalid PR base SHA');
+      const baseTip=git(['rev-parse','--verify',(requestedBase??'refs/remotes/origin/main')+'^{commit}']).trim();
+      captureCommittedSource(ROOT,snapshot,head,baseTip);
       result=checkSource({root:snapshot});
       assertSelectedSourceResult(ROOT,head,result);
       assert.equal(git(['rev-parse',INSTALLED_GENERATOR_BASE+'^{tree}'],snapshot).trim(),INSTALLED_GENERATOR_TREE);
@@ -684,7 +716,7 @@ module.exports = {
     installedEdition:installedEditionForCommit,
     captureInstalledFile,independentInstalledCases,assertSourceCommitAndIndex,assertSelectedSourceResult,summarizeGeneratedTransitions,
     verifySelectedDependencyIdentities,verifyGeneratedMutationSets,verifyGeneratedFileIdentity,
-    verifyInstalledAfterGeneration,
+    verifyInstalledAfterGeneration,captureCommittedSource,
   },
 };
 if (require.main === module) {

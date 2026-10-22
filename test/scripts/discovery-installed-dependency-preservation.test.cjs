@@ -6,6 +6,7 @@ const fs=require('node:fs');
 const os=require('node:os');
 const path=require('node:path');
 const {createHash}=require('node:crypto');
+const {execFileSync}=require('node:child_process');
 const checks=require('../../scripts/security/check-dependency-preservation.cjs')._test;
 const digest=raw=>createHash('sha256').update(raw).digest('hex');
 const blob=raw=>createHash('sha1').update(Buffer.concat([Buffer.from('blob '+raw.length+'\0'),raw])).digest('hex');
@@ -13,6 +14,45 @@ const dependencies=['hardhat','solc','ethers','@openzeppelin/contracts','@prb/ma
   '@ethereum-attestation-service/eas-contracts','@ethereum-attestation-service/eas-sdk'];
 const identities=()=>Object.fromEntries(dependencies.map((name,index)=>['node_modules/'+name,
   {version:'1.0.'+index,resolved:'https://registry.example.invalid/'+index,integrity:'sha512-owned-'+index}]));
+test('ordinary committed snapshot imports owned Git objects without permitting any transport',t=>{
+  const folder=fs.mkdtempSync(path.join(os.tmpdir(),'jobs-owned-offline-capture-'));
+  t.after(()=>fs.rmSync(folder,{recursive:true,force:true}));
+  const root=path.join(folder,'input'),snapshot=path.join(folder,'snapshot');
+  fs.mkdirSync(root);const records=[];
+  const run=(args,cwd=root,context=checks.GIT_SECURITY_CONTEXT.installed)=>{
+    const invocation=checks.gitInvocation(args,cwd,context);
+    assert.equal(context,checks.GIT_SECURITY_CONTEXT.installed);
+    assert.ok(invocation.args.includes('protocol.allow=never'));
+    assert.equal(invocation.options.env.GIT_ALLOW_PROTOCOL,'');
+    assert.equal(invocation.options.env.GIT_NO_LAZY_FETCH,'1');
+    assert.ok(!['clone','fetch','push','remote'].includes(args[0]),'No transport command is used');
+    records.push({args:[...args],context});
+    return execFileSync(invocation.command,invocation.args,invocation.options);
+  };
+  run(['init','--quiet','--template=','--object-format=sha1',root],folder);
+  fs.writeFileSync(path.join(root,'readme.txt'),'owned baseline\r\n');
+  fs.writeFileSync(path.join(root,'executable.txt'),'inert executable-mode fixture\n',{mode:0o755});
+  run(['add','--','readme.txt','executable.txt']);
+  const commit=message=>run(['-c','user.name=Owned fixture','-c','user.email=fixture@example.invalid',
+    '-c','commit.gpgsign=false','commit','--quiet','-m',message]);
+  commit('owned baseline');const base=run(['rev-parse','HEAD']).trim();
+  fs.writeFileSync(path.join(root,'readme.txt'),'owned selected source\r\n');
+  run(['add','--','readme.txt']);commit('owned selected source');
+  const head=run(['rev-parse','HEAD']).trim();
+  fs.writeFileSync(path.join(root,'readme.txt'),'ordinary later generated output\r\n');
+  checks.captureCommittedSource(root,snapshot,head,base,run);
+  assert.equal(run(['rev-parse','HEAD'],snapshot).trim(),head);
+  assert.equal(run(['rev-parse','refs/remotes/origin/main'],snapshot).trim(),base);
+  assert.equal(run(['merge-base',base,head],snapshot).trim(),base);
+  assert.equal(run(['ls-tree','-rz',head],snapshot),run(['ls-tree','-rz',head],root));
+  assert.equal(fs.readFileSync(path.join(snapshot,'readme.txt'),'utf8'),'owned selected source\r\n');
+  assert.ok(fs.statSync(path.join(snapshot,'executable.txt')).mode&0o111);
+  assert.equal(fs.readFileSync(path.join(root,'readme.txt'),'utf8'),'ordinary later generated output\r\n');
+  assert.equal(run(['status','--porcelain'],snapshot),'');
+  assert.equal(fs.existsSync(path.join(snapshot,'.git/objects/info/alternates')),false);
+  assert.ok(!fs.readFileSync(path.join(snapshot,'.git/config'),'utf8').includes('[remote'));
+  assert.ok(records.some(item=>item.args[0]==='bundle'&&item.args[1]==='unbundle'));
+});
 test('all seven dependencies preserve each exact version, resolved URL and integrity',()=>{
   const before=identities();
   assert.equal(Object.keys(checks.verifySelectedDependencyIdentities(before,structuredClone(before))).length,7);

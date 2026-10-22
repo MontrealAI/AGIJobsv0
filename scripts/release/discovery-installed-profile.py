@@ -344,10 +344,10 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                     'before': {'blob': '9657ecd2c072276276079e55fde51c5b66b8b37c',
                                                                'mode': '100644'},
                                                     'reason': 'Compose exact owner2425 immutable committed ledger edition/source selection and explicit original historical prefix helper/closure while preserving the historical query/archive/disposition/deployed assertion block and protected predicate; keep all source/native/release/publication approvals false'},
- 'scripts/security/check-dependency-preservation.cjs': {'after': {'mode': '100644', 'sha256': '5cdd598d6dbb2e2908cd5727c78144c9ae544f92b84c83fe701ab4972ede44cc'},
+ 'scripts/security/check-dependency-preservation.cjs': {'after': {'mode': '100644', 'sha256': '8bbfcd5694c1c02486b28768baa25763c1090d84a86d2de209c4097076114e9c'},
                                                         'before': {'blob': 'e697e1504a9649dfabfd8746a188bf66725f654b',
                                                                    'mode': '100644'},
-                                                        'reason': 'Compose exact owner2425 immutable committed-edition/source/control capture and typed independent dependency/generated proofs, preserving all seven protected dependency identities and the distinct original ba67 generator baseline; retain complete HEAD/index/byte/mode checks and false approval claims'},
+                                                        'reason': 'Retain owner2425 immutable committed edition/source/control selection and exact original ba67 generator comparison, all seven protected dependency identities and final HEAD/index/byte/mode proofs; audit original metadata before exporting a private Git object bundle and directly verifying/importing it into an independent ordinary snapshot with all transport refusal intact; replace the self-refused local clone and group only the AST-equivalent true whitespace warning cleanup'},
  'apps/enterprise-portal/package-lock.json': {'after': {'mode': '100644',
                                                         'sha256': 'f8f6cfa0094d4581a628019f6eb4011519243a370031d8e7bc37eb02e40aea29'},
                                               'before': {'blob': '85295a87f758c5c22a39fa7a77e499be71b06a5d',
@@ -442,12 +442,8 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
            'named CULTURE inputs select the existing exact-head production-audit surface and '
            'all-lock command without continue-on-error'},
  'test/scripts/discovery-installed-dependency-preservation.test.cjs': {'before': None,
- 'after': {'mode': '100644',
-           'sha256': 'dbeda13c6850fce006913d8064e0c59979e1d26a55ac6de867dd1f7b6c1be484'},
- 'reason': 'Retain exact owner2425 focused owned-fixture dependency/source coherence controls for '
-           'immutable edition/reference/typed-input/generated comparison and bounded regular-file '
-           'capture, without substituting these focused cases for actual source/native/hosted '
-           'qualification'},
+ 'after': {'mode': '100644', 'sha256': '7cfba430566c344fce50b8980f0341a53c42c4f5738146b09509eab445d68411'},
+ 'reason': 'Retain all25 owner2425 focused owned dependency/source coherence cases and add one ordinary small-repository real Git object-capture case under unchanged protocol.allow=never and lazy-fetch refusal, proving selected HEAD/baseline ancestry, exact blobs/modes, isolated metadata, original working-output preservation and no clone/fetch/remote transport command; no product/native/release approval'},
  'tools/security/discovery-installed-ledger-prefix.mjs': {'before': None,
  'after': {'mode': '100644',
            'sha256': '7803b4eef32c4ad7bcd6552b7ee652ba7ba5c94c18e1b7b864ec3b5cfc30bee3'},
