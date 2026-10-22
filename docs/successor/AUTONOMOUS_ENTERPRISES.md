@@ -57,6 +57,16 @@ refusals retain known zero replay; they do not authorize a blind retry. Known re
 A later receipt-presentation failure preserves any validated native receipt, known counters, original transport
 and unknown partial replay in its immutable owned error and journal. The original error cause is preserved.
 
+Unknown partial replay, construction spend, invocation reservations and future/successor spend keep both the
+returned state and recovery record `INCONCLUSIVE`, including when a native report is otherwise `REJECTED`.
+The validated report and its known work remain retained; recovery does not authorize another invocation.
+
+Input transport and each captured native report retain the existing two-million-byte ceiling. Before native work,
+the receiver separately reserves the escaped original transport, repeated context, a maximum-size captured report
+and bounded reason/framing bytes. Returned receipt sizing uses that reserved output bound, so it does not apply
+the input ceiling to the larger receiver envelope. Save the owned result with ordinary JSON serialization.
+This is a conservative encoded-size reservation, not a measured heap or hard preemption guarantee.
+
 Each receiver charges 10,000 declared admission units before the native inspector’s separate 10,000-unit charge.
 Current replay work is a conservative shared-session delta. Native calls are serialized with at most four
 retained admissions; unrelated host work is not excluded. Memory is an encoded-input/receipt reservation,
@@ -85,3 +95,16 @@ not a new executed boundary probe. This is technical source review, not eligible
 **Français :** ce récepteur source relie un historique Alpha figé au même dossier de treize sections.
 Les contrôles locaux, la provenance d’une installation, l’acceptation indépendante et le règlement restent distincts.
 Aucun import ne crée d’autorité ; une réservation incertaine interdit un nouvel essai automatique.
+
+Configured review findings on Jobs `e7c49b9` (uncertain rejection) and Fleet `c7eb951` (receipt sizing) led to
+the same additive correction in all three receivers. Literal data-state controls fail before the uncertainty
+repair and pass afterward. The output-bound calculation received static review; no new output-boundary
+execution probe is asserted. Fresh exact-head hosted and installed qualification remain required.
+
+Current repaired Manager/Jobs source checks pass **22/22 combined** on Node22.23.3 and24.19.0, including
+the six literal known/unknown report-state controls and actual n2 fixed-module interoperability. Fleet passes
+**15/15** on Node22.23.3 and24.19.0, including actual n32 basis evidence. These runs do not qualify an installed release.
+The earlier pinned Fleet24.21.0 observation retains its original source scope; that local binary is now absent,
+so fresh pinned-runtime qualification remains required. A separate static reader caught an unsafe numeric sum
+introduced during output-sizing repair; explicit safe-integer aggregate checks now preserve exact BigInt failure
+totals before serialization or return. Its final bounded readback has no further finding.

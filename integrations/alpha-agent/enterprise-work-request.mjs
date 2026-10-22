@@ -28,6 +28,10 @@ const NATIVE_MEASUREMENT='Declared current shared-session replay delta; native i
   +'Checking and elapsed limits are soft checks before and after complete bounded replays; JavaScript execution is not preempted.';
 const acceptedHistoricalStates=['FROZEN','TASKS_COMMITTED','INVOCATION_RECONCILED','READY_FOR_SUCCESSOR','SUCCESSOR_ACCEPTED_LOCAL'];
 const spent=x=>x===null || integer(x) || x==='unknown-reservation-retained';
+const unresolvedNative=receipt=>Boolean(receipt?.work.unknownPartialReplay
+  || receipt?.historicalState?.unknownConstructionSpent || receipt?.historicalState?.unresolvedReservation
+  || receipt?.historicalState?.futureSpent==='unknown-reservation-retained'
+  || receipt?.historicalState?.successorSpent==='unknown-reservation-retained');
 const CONTEXT_KEYS = ['schema','source','binding','inspectionId','logicalCommissionId','route','limits'];
 const REQUEST_KEYS = ['schema','inspectionId','logicalCommissionId','route','source','binding','payloadDigest',
   'docketDigest','payload','limits','authority','externalSubmission','settlement'];
@@ -128,7 +132,9 @@ export function createEnterpriseReceiver(options) {
         logicalCommissionId:request.logicalCommissionId,route:request.route}));
       record={key:contextDigest,requestDigest,transportDigest,state:'PENDING',nativeReceiptDigest:null,nativeReservationUnresolved:true};
       ledger.set(contextDigest,record);
-      const contextBytes=bytes(canonical(context)); const receiptReserve=2*rawBytes+131_072;
+      const contextBytes=bytes(canonical(context));
+      // Reserve the escaped original transport, repeated context, bounded native report and fixed/reason framing.
+      const receiptReserve=2*rawBytes+2*contextBytes+MAX_INPUT_BYTES+262_144;
       const workingBytes=4*rawBytes+2*contextBytes;
       const receiverReservation={checkingUnits:RECEIVER_ADMISSION_UNITS,elapsedMs:elapsed(began),
         memoryBytes:workingBytes+receiptReserve};
@@ -195,23 +201,31 @@ export function createEnterpriseReceiver(options) {
         authority:[],externalSubmission:'NOT_SUBMITTED',settlement:'NOT_RUN',currencyCapBaseUnits:'0',
         reconciliation:'RECEIVER_HISTORY_COMMIT_REQUIRED',installedSourceCaptureQualified:false,
         custody:'Original transport and native receipt returned for the existing mission and thirteen-section docket.'};
+      const nativeUnresolved=unresolvedNative(nativeReceipt);
+      // All result data is receiver-owned or already captured inert JSON. Key ordering cannot change byte count.
+      // Output uses its reserved bound; the shared canonicalizer's 2 MB input ceiling is unchanged.
+      const receiptSize=()=>{resources(result.resourceUsed);resources(result.receiverResourceUsed);
+        const count=bytes(JSON.stringify(result));
+        need(count<=receiptReserve,'ENTERPRISE_RECEIPT_RESERVATION_EXCEEDED');return count;};
       for(let i=0;i<8;i++) {
-        result.receiverResourceUsed.memoryBytes=workingBytes+bytes(canonical(result));
+        result.receiverResourceUsed.memoryBytes=workingBytes+receiptSize();
         result.receiverResourceUsed.elapsedMs=elapsed(began);
         result.resourceUsed={checkingUnits:ownUsed.checkingUnits+nativeUsed.checkingUnits,elapsedMs:elapsed(began),
           memoryBytes:result.receiverResourceUsed.memoryBytes+nativeUsed.memoryBytes};
+        resources(result.resourceUsed);
         const within=available && fits(nativeUsed,effectiveLimits) && fits(result.resourceUsed,context.limits);
-        result.state=!within || nativeReceipt.state==='INCONCLUSIVE'?'INCONCLUSIVE'
+        result.state=!within || nativeUnresolved || nativeReceipt.state==='INCONCLUSIVE'?'INCONCLUSIVE'
           :nativeReceipt.state==='ACCEPTED_LOCAL_INSPECTION'?'LOCAL_CHECKED':'LOCAL_REJECTED';
-        result.reason=!within?'RESOURCE_RESERVATION_OR_CAP_INCOMPLETE':nativeReceipt.reasons.join('; ');
+        result.reason=!within?'RESOURCE_RESERVATION_OR_CAP_INCOMPLETE':nativeUnresolved
+          ?'NATIVE_REPLAY_OR_HISTORY_UNRESOLVED; '+nativeReceipt.reasons.join('; '):nativeReceipt.reasons.join('; ');
       }
       record.state=result.state==='INCONCLUSIVE'?'INCONCLUSIVE':'INSPECTED';
       record.nativeReceiptDigest=nativeReceipt?sha(canonical(nativeReceipt)):null;
-      record.nativeReservationUnresolved=Boolean(nativeReceipt?.work.unknownPartialReplay); ledger.set(contextDigest,freeze({...record}));
+      record.nativeReservationUnresolved=nativeUnresolved; ledger.set(contextDigest,freeze({...record}));
       const digits=vector=>RESOURCE_KEYS.reduce((total,k)=>total+String(vector[k]).length,0);
       const variableBytes=()=>result.state.length+bytes(JSON.stringify(result.reason))
         +digits(result.resourceUsed)+digits(result.receiverResourceUsed);
-      const serializedBytes=bytes(canonical(result)), serializedVariables=variableBytes();
+      const serializedBytes=receiptSize(), serializedVariables=variableBytes();
       const finalSample=()=>{
         result.receiverResourceUsed.elapsedMs=elapsed(began);result.resourceUsed.elapsedMs=result.receiverResourceUsed.elapsedMs;
         for(let i=0;i<8;i++){
@@ -221,6 +235,7 @@ export function createEnterpriseReceiver(options) {
           const resident=workingBytes+receiptBytes;
           if(result.receiverResourceUsed.memoryBytes===resident)return;
           result.receiverResourceUsed.memoryBytes=resident;result.resourceUsed.memoryBytes=resident+nativeUsed.memoryBytes;
+          resources(result.resourceUsed);
         }
         need(false,'ENTERPRISE_RECEIPT_DID_NOT_CONVERGE');
       };
@@ -231,7 +246,7 @@ export function createEnterpriseReceiver(options) {
     } catch(error) {
       ownUsed.elapsedMs=elapsed(began);
       const knownReceiver=result?{...result.receiverResourceUsed,elapsedMs:ownUsed.elapsedMs}:ownUsed;
-      const uncertain=nativeInvoked && (!nativeChecked || nativeReceipt.work.unknownPartialReplay);
+      const uncertain=nativeInvoked && (!nativeChecked || unresolvedNative(nativeReceipt));
       if(record) ledger.set(contextDigest,freeze({...record,state:'INCONCLUSIVE',
         nativeReceiptDigest:nativeChecked?sha(canonical(nativeReceipt)):record.nativeReceiptDigest,
         nativeReservationUnresolved:uncertain}));

@@ -2,6 +2,7 @@
 // Optional real-source checks require already installed fixed Alpha modules; no input selects a runtime path.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {createEnterpriseReceiver,enterpriseReceiverCapabilities,RECEIVER_ADMISSION_UNITS} from './enterprise-work-request.mjs';
 import {canonical} from './discovery-lab-contract.mjs';
 const runtime=globalThis.__ENTERPRISE_NATIVE_TEST_RUNTIME__ || null;
@@ -22,6 +23,40 @@ function literalTransport(context=literalContext()) {
     authority:[],externalSubmission:'NOT_SUBMITTED',settlement:'NOT_RUN'},docket:'{}'};
 }
 const causeCode=expected=>error=>error.cause?.code===expected && error.authority.length===0;
+
+// Literal report-state checks only. This callback does not certify a real workspace or installed source.
+test('literal negative receipts keep every unknown replay or historical reservation inconclusive',async()=>{
+  const digest=value=>createHash('sha256').update(canonical(value)).digest('hex');
+  const cases=[null,'partial','construction','reservation','future','successor'];
+  for(const uncertainty of cases) {
+    const context=literalContext(),transport=literalTransport(context);let calls=0;
+    const report={schema:'autonomous-enterprise-native-inspection/v1',state:'REJECTED',accepted:false,
+      requestDigest:digest(transport.request),reconciliationKey:digest({schema:'autonomous-enterprise-native-reconciliation-key/v1',
+        source:context.source,binding:context.binding,inspectionId:context.inspectionId,
+        logicalCommissionId:context.logicalCommissionId,route:context.route}),binding:context.binding,route:context.route,
+      source:context.source,payloadDigest:transport.request.payloadDigest,docketDigest:transport.request.docketDigest,
+      resourceUsed:{checkingUnits:10_017,elapsedMs:1,memoryBytes:100},
+      work:{admissionUnits:10_000,knownReplayWork:17,unknownPartialReplay:uncertainty==='partial',
+        measurement:'Declared current shared-session replay delta; native inspections are serialized; unrelated host work is not excluded. '
+          +'Memory bytes reserve four canonical UTF-8 input/context/options footprints, not measured peak VM heap; output, control and framing overhead remain unmeasured. '
+          +'Checking and elapsed limits are soft checks before and after complete bounded replays; JavaScript execution is not preempted.'},
+      reasons:['LITERAL_REPLAY_REJECTED'],historicalState:{state:'FROZEN',unknownConstructionSpent:uncertainty==='construction',
+        unresolvedReservation:uncertainty==='reservation',futureSpent:uncertainty==='future'?'unknown-reservation-retained':null,
+        successorSpent:uncertainty==='successor'?'unknown-reservation-retained':null},authority:[],externalSubmission:'NOT_SUBMITTED',
+      settlement:'NOT_RUN',reconciliation:'RECEIVER_HISTORY_COMMIT_REQUIRED',scope:'LOCAL_FIXED_SOURCE_INSPECTION_ONLY'};
+    const inspector=async()=>{calls++;return report;};
+    const receiver=createEnterpriseReceiver({installedContext:context,inspectNativeRequest:inspector});
+    const raw=canonical(transport),result=await receiver.receive(raw),row=receiver.exportJournal().records[0];
+    assert.equal(result.state,uncertainty?'INCONCLUSIVE':'LOCAL_REJECTED',String(uncertainty));
+    assert.equal(row.state,uncertainty?'INCONCLUSIVE':'INSPECTED',String(uncertainty));
+    assert.equal(row.nativeReservationUnresolved,Boolean(uncertainty),String(uncertainty));
+    assert.equal(row.nativeReceiptDigest,digest(report));assert.deepEqual(result.nativeReceipt,report);
+    assert.equal(result.resourceUsed.checkingUnits,20_017);assert.deepEqual(result.authority,[]);
+    const restored=createEnterpriseReceiver({installedContext:context,inspectNativeRequest:inspector,priorJournal:receiver.exportJournal()});
+    await assert.rejects(restored.receive(raw),causeCode('ENTERPRISE_DUPLICATE_OR_UNCERTAIN_INSPECTION'));
+    assert.equal(calls,1);
+  }
+});
 
 test('fixed route is an explicit zero-cap alternative with no installed-release or pilot claim',()=>{
   const capabilities=enterpriseReceiverCapabilities();
