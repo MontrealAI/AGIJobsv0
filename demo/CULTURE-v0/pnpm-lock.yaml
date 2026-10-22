@@ -255,7 +255,7 @@ importers:
         version: 5.5.1(graphql@16.11.0)
       '@as-integrations/fastify':
         specifier: ^3.1.0
-        version: 3.1.0(@apollo/server@5.5.1(graphql@16.11.0))(fastify@5.12.5)
+        version: 3.1.0(@apollo/server@5.5.1(graphql@16.11.0))(fastify@5.12.6)
       '@fastify/cors':
         specifier: ^11.3.0
         version: 11.3.0
@@ -272,8 +272,8 @@ importers:
         specifier: ^6.13.2
         version: 6.15.0
       fastify:
-        specifier: ^5.12.5
-        version: 5.12.5
+        specifier: ^5.12.6
+        version: 5.12.6
       graphql:
         specifier: ^16.11.0
         version: 16.11.0
@@ -3348,8 +3348,8 @@ packages:
   fastify-plugin@6.0.0:
     resolution: {integrity: sha512-fZOty7z3O7vOliF6d8bHE3wiEh1KcNnKEQensSgTk9C1DvN6nRLS++XVd86v33Hw/8u9Un8A1zDrQ8ujcQDHEg==}
 
-  fastify@5.12.5:
-    resolution: {integrity: sha512-OB2k1dlxs5/NAABqeKV2FUHkSD2BbENsCak8yULVcymn3fHIPDVa9TI3SDnJSWYSllZmSYuZXy2gTnsT+Sut1A==}
+  fastify@5.12.6:
+    resolution: {integrity: sha512-XeErl1DDsxdbhE9RPRJ05iNnfMhHRHHewVNNAJXaGTOaCY4wHb6rEizphhgzBq5YQe4JyqQWPpGd+hLh2PXXJA==}
 
   fastq@1.19.1:
     resolution: {integrity: sha512-GwLTyxkCXjXbxqIhTsMI2Nui8huMPtnxg7krajPJAjnEG/iiOS7i+zCtWGZR9G0NBKbXKh6X9m9UIsYX/N6vvQ==}
@@ -3842,8 +3842,8 @@ packages:
   io-ts@1.10.4:
     resolution: {integrity: sha512-b23PteSnYXSONJ6JQXRAlvJhuw8KOtkqa87W4wDtvMrud/DTJd5X+NpOOI+O/zZwVq6v0VLAaJ+1EDViKEuN9g==}
 
-  ip-address@10.7.3:
-    resolution: {integrity: sha512-A1kdq/tSb5QjvKvAMgIoEvDBIgL7qaqVP/jkvSwYYRZ9iEzvPpopxp2wQfu3SuZRHtpHNxMn8Fs0bS+gf5Xmwg==}
+  ip-address@10.7.4:
+    resolution: {integrity: sha512-DWBMKyeM25D70nrIiTkgQth59/G+naKOTep6huF9j+GmeK3DMD60Zvxg5d5qQnz+38AHgou6ean2LECX+lrKDg==}
     engines: {node: '>= 12'}
 
   ipaddr.js@1.9.1:
@@ -6305,10 +6305,10 @@ snapshots:
 
   '@apollo/utils.withrequired@3.0.0': {}
 
-  '@as-integrations/fastify@3.1.0(@apollo/server@5.5.1(graphql@16.11.0))(fastify@5.12.5)':
+  '@as-integrations/fastify@3.1.0(@apollo/server@5.5.1(graphql@16.11.0))(fastify@5.12.6)':
     dependencies:
       '@apollo/server': 5.5.1(graphql@16.11.0)
-      fastify: 5.12.5
+      fastify: 5.12.6
       fastify-plugin: 5.1.0
 
   '@babel/code-frame@7.27.1':
@@ -6872,7 +6872,7 @@ snapshots:
     dependencies:
       '@lukeed/ms': 2.0.2
       fastify-plugin: 6.0.0
-      ip-address: 10.7.3
+      ip-address: 10.7.4
       toad-cache: 3.7.0
 
   '@graphql-tools/merge@9.2.6(graphql@16.11.0)':
@@ -9741,7 +9741,7 @@ snapshots:
 
   fastify-plugin@6.0.0: {}
 
-  fastify@5.12.5:
+  fastify@5.12.6:
     dependencies:
       '@fastify/ajv-compiler': 4.0.6
       '@fastify/error': 4.2.0
@@ -10375,7 +10375,7 @@ snapshots:
     dependencies:
       fp-ts: 1.19.3
 
-  ip-address@10.7.3: {}
+  ip-address@10.7.4: {}
 
   ipaddr.js@1.9.1: {}
 

@@ -1,5 +1,4 @@
 """Adversarial additive source profile checks; this suite never qualifies publication."""
-import copy
 import hashlib
 import json
 import pathlib
@@ -67,7 +66,7 @@ class DiscoverySourceProfile(unittest.TestCase):
         raw=(ROOT/P['BASELINE']).read_bytes()
         variants=[raw+b' '*100000, (json.dumps(json.loads(raw),indent=1)+'\n').encode()]
         for changed in variants:
-            self.assertTrue(changed!=raw)
+            self.assertNotEqual(changed, raw)
             self.assertEqual(json.loads(changed),json.loads(raw))
             def rejected(options):
                 with self.assertRaisesRegex(ValueError,'baseline.*byte|Baseline.*byte'):
