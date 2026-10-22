@@ -3,6 +3,15 @@
 > **[Mission Studio guide](docs/successor/MISSION_STUDIO.md)** · [Native Computer Use and reproducible laboratory](docs/successor/COMPUTER_USE_LEVELS.md) · [Research-to-usefulness journey](docs/successor/FIND_YOUR_ALPHA.md).
 > Free mission workspace · No account or wallet. Prepare an exact task for your own Computer Use runtime or an operator-led Work session. Keep your current approach until a better one earns the change.
 
+> **Autonomous Enterprises · Build the means of building.** Construct checked capabilities with Alpha, freeze
+> their bytes and inspect subsequent use through the same thirteen-section Evidence Docket. Jobs supplies its
+> distinct **AGIALPHA18** work/evidence route; Manager remains the alternative USDC6 route.
+> [Foundry source candidate](https://github.com/MontrealAI/AGI-Alpha-Agent-v0/pull/4855) ·
+> [Receiver contract and remaining acceptance](docs/successor/AUTONOMOUS_ENTERPRISES.md).
+> The source receiver is tested locally with a zero currency cap. Installed integration and the operational pilot
+> remain **NOT_RUN**. **Français :** aperçu source, capacités figées et réutilisables ; intégration installée et
+> pilote opérationnel **NOT_RUN**.
+
 # AGI Jobs v0 (v2)
 
 ## AGI Alpha Agent + AGI Jobs: one shared ecosystem
