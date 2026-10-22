@@ -133,13 +133,9 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                    'reason': 'Preserve exact Discovery receiver and finite '
                                                              'source-only controls through the prerequisite '
                                                              'merge'},
- 'docs/successor/DISCOVERY_INSTALLED_RELEASE.md': {'after': {'mode': '100644',
-                                                             'sha256': '8f0a4888eaa12c56d193e106ce1b3373801ca825b1e27ae20fe08e0c6ddc84e1'},
+ 'docs/successor/DISCOVERY_INSTALLED_RELEASE.md': {'after': {'mode': '100644', 'sha256': 'b5b59a1b0c613461a7a5647c1a7fdca8c4d27c50ef7395c5889b6247b05d56c1'},
                                                    'before': None,
-                                                   'reason': 'Implement separately gated source-bound '
-                                                             'installed archive, immutable Alpha transition, '
-                                                             'operator, retained mission evidence and '
-                                                             'release qualification'},
+                                                   'reason': 'Describe the installed reviewed Alpha61532 source and original common17 browser bindings accurately; retain separate original final-main producer/native/scanner/publication gates and explicit independent public Alpha asset-byte acceptance, without changing runtime or authority'},
  'docs/successor/DISCOVERY_LAB.md': {'after': {'mode': '100644',
                                                'sha256': '55e75ea1f35de29b2486d819c56e04ac042c6397225a3fbccb74f5435186dc4b'},
                                      'before': None,
