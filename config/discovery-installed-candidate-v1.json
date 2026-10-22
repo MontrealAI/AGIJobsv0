@@ -206,6 +206,39 @@
       },
       "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
     },
+    "demo/CULTURE-v0/indexers/culture-graph-indexer/package-lock.json": {
+      "before": {
+        "blob": "60ba190dbb77b0396d2691390b24eb5484386293",
+        "mode": "100644"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "3a7cdbcb2c27a33d69f6692ba7752437ed00e76a551a8e328bfab8e23c4dd04a"
+      },
+      "reason": "Patch only the CULTURE indexer Fastify5.12.5 to5.12.6 for GHSA-389g-gv7q-r4x8 and transitive ip-address10.7.3 to10.7.4 for GHSA-rxp7-6hxx-x8q5, with matching npm/pnpm lock records; preserve existing strict high/critical and failed-command audit checks, protected contract/compiler identities and legacy release bodies"
+    },
+    "demo/CULTURE-v0/indexers/culture-graph-indexer/package.json": {
+      "before": {
+        "blob": "c91b3f2d6f11ad0a0b0bde788ddfcb33a773db97",
+        "mode": "100644"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "cfd61d853a17190b4a10513a396b5c6dfebff444b95eb09f32bc19a95ef02886"
+      },
+      "reason": "Patch only the CULTURE indexer Fastify5.12.5 to5.12.6 for GHSA-389g-gv7q-r4x8 and transitive ip-address10.7.3 to10.7.4 for GHSA-rxp7-6hxx-x8q5, with matching npm/pnpm lock records; preserve existing strict high/critical and failed-command audit checks, protected contract/compiler identities and legacy release bodies"
+    },
+    "demo/CULTURE-v0/pnpm-lock.yaml": {
+      "before": {
+        "blob": "6023dfd3e6f38c274d268cc5a04db53c9acfdaef",
+        "mode": "100644"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "7b53e70de7fcd06328d0c4deeaf7c3270c67ddc6a3447ef6a72102ad3c1f3e1c"
+      },
+      "reason": "Patch only the CULTURE indexer Fastify5.12.5 to5.12.6 for GHSA-389g-gv7q-r4x8 and transitive ip-address10.7.3 to10.7.4 for GHSA-rxp7-6hxx-x8q5, with matching npm/pnpm lock records; preserve existing strict high/critical and failed-command audit checks, protected contract/compiler identities and legacy release bodies"
+    },
     "docs/successor/DISCOVERY_INSTALLED_RELEASE.md": {
       "before": null,
       "after": {
@@ -475,9 +508,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "603f6f26515803bde617f977a2a1cbd9c48e09fafc9b77dcc9f61eb18ca7728f"
+        "sha256": "2e85aff37de2a4952b3b2daa38f93aaf8534403d55bd476a7486fe8f52481e43"
       },
-      "reason": "Preserve exact Discovery receiver and finite source-only controls through the prerequisite merge"
+      "reason": "Preserve the ordinary Discovery source-profile negative cases while removing an unused copy import and using assertNotEqual for the existing byte-inequality assertion; resolve true Python quality findings without changing legacy profile, publisher, qualifier, query or accepted-record bodies"
     },
     "scripts/security/check-dependency-preservation.cjs": {
       "before": {
