@@ -273,13 +273,13 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                                             'controls through the '
                                                                             'prerequisite merge'},
  'package-lock.json': {'after': {'mode': '100644',
-                                 'sha256': 'bac9b147a450bf1da8bbfa7295f0dfa202d0b795698401268bbacb577c7af0b9'},
+                                 'sha256': '7eb338f7e47973481f49f8e677beb02ec8513ad4ae6e5ef7f35edf3e6ba34f52'},
                        'before': {'blob': '49676e6284cfb6aee1e953338e702b55fc01b3be', 'mode': '100644'},
-                       'reason': 'Preserve proposed rc18 metadata and patch only Next15.5.27 to15.5.28 for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r while preserving the seven protected contract/compiler dependency identities'},
+                       'reason': 'Preserve proposed rc18 metadata and the Next15.5.28 fixes for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r; patch only direct DOMPurify3.3.0 and nested3.4.16 to3.4.17 for GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr, deduplicating the compatible root node while preserving all seven protected contract/compiler dependency identities'},
  'package.json': {'after': {'mode': '100644',
-                            'sha256': '9ea637ad7657f01621e9a3a9666a99cda60ffdfa4a0338533391e9d13599d1e0'},
+                            'sha256': '2593efa7bd90eb75ab52eb9f935e7a62cbf614cee87d190eea84411d9618f856'},
                   'before': {'blob': 'd69a25b422673d9cb130be61fb45a9f4977317c9', 'mode': '100644'},
-                  'reason': 'Preserve proposed rc18 metadata and patch only Next15.5.27 to15.5.28 for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r while preserving the seven protected contract/compiler dependency identities'},
+                  'reason': 'Preserve proposed rc18 metadata and the Next15.5.28 fixes for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r; patch only direct DOMPurify3.3.0 and nested3.4.16 to3.4.17 for GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr, deduplicating the compatible root node while preserving all seven protected contract/compiler dependency identities'},
  'scripts/release/capture-discovery-browser-input.cjs': {'after': {'mode': '100644',
                                                                    'sha256': '170ef450c718e6a54719a970939d68a3b46b443adb017eadf15e35ab6c7adcfe'},
                                                          'before': None,
@@ -437,12 +437,10 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                    'GHSA-p3m5-59mp-jv5r while preserving '
                                                    'contract/compiler dependencies'},
  'apps/onebox/package-lock.json': {'after': {'mode': '100644',
-                                             'sha256': 'afa21b271aa87d1e90e2ca888a6f37ba06061b38d450f0efa1004b63e7c83892'},
+                                             'sha256': '676115c8943454ff3a9843cc4b3abd383a2bbd981708a3edcacdd71e18956907'},
                                    'before': {'blob': '0fbb3e3406f94cbc4a61721db924685bc8824644',
                                               'mode': '100644'},
-                                   'reason': 'Patch the exact Next15.5.28 dependency graph for '
-                                             'GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r while '
-                                             'preserving contract/compiler dependencies'},
+                                   'reason': 'Preserve the exact Next15.5.28 fixes for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r; patch only transitive DOMPurify3.4.16 to3.4.17 for GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr while preserving contract/compiler dependencies'},
  'apps/onebox/package.json': {'after': {'mode': '100644',
                                         'sha256': 'd3700df816d22e593a0ab53ae10b043c6aaa822f4ac8987ab81966c294d52a4f'},
                               'before': {'blob': '97930338ea29bb0e273d4721d99d2c6b92f992c1',
