@@ -598,9 +598,9 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "93f18da95feae6ed73fa39911f3e41bd7bb4dffb1d60aa336256813bc4979be6"
+        "sha256": "7f52b2cfa962332fdf532e00a0e103be1c7ea25c9a22a26fabfd2a505fd7c48c"
       },
-      "reason": "Trigger the existing exact-head all22 production dependency audit and compatibility workflow for the three named CULTURE indexer manifest/npm lock and workspace pnpm lock paths; preserve all existing surfaces, commands, thresholds, failed-command rejection and evidence retention"
+      "reason": "Retain exact-head all22 production audit, CULTURE path triggers, compatibility surfaces, thresholds and failed-command retention; write only workflow harness evidence to owned runner scratch, read both audit JSON outputs there and stage original artifact-relative report/SBOM/screenshot paths outside authenticated source; execute existing audit regression file in the library surface without filtering generated-source or weakening any guard"
     },
     "test/scripts/dependency-audit.test.cjs": {
       "before": {
@@ -609,9 +609,9 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "c600c0f1ecdfb54922d12a7ec8352811e55e0ab2c4df7fdc06ee610f3e1fcb41"
+        "sha256": "4f892ed1a5b519bf72b6bd0e71dda79052bcb5c355809790559d4ba27f337a7a"
       },
-      "reason": "Retain existing strict audit failure and dependency-input controls and prove the three named CULTURE inputs select the existing exact-head production-audit surface and all-lock command without continue-on-error"
+      "reason": "Retain all7 strict audit and CULTURE workflow test bodies; add two ordinary inert harness/reader cases proving scratch-only output, positive and failed log retention, unchanged logical artifact paths, mandatory source/generated commands and severity/error refusal, without claiming local execution or release approval"
     },
     "test/scripts/discovery-installed-dependency-preservation.test.cjs": {
       "before": null,
