@@ -343,6 +343,11 @@ test('security regressions stay isolated and mandatory in their source-bound wor
     invocation.env.EXPECTED_SOURCE,
     'dedicated tests must use the selected exact head'
   );
+  assert.equal(
+    checkout.with['fetch-depth'],
+    0,
+    'installed finite source proof requires authenticated owner ancestry'
+  );
   const setup = policy.steps.findIndex(
     (item) =>
       (item.uses || '').startsWith('actions/setup-node@') &&

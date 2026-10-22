@@ -4,7 +4,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { validateDiscoveryProtectedScope } from './discovery-protected-scope.mjs';
-import {auditInstalledGitRoot,installedGit,validateInstalledProtectedScope} from './discovery-installed-protected-scope.mjs';
+import {auditInstalledGitRoot,installedGit,validateInstalledProtectedScope,INSTALLED_PROTECTED_BASELINE} from './discovery-installed-protected-scope.mjs';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const installedEdition=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version==='2.1.0-rc.18';
@@ -57,9 +57,10 @@ assert.equal(ledger.baseline.deployedJobsSource, '818b3a246871e4cd4dde86558dbb91
 assert.equal(git('show', `${ledger.baseline.commit}:.github/codeql/config.yml`), fs.readFileSync(path.join(root, '.github/codeql/config.yml'), 'utf8').trim(), 'scanner query/path policy changed');
 const protectedPath = file => /^(contracts\/|config\/|deployment-config\/|deployment\/|deployments\/)/.test(file) || /(?:compiler-evidence|compiler-provenance|mainnet-deployment|deployment-addresses|configuration-readback|solidity-compiler|ethereum-mainnet)/.test(file) || (/receipts/i.test(file) && /\.json$/.test(file));
 const protectedFiles = git('ls-tree', '-r', '--name-only', ledger.baseline.commit).split('\n').filter(protectedPath);
-const changes = git('diff', '--name-only', ledger.baseline.commit, 'HEAD').split('\n').filter(Boolean);
+const scopeBaseline = installedEdition ? INSTALLED_PROTECTED_BASELINE : ledger.baseline.commit;
+const changes = git('diff', '--name-only', scopeBaseline, 'HEAD').split('\n').filter(Boolean);
 const discoveryScope = installedEdition
-  ? validateInstalledProtectedScope(root,ledger.baseline.commit,changes.filter(protectedPath))
+  ? validateInstalledProtectedScope(root,scopeBaseline,changes.filter(protectedPath))
   : validateDiscoveryProtectedScope(root, ledger.baseline.commit, changes.filter(protectedPath));
 assert.equal(git('diff', '--name-only', 'HEAD'), '', 'uncommitted tracked changes cannot be bound to HEAD qualification');
 assert.equal(ledger.qualification.productionApproved, false);

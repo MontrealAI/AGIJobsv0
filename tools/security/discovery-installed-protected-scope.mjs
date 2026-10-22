@@ -6,8 +6,9 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 export const REVIEWED_INSTALLED_POLICY=Object.freeze({
-  manifest:'567f69cb1464344a2d81194e94b2dbb7a66c9731990a0508d19ca75d4d3abc62',verifier:'2e965720858a76729c022da21d183209454417a57200dd778c346cb8ded84d2e'
+  manifest:'7a1c1b3f3cabfa9faac5d2b4981a2acf11a8a10c56b7d6a22e861c4b11eeb5c2',verifier:'00832c64a0588c1eca820089fea0af60387f13adb6ef2be0605492c84bcfd09b'
 });
+export const INSTALLED_PROTECTED_BASELINE='83065adf18a6ee987f8fa479a496a052d35db682';
 const MANIFEST='config/discovery-installed-candidate-v1.json';
 const VERIFIER='scripts/release/discovery-installed-profile.py';
 const SELF='tools/security/discovery-installed-protected-scope.mjs';
@@ -50,7 +51,7 @@ export function validateInstalledProtectedScope(root,baselineCommit,changes) {
   const pins={manifest:sha(bounded(path.join(root,MANIFEST))),verifier:sha(verifier),
     scopeVerifier:sha(bounded(path.join(root,SELF)))};
   assertReviewedInstalledPolicy(pins);
-  assert.equal(baselineCommit,'83065adf18a6ee987f8fa479a496a052d35db682');
+  assert.equal(baselineCommit,INSTALLED_PROTECTED_BASELINE);
   for(const name of [MANIFEST,VERIFIER,SELF]) {
     const committed=execFileSync('git',['--no-replace-objects','--no-pager','-C',root,'-c','protocol.allow=never',
       '-c','core.fsmonitor=false','-c','core.hooksPath=/dev/null','cat-file','blob','HEAD:'+name],

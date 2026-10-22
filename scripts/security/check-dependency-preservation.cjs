@@ -205,7 +205,36 @@ function checkSourceImpl(
   const reconcileReviewedSource =
     reviewedReachable &&
     (baseline === record.dependencyBaseline || baselineWithinFreeze);
-  if (reconcileReviewedSource) {
+  const packageFile = path.join(root, 'package.json');
+  const installedEdition =
+    fs.existsSync(packageFile) &&
+    JSON.parse(fs.readFileSync(packageFile, 'utf8')).version === '2.1.0-rc.18';
+  let installedSourceScope = null;
+  if (installedEdition) {
+    const script = `import {pathToFileURL} from 'node:url';
+const root=process.argv[1];
+const p=await import(pathToFileURL(root+'/tools/security/discovery-installed-protected-scope.mjs'));
+p.auditInstalledGitRoot(root);
+const changes=JSON.parse(process.argv[2]);
+console.log(JSON.stringify(p.validateInstalledProtectedScope(root,p.INSTALLED_PROTECTED_BASELINE,changes)));`;
+    installedSourceScope = JSON.parse(
+      execFileSync(
+        process.execPath,
+        [
+          '--input-type=module',
+          '-e',
+          script,
+          root,
+          JSON.stringify(changed.filter(protectedPath)),
+        ],
+        { encoding: 'utf8', timeout: 90000, maxBuffer: 2000000 }
+      )
+    );
+    assert.equal(installedSourceScope.completeTrackedSourceVerified, true);
+    assert.equal(installedSourceScope.sourceCommit, head);
+    assert.equal(installedSourceScope.releaseQualified, false);
+    generatedSourceBaseline = head;
+  } else if (reconcileReviewedSource) {
     generatedSourceBaseline = verifyReviewedSource({
       root,
       baseline,
@@ -252,6 +281,7 @@ function checkSourceImpl(
     generatedSourceBaseline,
     protectedSourceChanged: changed.some(protectedPath),
     reviewedSourceReconciled: reconcileReviewedSource,
+    installedSourceScope,
     selectedDependencyIdentitiesPreserved: preserved,
   };
 }

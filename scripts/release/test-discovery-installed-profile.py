@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: MIT
 """Ordinary finite source/preparation checks; no Alpha code or service is run."""
-import hashlib
 import json
 import pathlib
 import os

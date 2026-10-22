@@ -7,7 +7,6 @@ import io
 import json
 import pathlib
 import os
-import re
 import shutil
 import subprocess
 import runpy
