@@ -17,7 +17,11 @@ BASELINE = 'config/discovery-lab-source-baseline-v1.json'
 BASELINE_SHA256 = 'd7225ecab094653482593057be4b018e0c61dfb7c1c592baa134dc668fa81a65'
 VERIFIER = 'scripts/release/discovery-lab-profile.py'
 SCOPE_VERIFIER = 'tools/security/discovery-protected-scope.mjs'
-TRANSITIONS = {'tools/security/validate-codeql-remediation.mjs': {'mode': '100644', 'blob': '9657ecd2c072276276079e55fde51c5b66b8b37c'}}
+TRANSITIONS = {
+    'tools/security/validate-codeql-remediation.mjs': {'mode': '100644', 'blob': '9657ecd2c072276276079e55fde51c5b66b8b37c'},
+    'hardhat.config.js': {'mode': '100644', 'blob': '8d201a5f8af39ccefa4970e6839584abcc1720ba'},
+    'test/scripts/hardhat-test-discovery.test.cjs': {'mode': '100644', 'blob': '25707f312769272f1f88a6d12b1c709ac07d0ae9'},
+}
 ALLOWED = {'test/security/discovery-protected-scope.test.mjs', 'integrations/alpha-agent/discovery-lab-work-request.test.mjs', 'integrations/alpha-agent/discovery-lab-native-test.mjs', 'integrations/alpha-agent/discovery-lab-work-request.mjs', '.github/workflows/discovery-lab-receiver.yml', 'docs/successor/DISCOVERY_LAB.md', 'scripts/release/test-discovery-lab-profile.py', 'integrations/alpha-agent/fixtures/discovery-lab-request.json', 'integrations/alpha-agent/discovery-lab-contract.mjs', 'config/discovery-lab-alpha-source.json'}
 CLAIMS = {'sourcePackageOnly': True, 'releaseQualified': False,
           'releaseIdentity': None, 'publicationApproved': False, 'executionApproved': False}
@@ -102,15 +106,15 @@ def inventory(root, selection):
                 and isinstance(after['sha256'], str) and re.fullmatch('[0-9a-f]{64}', after['sha256']), 'Candidate added input identity differs')
         expected[name] = dict(after)
     transitions = manifest['transitions']
-    require(isinstance(transitions, dict) and set(transitions) == set(TRANSITIONS), 'Only the exact reviewed validator transition is admitted')
+    require(isinstance(transitions, dict) and set(transitions) == set(TRANSITIONS), 'Only the exact reviewed validator and test-isolation transitions are admitted')
     for name, before in TRANSITIONS.items():
         item = transitions[name]
         require(isinstance(item, dict) and set(item) == {'before', 'after', 'reason'}
                 and same(item['before'], before) and same(expected.get(name), before)
-                and isinstance(item['reason'], str) and item['reason'].strip(), 'Validator before-source proof differs')
+                and isinstance(item['reason'], str) and item['reason'].strip(), 'Reviewed transition before-source proof differs')
         after = item['after']
         require(isinstance(after, dict) and set(after) == {'mode', 'sha256'} and after['mode'] == '100644'
-                and isinstance(after['sha256'], str) and re.fullmatch('[0-9a-f]{64}', after['sha256']), 'Validator after-source proof differs')
+                and isinstance(after['sha256'], str) and re.fullmatch('[0-9a-f]{64}', after['sha256']), 'Reviewed transition after-source proof differs')
         expected[name] = dict(after)
     expected[MANIFEST] = {'mode': '100644', 'sha256': selection['manifestSha256']}
     expected[VERIFIER] = {'mode': '100644', 'sha256': selection['verifierSha256']}
