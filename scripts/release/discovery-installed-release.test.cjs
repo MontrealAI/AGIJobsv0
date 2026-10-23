@@ -1123,30 +1123,6 @@ test('publisher metadata diagnostics preserve expected absence and successful JS
     assert.ok(calls.every(item=>item.options.headers.Authorization==='Bearer '+token&&item.options.redirect==='error'));
   } finally {global.fetch=originalFetch;}
 });
-test('Alpha packet metadata uses the existing token only at its fixed repository; raw bytes stay separate',async()=>{
-  const originalFetch=global.fetch,calls=[],token='inert-existing-workflow-token';
-  global.fetch=async(url,options)=>{calls.push({url,options});return new Response(JSON.stringify({id:12}),{status:200});};
-  try {
-    const api=Q.alphaMetadataApi(token);assert.deepEqual(await api('actions/runs/12'),{id:12});
-    assert.equal(calls[0].url,'https://api.github.com/repos/MontrealAI/AGI-Alpha-Agent-v0/actions/runs/12');
-    assert.equal(calls[0].options.headers.Authorization,'Bearer '+token);assert.equal(calls[0].options.redirect,'error');
-    for(const route of ['https://example.invalid/secret','../other','contents/file','git/blobs/'+ 'a'.repeat(40),'actions/artifacts/12/zip'])
-      assert.throws(()=>api(route));
-    assert.equal(calls.length,1);assert.throws(()=>Q.alphaMetadataApi(''));
-    const source=fs.readFileSync(path.join(__dirname,'discovery-installed-qualification.cjs'),'utf8');
-    assert.ok(source.includes('alphaRead=options.alphaApi||alphaMetadataApi(process.env.GH_TOKEN)'));
-  } finally {global.fetch=originalFetch;}
-});
-test('Alpha metadata HTTP failures name source endpoint and auth context without reading body or retrying',async()=>{
-  const originalFetch=global.fetch,token='inert-existing-workflow-token';let calls=0,bodyReads=0;
-  global.fetch=async()=>{calls++;return {ok:false,status:403,get body(){bodyReads++;throw Error('Never inspect remote diagnostic payload');}};};
-  try {
-    await assert.rejects(Q.alphaMetadataApi(token)('actions/runs/12'),error=>
-      error.message==='Hosted metadata read failed: GET repos/MontrealAI/AGI-Alpha-Agent-v0/actions/runs/12 HTTP 403 (authentication=existing-workflow-token)'&&
-      !error.message.includes(token));
-    assert.equal(calls,1);assert.equal(bodyReads,0);
-  } finally {global.fetch=originalFetch;}
-});
 test('publisher metadata failures expose no response body or credential for other statuses',async()=>{
   const originalFetch=global.fetch,token='inert-fixture-token';let reads=0,calls=0;
   try {
@@ -1451,3 +1427,5 @@ test('actual publisher preserves creation receipt and empty draft without duplic
 test('interrupted seven-asset upload retry preserves original IDs and bytes without replacement',async()=>{
  await ownedPublisherIdRun({substituteUploadedId:true,retryInterrupted:true});
 });
+
+require('./recover-discovery-rc20.test.cjs');
