@@ -452,9 +452,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "563acaa36d0acc56da446fc4c4f399e10f68c625e1b662ba5b7e761a52cb8f22"
+        "sha256": "5f3ffe9c0b9257dc20985b12b4af8b30f23c3c531dcb5c3bfa1dc100ddf0773b"
       },
-      "reason": "Retain all33 existing inert release test bodies; add24 ordinary source-specific Alpha615 asset, selected-attempt main-branch job and whole-publication cases, including independent literal97-name equality, paginated inert payloads and consistent omission/refusal controls, without claiming executed tests or actual public downloads"
+      "reason": "Retain all57 existing inert release test bodies, including the original33 bodies and24 source-specific Alpha615 profile/job/publication cases; append seven ordinary fake-API cases reproducing the actual large-record publisher caller and preserving small Contents reads while rejecting missing or mismatched metadata, substitution, truncation, noncanonical base64, oversize and changed record selectors; no actual public download or qualification claim"
     },
     "scripts/release/discovery-lab-profile.py": {
       "before": null,
@@ -484,9 +484,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "49b5fdb589e4498a5fa12bb5e1ffc4b0ed265acff9f6e34f8244934beebd4ce5"
+        "sha256": "8b26384360a61b1d41768fda82ce7047f417949cccc5dc06d31a6d18d899f736"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Preserve all separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification checks; read the exact bounded immutable publication record through Contents metadata and, only for encoding none, its same-repository Git blob SHA, requiring canonical base64, exact declared size, Git blob SHA1 and independently selected SHA256 before any release operation"
     },
     "scripts/release/test-discovery-installed-archive.py": {
       "before": null,

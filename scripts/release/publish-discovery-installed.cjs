@@ -4,6 +4,7 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
+const crypto=require('node:crypto');
 const {execFileSync}=require('node:child_process');
 const Q=require('./discovery-installed-qualification.cjs');
 const RECORD_PATH='docs/successor/evidence/discovery-installed-publication-review.json';
@@ -27,6 +28,30 @@ function apiClient(token) {
     try {while(true){const item=await reader.read();if(item.done)break;size+=item.value.length;assert.ok(size<=16_000_000);chunks.push(Buffer.from(item.value));}}
     finally{await reader.cancel();}return Q.json(Buffer.concat(chunks));
   };
+}
+async function publicationRecordBytes(api,recordCommit,recordSha256) {
+  assert.match(recordCommit||'',/^[a-f0-9]{40}$/);assert.match(recordSha256||'',/^[a-f0-9]{64}$/);
+  const entry=await api('contents/'+RECORD_PATH+'?ref='+recordCommit);
+  assert.equal(entry.type,'file');assert.equal(entry.path,RECORD_PATH);
+  assert.match(entry.sha||'',/^[a-f0-9]{40}$/);
+  assert.ok(Number.isSafeInteger(entry.size)&&entry.size>0&&entry.size<=8_000_000,'Publication record size differs from its existing bound');
+  assert.ok(entry.encoding==='base64'||entry.encoding==='none');assert.equal(typeof entry.content,'string');
+  let encoded=entry.content;
+  if(entry.encoding==='none') {
+    assert.equal(entry.content,'','Encoding-none Contents metadata must not embed record bytes');
+    const blob=await api('git/blobs/'+entry.sha);
+    assert.equal(blob.sha,entry.sha);assert.equal(blob.size,entry.size);assert.equal(blob.encoding,'base64');
+    assert.equal(typeof blob.content,'string');encoded=blob.content;
+  }
+  const canonical=encoded.replace(/[ \t\r\n]/g,'');
+  assert.equal(canonical.length,4*Math.ceil(entry.size/3),'Publication record base64 length differs');
+  assert.match(canonical,/^[A-Za-z0-9+/]*={0,2}$/);
+  const bytes=Buffer.from(canonical,'base64');
+  assert.equal(bytes.length,entry.size,'Publication record decoded size differs');
+  assert.equal(bytes.toString('base64'),canonical,'Publication record base64 is not canonical');
+  const sha=crypto.createHash('sha1').update(Buffer.from('blob '+bytes.length+'\0')).update(bytes).digest('hex');
+  assert.equal(sha,entry.sha,'Publication record Git blob identity differs');
+  assert.equal(Q.hash(bytes),recordSha256,'Publication record SHA256 differs');return bytes;
 }
 async function tagCommit(api,tag) {
   let object=(await api('git/ref/tags/'+tag,{absent:true}))?.object;
@@ -92,9 +117,7 @@ async function publish(options,{api=apiClient(process.env.GH_TOKEN),command=gh}=
   assert.equal(process.env.GITHUB_ACTOR,process.env.GITHUB_REPOSITORY_OWNER,'Owner-selected software publication only');
   const {recordCommit,recordSha256,output}=options;
   const source=Q.sourceProof(options);assert.equal(source.sourceCommit,process.env.GITHUB_SHA);
-  const remote=await api('contents/'+RECORD_PATH+'?ref='+recordCommit);
-  assert.equal(remote.type,'file');assert.equal(remote.encoding,'base64');
-  const recordBytes=Buffer.from(remote.content.replace(/\s+/g,''),'base64');assert.equal(Q.hash(recordBytes),recordSha256);
+  const recordBytes=await publicationRecordBytes(api,recordCommit,recordSha256);
   const record=Q.json(recordBytes);
   // The record is separate immutable public evidence so it can name the exact source commit.
   assert.equal(record.source?.commit,source.sourceCommit);assert.equal(record.source?.tree,source.sourceTree);
@@ -159,7 +182,7 @@ async function publish(options,{api=apiClient(process.env.GH_TOKEN),command=gh}=
     draftAndPublicBytesIndependentlyDownloaded:true,productionApproved:false,authority:'none'};
   fs.writeFileSync(path.join(privateRoot,'public-byte-observation.json'),JSON.stringify(observation,null,2)+'\n',{flag:'wx'});return observation;
 }
-module.exports={args,RECORD_PATH,apiClient,tagCommit,requireAbsent,verifyAssets,assetLease,draftLease,prerequisiteLease,verifyPublicationLeases,publish};
+module.exports={args,RECORD_PATH,apiClient,publicationRecordBytes,tagCommit,requireAbsent,verifyAssets,assetLease,draftLease,prerequisiteLease,verifyPublicationLeases,publish};
 if(require.main===module) {
   (async()=>publish(args(process.argv.slice(2))))().then(value=>console.log(JSON.stringify(value,null,2)))
     .catch(error=>{console.error(error.message);process.exitCode=1;});

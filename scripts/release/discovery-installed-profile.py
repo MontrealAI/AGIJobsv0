@@ -266,9 +266,13 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                                         'immutable Alpha transition, '
                                                                         'operator, retained mission evidence '
                                                                         'and release qualification'},
- 'scripts/release/discovery-installed-release.test.cjs': {'after': {'mode': '100644', 'sha256': '563acaa36d0acc56da446fc4c4f399e10f68c625e1b662ba5b7e761a52cb8f22'},
-                                                          'before': None,
-                                                          'reason': 'Retain all33 existing inert release test bodies; add24 ordinary source-specific Alpha615 asset, selected-attempt main-branch job and whole-publication cases, including independent literal97-name equality, paginated inert payloads and consistent omission/refusal controls, without claiming executed tests or actual public downloads'},
+ 'scripts/release/discovery-installed-release.test.cjs': {'before': None,
+ 'after': {'mode': '100644', 'sha256': '5f3ffe9c0b9257dc20985b12b4af8b30f23c3c531dcb5c3bfa1dc100ddf0773b'},
+ 'reason': 'Retain all57 existing inert release test bodies, including the original33 bodies and24 '
+           'source-specific Alpha615 profile/job/publication cases; append seven ordinary fake-API cases '
+           'reproducing the actual large-record publisher caller and preserving small Contents reads while '
+           'rejecting missing or mismatched metadata, substitution, truncation, noncanonical base64, oversize and '
+           'changed record selectors; no actual public download or qualification claim'},
  'scripts/release/discovery-lab-profile.py': {'after': {'mode': '100644',
                                                         'sha256': '4da6958cd88f4e596aaa5947f398d2367009bb9bfe487fcfa1d0bf17b4cd348b'},
                                               'before': None,
@@ -288,13 +292,13 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                     'reason': 'Implement separately gated installed runtime '
                                                               'and independently authenticated standalone '
                                                               'bootstrap'},
- 'scripts/release/publish-discovery-installed.cjs': {'after': {'mode': '100644',
-                                                               'sha256': '49b5fdb589e4498a5fa12bb5e1ffc4b0ed265acff9f6e34f8244934beebd4ce5'},
-                                                     'before': None,
-                                                     'reason': 'Implement separately gated source-bound '
-                                                               'installed archive, immutable Alpha '
-                                                               'transition, operator, retained mission '
-                                                               'evidence and release qualification'},
+ 'scripts/release/publish-discovery-installed.cjs': {'before': None,
+ 'after': {'mode': '100644', 'sha256': '8b26384360a61b1d41768fda82ce7047f417949cccc5dc06d31a6d18d899f736'},
+ 'reason': 'Preserve all separately gated source-bound installed archive, immutable Alpha transition, operator, '
+           'retained mission evidence and release qualification checks; read the exact bounded immutable '
+           'publication record through Contents metadata and, only for encoding none, its same-repository Git '
+           'blob SHA, requiring canonical base64, exact declared size, Git blob SHA1 and independently selected '
+           'SHA256 before any release operation'},
  'scripts/release/test-discovery-installed-archive.py': {'after': {'mode': '100644',
                                                                    'sha256': '41800950cd4d7f4ed9e7d89ead7fb3112b54d138ee4dc4b79790188e2dce85cd'},
                                                          'before': None,
