@@ -1134,7 +1134,7 @@ test('publisher metadata failures expose no response body or credential for othe
   } finally {global.fetch=originalFetch;}
 });
 function ownedReleaseRow(id,extra={}) {
-  return {id,tag_name:'inert-'+id,target_commitish:source.sourceCommit,draft:true,prerelease:true,
+  return {id,url:'https://api.github.com/repos/'+Q.REPOSITORY+'/releases/'+id,tag_name:'inert-'+id,target_commitish:source.sourceCommit,draft:true,prerelease:true,
     name:P.RELEASE_TITLE,body:P.RELEASE_NOTES,created_at:'2026-10-23T00:00:00Z',
     updated_at:'2026-10-23T00:00:00Z',assets:[],...extra};
 }
@@ -1169,15 +1169,15 @@ test('created draft uses its unique new ID and exact intended metadata rather th
   const draft=ownedReleaseRow(500,{tag_name:Q.TAG}),first=Array.from({length:100},(_,i)=>ownedReleaseRow(i+1)),calls=[];
   const api=async route=>{calls.push(route);if(route==='releases?per_page=100&page=1')return first;
     if(route==='releases?per_page=100&page=2')return [draft];assert.equal(route,'releases/500');return structuredClone(draft);};
-  assert.deepEqual(await P.createdDraft(api,source,first),draft);
-  assert.equal(calls.at(-1),'releases/500');assert.ok(!calls.some(route=>route.startsWith('releases/tags/')));
+  assert.deepEqual(await P.createdDraft(api,source,first,draft),draft);
+  assert.equal(calls[0],'releases/500');assert.ok(!calls.some(route=>route.startsWith('releases/tags/')));
   for(const mutate of [r=>r.name='substituted',r=>r.body='substituted',r=>r.target_commitish='f'.repeat(40),
     r=>r.draft=false,r=>r.assets=[{id:1}],r=>r.id=501]) {
     const changed=structuredClone(draft);mutate(changed);
-    await assert.rejects(P.createdDraft(async route=>route.startsWith('releases?')?[draft]:changed,source,first));
+    await assert.rejects(P.createdDraft(async route=>route.startsWith('releases?')?[draft]:changed,source,first,draft));
   }
-  await assert.rejects(P.createdDraft(async()=>[draft,ownedReleaseRow(501,{tag_name:Q.TAG})],source,first),/exactly one/);
-  await assert.rejects(P.createdDraft(async()=>[draft],source,[draft]),/historical release ID/);
+  await assert.rejects(P.createdDraft(async route=>route==='releases/500'?draft:[draft,ownedReleaseRow(501,{tag_name:Q.TAG})],source,first,draft),/exactly one/);
+  await assert.rejects(P.createdDraft(async()=>[draft],source,[draft],draft),/historical release ID/);
 });
 function ownedAssetFixture(t) {
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'discovery-id-assets-'));
@@ -1289,7 +1289,7 @@ test('actual publisher rejects a private candidate collision before qualificatio
     for(const key of keys)if(previous[key]===undefined)delete process.env[key];else process.env[key]=previous[key];
     fs.rmSync(root,{recursive:true,force:true});}
 });
-async function ownedPublisherIdRun({substituteUploadedId=false}={}) {
+async function ownedPublisherIdRun({substituteUploadedId=false,hideCreatedId=false}={}) {
   const parent=fs.mkdtempSync(path.join(os.tmpdir(),'discovery-owned-publish-')),root=path.join(parent,'source'),output=path.join(parent,'publish');
   fs.mkdirSync(root,{mode:0o700});
   const prerequisite={id:20,tag_name:'source-v2.1.0-rc.17',target_commitish:'c'.repeat(40),draft:false,prerelease:true,published_at:'2026-10-22T00:00:00Z',
@@ -1319,16 +1319,16 @@ async function ownedPublisherIdRun({substituteUploadedId=false}={}) {
       if(route==='git/ref/tags/'+Q.TAG)return tag?{object:{type:'commit',sha:tag}}:null;
       if(route==='releases/tags/'+Q.TAG){assert.equal(draft,null,'A private draft must never be read by published-tag lookup');return null;}
       if(route==='releases?per_page=100&page=1')return [structuredClone(prerequisite),...(draft?[structuredClone(draft)]:[])];
-      if(route==='releases/500')return structuredClone(draft);
+      if(route==='releases/500')return hideCreatedId?null:structuredClone(draft);
       throw Error('Unexpected owned publisher ID route: '+route);
     };
     const command=values=>{
       commands.push(values);
-      if(values[0]==='release') {
-        assert.deepEqual(values.slice(0,3),['release','create',Q.TAG]);assert.equal(draft,null);
-        assert.equal(values[values.indexOf('--title')+1],P.RELEASE_TITLE);
-        assert.equal(values[values.indexOf('--notes')+1],P.RELEASE_NOTES);
-        draft=ownedReleaseRow(500,{tag_name:Q.TAG});return Buffer.from('inert created draft\n');
+      if(values[2]==='POST') {
+        assert.deepEqual(values.slice(0,4),['api','--method','POST','repos/'+Q.REPOSITORY+'/releases']);assert.equal(draft,null);
+        assert.ok(values.includes('name='+P.RELEASE_TITLE));
+        assert.ok(values.includes('body='+P.RELEASE_NOTES));
+        draft=ownedReleaseRow(500,{tag_name:Q.TAG});return Buffer.from(JSON.stringify(draft));
       }
       assert.deepEqual(values,['api','--method','PATCH','repos/'+Q.REPOSITORY+'/releases/500','--field','draft=false','--field','prerelease=true']);
       assert.equal(calls.at(-1),'git/ref/heads/main','The source lease must remain the final server read before publication');
@@ -1347,7 +1347,13 @@ async function ownedPublisherIdRun({substituteUploadedId=false}={}) {
       assetReads.push(id);const asset=release.assets.find(row=>row.id===id);assert.ok(asset);
       return fs.readFileSync(path.join(output,asset.name));
     }});
-    if(substituteUploadedId) {
+    if(hideCreatedId) {
+      await assert.rejects(P.publish({root,output,recordCommit:f.recordCommit,recordSha256:f.recordSha256},{api,command,upload,download}),/preserve draft and creation receipt/);
+      assert.equal(commands.length,1);assert.equal(uploads.length,0);assert.equal(assetReads.length,0);
+      assert.equal(draft.draft,true);assert.deepEqual(draft.assets,[]);assert.equal(tag,null);
+      assert.equal(JSON.parse(fs.readFileSync(output+'.creation-response.json','utf8')).id,500);
+      assert.equal(calls.filter(route=>route==='releases/500').length,5);
+    } else if(substituteUploadedId) {
       await assert.rejects(P.publish({root,output,recordCommit:f.recordCommit,recordSha256:f.recordSha256},{api,command,upload,download}),
         /Uploaded asset IDs changed/);
       assert.equal(commands.length,1);assert.equal(assetReads.length,0);assert.equal(draft.draft,true);
@@ -1374,4 +1380,34 @@ test('release asset HTTP refusals retain only exact fixed method route and actua
       error=>error.message==='Release asset GET repos/'+Q.REPOSITORY+'/releases/assets/800 HTTP '+status);
     assert.equal(response.state.reads,0);assert.equal(response.state.cancels,1);
   }
+});
+
+
+test('creation response ID tolerates bounded read-only visibility without another creation',async()=>{
+ const draft=ownedReleaseRow(500,{tag_name:Q.TAG});let reads=0,delays=0;const calls=[];
+ const api=async(route,options)=>{calls.push(route);if(route==='releases/500'){assert.equal(options.absent,true);return ++reads<3?null:structuredClone(draft);}
+   assert.equal(route,'releases?per_page=100&page=1');return reads<3?[]:[structuredClone(draft)];};
+ assert.deepEqual(await P.createdDraft(api,source,[],draft,{delay:async ms=>{assert.equal(ms,2000);delays++;}}),draft);
+ assert.equal(reads,3);assert.equal(delays,2);assert.equal(calls.length,6);
+});
+test('creation response absence terminates and identity mismatches never retry',async()=>{
+ const draft=ownedReleaseRow(500,{tag_name:Q.TAG});let reads=0,delays=0;
+ await assert.rejects(P.createdDraft(async route=>{reads++;return route==='releases/500'?null:[];},source,[],draft,{delay:async()=>{delays++;}}),/preserve draft and creation receipt/);
+ assert.equal(reads,10);assert.equal(delays,4);
+ for(const mutate of [r=>r.url='https://api.github.com/repos/other/repo/releases/500',r=>r.name='wrong',r=>r.body='wrong',r=>r.target_commitish='f'.repeat(40),r=>r.draft=false,r=>r.assets=[{id:7}]]){
+   const changed=structuredClone(draft);mutate(changed);let calls=0;
+   await assert.rejects(P.createdDraft(async()=>{calls++;return draft;},source,[],changed,{delay:async()=>assert.fail('must not delay')}));assert.equal(calls,0);
+ }
+ const collision=ownedReleaseRow(501,{tag_name:Q.TAG});
+ await assert.rejects(P.createdDraft(async route=>route==='releases/500'?draft:[collision],source,[],draft,{delay:async()=>assert.fail('must not delay')}),/different release ID/);
+});
+test('publisher failure evidence retains only the bounded creation response outside uploaded release assets',()=>{
+ const workflow=fs.readFileSync(path.join(__dirname,'../../.github/workflows/discovery-installed-release.yml'),'utf8');
+ assert.match(workflow,/name: Retain bounded draft creation response\n\s+if: always\(\)/);
+ assert.match(workflow,/path: \$\{\{ runner.temp \}\}\/discovery-installed-release-assets.creation-response.json/);
+ assert.ok(!P.ASSET_NAMES.some(name=>name.includes('creation-response')));
+});
+
+test('actual publisher preserves creation receipt and empty draft without duplicate POST after invisible ID',async()=>{
+ await ownedPublisherIdRun({hideCreatedId:true});
 });

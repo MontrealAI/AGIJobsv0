@@ -90,18 +90,36 @@ function draftMetadata(release) {
   return Object.fromEntries(['id','tag_name','target_commitish','draft','prerelease','name','body','created_at','updated_at']
     .map(key=>[key,release[key]]));
 }
-async function createdDraft(api,source,before) {
-  assert.ok(Array.isArray(before));
-  const matches=(await releaseInventory(api)).filter(row=>row.tag_name===Q.TAG);
-  assert.equal(matches.length,1,'The newly created tag must identify exactly one draft');
-  assert.ok(!before.some(row=>row.id===matches[0].id),'A historical release ID cannot be adopted');
-  const current=await api('releases/'+matches[0].id);
-  assert.deepEqual(draftMetadata(current),draftMetadata(matches[0]),'Created draft inventory and ID read differ');
-  assert.equal(current.target_commitish,source.sourceCommit,'Created draft target differs from qualified source');
-  assert.equal(current.name,RELEASE_TITLE,'Created draft title differs from this publication');
-  assert.equal(current.body,RELEASE_NOTES,'Created draft notes differ from this publication');
-  assert.deepEqual(current.assets,[],'Newly created draft must be empty before its own uploads');
-  return current;
+function createdIdentity(release,source) {
+  draftMetadata(release);
+  assert.equal(release.url,'https://api.github.com/repos/'+Q.REPOSITORY+'/releases/'+release.id,'Created draft repository/ID differs');
+  assert.equal(release.target_commitish,source.sourceCommit,'Created draft target differs from qualified source');
+  assert.equal(release.name,RELEASE_TITLE,'Created draft title differs from this publication');
+  assert.equal(release.body,RELEASE_NOTES,'Created draft notes differ from this publication');
+  assert.deepEqual(release.assets,[],'Newly created draft must be empty before its own uploads');
+  return release;
+}
+async function createdDraft(api,source,before,creation,{attempts=5,delay=ms=>new Promise(resolve=>setTimeout(resolve,ms))}={}) {
+  assert.ok(Array.isArray(before));createdIdentity(creation,source);
+  assert.ok(!before.some(row=>row.id===creation.id),'A historical release ID cannot be adopted');
+  assert.ok(Number.isSafeInteger(attempts)&&attempts>=1&&attempts<=5);assert.equal(typeof delay,'function');
+  for(let attempt=0;attempt<attempts;attempt++) {
+    const current=await api('releases/'+creation.id,{absent:true});
+    if(current!==null) {
+      createdIdentity(current,source);
+      assert.deepEqual(draftMetadata(current),draftMetadata(creation),'Created draft response and ID read differ');
+    }
+    const matches=(await releaseInventory(api)).filter(row=>row.tag_name===Q.TAG);
+    assert.ok(matches.length<=1,'The newly created tag must identify exactly one draft');
+    if(matches.length) {
+      createdIdentity(matches[0],source);
+      assert.equal(matches[0].id,creation.id,'Created tag identifies a different release ID');
+      assert.deepEqual(draftMetadata(matches[0]),draftMetadata(creation),'Created draft inventory and response differ');
+    }
+    if(current!==null&&matches.length===1)return current;
+    if(attempt+1<attempts)await delay(2000);
+  }
+  throw Error('Created release ID '+creation.id+' did not become visible within bounded read-only reconciliation; preserve draft and creation receipt');
 }
 async function uploadAssets(release,directory,expected,{fetcher=fetch,token=process.env.GH_TOKEN}={}) {
   draftMetadata(release);assert.deepEqual(release.assets,[]);
@@ -230,9 +248,14 @@ async function publish(options,{api=apiClient(process.env.GH_TOKEN),command=gh,u
   fs.writeFileSync(path.join(output,'SHA256SUMS.txt'),sums,{flag:'wx'});files['SHA256SUMS.txt']=Q.hash(sums);
   assert.equal((await api('git/ref/heads/main')).object?.sha,source.sourceCommit,'Actual main moved before draft creation');
   const beforeDraft=await requireAbsent(api,Q.TAG);
-  command(['release','create',Q.TAG,'--repo',Q.REPOSITORY,'--target',source.sourceCommit,'--draft','--prerelease',
-    '--title',RELEASE_TITLE,'--notes',RELEASE_NOTES]);
-  const created=await createdDraft(api,source,beforeDraft);
+  // Create once; never retry a POST or rediscover ownership from a tag alone.
+  const creationBytes=command(['api','--method','POST','repos/'+Q.REPOSITORY+'/releases',
+    '--raw-field','tag_name='+Q.TAG,'--raw-field','target_commitish='+source.sourceCommit,
+    '--field','draft=true','--field','prerelease=true','--raw-field','name='+RELEASE_TITLE,'--raw-field','body='+RELEASE_NOTES]);
+  assert.ok(Buffer.isBuffer(creationBytes)&&creationBytes.length>0&&creationBytes.length<=1_000_000,'Bounded creation JSON response is required');
+  fs.writeFileSync(output+'.creation-response.json',creationBytes,{flag:'wx',mode:0o600});
+  const creation=Q.json(creationBytes);
+  const created=await createdDraft(api,source,beforeDraft,creation);
   const expected=Object.fromEntries(Object.entries(files).map(([name,sha256])=>[name,{sha256,bytes:fs.statSync(path.join(output,name)).size}]));
   const uploaded=assetLease(await upload(created,output,expected),expected);
   const draft=await api('releases/'+created.id);assert.equal(draft.draft,true);assert.equal(draft.prerelease,true);
@@ -264,8 +287,9 @@ async function publish(options,{api=apiClient(process.env.GH_TOKEN),command=gh,u
     draftAndPublicBytesIndependentlyDownloaded:true,productionApproved:false,authority:'none'};
   fs.writeFileSync(path.join(privateRoot,'public-byte-observation.json'),JSON.stringify(observation,null,2)+'\n',{flag:'wx'});return observation;
 }
-module.exports={args,RECORD_PATH,ASSET_NAMES,RELEASE_TITLE,RELEASE_NOTES,apiClient,publicationRecordBytes,tagCommit,releaseInventory,requireAbsent,createdDraft,uploadAssets,downloadAssets,verifyAssets,assetLease,draftLease,prerequisiteLease,verifyPublicationLeases,publish};
+module.exports={args,RECORD_PATH,ASSET_NAMES,RELEASE_TITLE,RELEASE_NOTES,apiClient,publicationRecordBytes,tagCommit,releaseInventory,requireAbsent,createdIdentity,createdDraft,uploadAssets,downloadAssets,verifyAssets,assetLease,draftLease,prerequisiteLease,verifyPublicationLeases,publish};
 if(require.main===module) {
   (async()=>publish(args(process.argv.slice(2))))().then(value=>console.log(JSON.stringify(value,null,2)))
     .catch(error=>{console.error(error.message);process.exitCode=1;});
 }
+
