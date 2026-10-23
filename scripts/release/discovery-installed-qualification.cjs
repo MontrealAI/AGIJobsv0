@@ -11,7 +11,7 @@ const {createRequire} = require('node:module');
 const REPOSITORY = 'MontrealAI/AGIJobsv0';
 const ALPHA_REPOSITORY = 'MontrealAI/AGI-Alpha-Agent-v0';
 const WORKFLOW = '.github/workflows/discovery-installed-release.yml';
-const VERSION = '2.1.0-rc.18';
+const VERSION = '2.1.0-rc.19';
 const TAG = 'discovery-v' + VERSION;
 const PYTHON_WORKFLOW = '.github/workflows/discovery-installed-python-analysis.yml';
 const NODES = Object.freeze(['22.23.3', '24.21.0']);
@@ -437,10 +437,16 @@ function liveApi(token,repository=REPOSITORY) {
     finally{await reader.cancel();}return json(Buffer.concat(chunks));
   };
 }
-async function download(route,{fetcher=fetch,token=process.env.GH_TOKEN}={}) {
-  assert.ok(/^actions\/(?:artifacts\/[1-9][0-9]*\/zip|jobs\/[1-9][0-9]*\/logs)$/.test(route));
+async function download(route,options={}) {return downloadBytes(route,options,false);}
+async function downloadReleaseAsset(assetId,options={}) {
+  assert.ok(positive(assetId),'An exact positive release asset ID is required');
+  return downloadBytes('releases/assets/'+assetId,options,true);
+}
+async function downloadBytes(route,{fetcher=fetch,token=process.env.GH_TOKEN}={},releaseAsset=false) {
+  assert.ok((releaseAsset?/^releases\/assets\/[1-9][0-9]*$/:/^actions\/(?:artifacts\/[1-9][0-9]*\/zip|jobs\/[1-9][0-9]*\/logs)$/).test(route));
   assert.equal(typeof fetcher,'function');assert.ok(typeof token==='string'&&token,'Existing workflow token is required');
-  const cancel=async body=>{if(body)try{await body.cancel();}catch{throw Error('Actions byte download cleanup failed');}};
+  const phase=label=>releaseAsset?'Release asset GET repos/'+REPOSITORY+'/'+route+' '+label:'Actions byte download '+label;
+  const cancel=async body=>{if(body)try{await body.cancel();}catch{throw Error(phase('cleanup failed'));}};
   const signal=AbortSignal.timeout(60_000);let url='https://api.github.com/repos/'+REPOSITORY+'/'+route,response;
   for(let redirects=0;redirects<=4;redirects++) {
     // Preserve original bytes as data in memory; never send log/ZIP bodies to a terminal or pager.
@@ -449,19 +455,21 @@ async function download(route,{fetcher=fetch,token=process.env.GH_TOKEN}={}) {
     assert.ok(authority&&!/[%@]/.test(authority),'Actions download authority is invalid');
     const parsed=new URL(url);assert.equal(parsed.protocol,'https:');
     assert.equal(parsed.username,'');assert.equal(parsed.password,'');assert.equal(parsed.port,'');
-    assert.ok(redirects===0?parsed.hostname==='api.github.com':
+    assert.ok(redirects===0?parsed.hostname==='api.github.com':releaseAsset?
+      ['release-assets.githubusercontent.com','objects.githubusercontent.com'].includes(parsed.hostname):
       parsed.hostname==='results-receiver.actions.githubusercontent.com'||/^[a-z0-9][a-z0-9-]*\.blob\.core\.windows\.net$/.test(parsed.hostname),
       'Actions download redirect left approved storage');
-    const headers={Accept:redirects===0?'application/vnd.github+json':'application/octet-stream','Accept-Encoding':'identity',
+    const headers={Accept:redirects===0&&!releaseAsset?'application/vnd.github+json':'application/octet-stream','Accept-Encoding':'identity',
       ...(redirects===0?{Authorization:'Bearer '+token,'X-GitHub-Api-Version':'2022-11-28'}:{})};
     try {response=await fetcher(url,{method:'GET',redirect:'manual',signal,headers});}
-    catch {throw Error('Actions byte download request failed');}
+    catch {throw Error(phase('request failed'));}
     if([301,302,303,307,308].includes(response.status)) {
       const location=response.headers.get('location');await cancel(response.body);
       assert.ok(location&&redirects<4,'Actions download redirect is absent or excessive');
       assert.ok(/^https:\/\//.test(location),'Actions download redirect must be absolute HTTPS');url=location;continue;
     }
-    if(response.status!==200) {await cancel(response.body);throw Error('Actions byte download did not return HTTP200');}break;
+    if(response.status!==200) {await cancel(response.body);throw Error(releaseAsset?
+      'Release asset GET repos/'+REPOSITORY+'/'+route+' HTTP '+response.status:'Actions byte download did not return HTTP200');}break;
   }
   let reader,size=0;const chunks=[];
   try {
@@ -469,7 +477,7 @@ async function download(route,{fetcher=fetch,token=process.env.GH_TOKEN}={}) {
     if(length!==null) {assert.match(length,/^(0|[1-9][0-9]*)$/);assert.ok(Number(length)<=64_000_000,'Actions byte download exceeds existing bound');}
     const encoding=response.headers.get('content-encoding');assert.ok(encoding===null||encoding==='identity','Actions byte download was content-encoded');
     assert.ok(response.body,'Actions byte download body is absent');reader=response.body.getReader();
-    while(true) {let item;try{item=await reader.read();}catch{throw Error('Actions byte download stream failed');}if(item.done)break;size+=item.value.byteLength;
+    while(true) {let item;try{item=await reader.read();}catch{throw Error(phase('stream failed'));}if(item.done)break;size+=item.value.byteLength;
       assert.ok(size<=64_000_000,'Actions byte download exceeds existing bound');chunks.push(Buffer.from(item.value));}
     if(length!==null)assert.equal(size,Number(length),'Actions byte download is truncated');
     return Buffer.concat(chunks);
@@ -1113,7 +1121,7 @@ async function qualify(options) {
   fs.writeFileSync(path.join(output,'qualification.json'),JSON.stringify(proof,null,2)+'\n',{flag:'wx'});return proof;
 }
 module.exports={REPOSITORY,WORKFLOW,VERSION,TAG,NODES,PRODUCER,CONSUMER,INSTALLER_PATH,INSTALLER_ASSET,hash,json,canonical,fields,bounded,sourceProof,plan,
-  validateRun,validateJob,validateArtifact,validateRetainedHistory,verifyBrowserInput,verifyAlphaPublication,verifyAlphaPublicAssets,reviewedAlphaReleaseProfile,verifyAlphaProfileInventory,verifyAlphaProfilePacks,alphaReleaseAttemptJobs,alphaReleaseJobsLease,alphaPublicAssetIdentity,alphaPublicAssetInventory,readPublicAlphaAsset,ALPHA_ASSET_MAX_BYTES,reviewReferences,zipMembers,installedArchive,validateInstaller,assertProducerInventory,custodyFromProducer,validateBootstrap,validateNative,publicationRecord,scannerReview,download,qualify};
+  validateRun,validateJob,validateArtifact,validateRetainedHistory,verifyBrowserInput,verifyAlphaPublication,verifyAlphaPublicAssets,reviewedAlphaReleaseProfile,verifyAlphaProfileInventory,verifyAlphaProfilePacks,alphaReleaseAttemptJobs,alphaReleaseJobsLease,alphaPublicAssetIdentity,alphaPublicAssetInventory,readPublicAlphaAsset,ALPHA_ASSET_MAX_BYTES,reviewReferences,zipMembers,installedArchive,validateInstaller,assertProducerInventory,custodyFromProducer,validateBootstrap,validateNative,publicationRecord,scannerReview,download,downloadReleaseAsset,qualify};
 if(require.main===module) {
   const [command,root,manifestSha256,verifierSha256,scopeVerifierSha256,runId,recordFile,recordSha256,output]=process.argv.slice(2);
   (async()=>{

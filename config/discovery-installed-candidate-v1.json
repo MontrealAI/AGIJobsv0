@@ -2,7 +2,7 @@
   "schema": "agijobsv0/discovery-installed-profile/v1",
   "repository": "MontrealAI/AGIJobsv0",
   "profile": "jobs-discovery-installed-v1",
-  "proposedVersion": "2.1.0-rc.18",
+  "proposedVersion": "2.1.0-rc.19",
   "versionReservation": "UNRESERVED_PROPOSAL",
   "state": "LOCAL_PREPARATION_NOT_APPROVED",
   "prerequisite": "792687d133863783d02972f543f1eaca257b9e9c",
@@ -45,9 +45,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "ddbeb096fe08d61ecc321e2da90079d8432668b29af4f5340326bfc3daf6ea70"
+        "sha256": "0234e5b3318f8877d6fec5c0ac17a012cebffc0536084f7884b5dcbc04b0c319"
       },
-      "reason": "Preserve full-history checkout, actual installed source applicability and both original suites in order; append only exact owner2425 dependency-coherence and historical-ledger-prefix suites as ordinary changed-source qualification, retaining failures and all existing gates"
+      "reason": "Preserve full-history checkout, actual installed source applicability and both original suites in order; append only exact owner2425 dependency-coherence and historical-ledger-prefix suites as ordinary changed-source qualification, retaining failures and all existing gates; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary"
     },
     ".github/workflows/source-release-rc16.yml": {
       "before": {
@@ -170,17 +170,17 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "cff78ea1f379e71a5f96be2ce5df1c03c4f58358dc074107936170564ee17e3a"
+        "sha256": "697e262150aa87c56c7508de1c694246be09b84e16dc1bbf20d1ee32253df80e"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary"
     },
     "config/discovery-installed-review-request-v1.json": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "a6a75cdcd8b41ed3ec85079fc74c798f24a4d3ad2e280ddf719df519b283551c"
+        "sha256": "b1a7f5fd5946204bdb650cdffe25f6d02a2e6008823f757646c4744688c0fa13"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary"
     },
     "config/discovery-lab-alpha-source.json": {
       "before": null,
@@ -243,9 +243,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "783d00ccc0e1d2137b853f3dcb57ab117da88ee123526b34d8e3728be7b6303d"
+        "sha256": "1f4a2b86f2b3b789e8ca6dbd551ea1ee18dc6687493d87008ab471bdfd98e496"
       },
-      "reason": "Document the bounded installed local-review receiver, reviewed615 source and browser-input selection, independent archive hash/size/manifest runtime contract, machine-enforced Alpha public-asset acceptance and remaining exact-main/native/scanner/publication gates; preserve zero authority, incomplete-cost and deployment-observation limits and historical publisher evidence"
+      "reason": "Document the bounded installed local-review receiver, reviewed615 source and browser-input selection, independent archive hash/size/manifest runtime contract, machine-enforced Alpha public-asset acceptance and remaining exact-main/native/scanner/publication gates; preserve zero authority, incomplete-cost and deployment-observation limits and historical publisher evidence; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary"
     },
     "docs/successor/DISCOVERY_LAB.md": {
       "before": null,
@@ -326,9 +326,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "98996a4bf688966e1554ddec2186286a30c4f5861ad0d2c6468c93c2f24276d9"
+        "sha256": "ac4426454bcf0b06797636ddef5e81f9ec586295b4cde65904bb7b15c0f620e4"
       },
-      "reason": "Capture the complete bounded installed input set and imported module bytes; require inert independently selected archive hash, positive bounded safe-integer byte count and manifest hash; compare exact extraction custody schema/authority/state/tuple before returning frozen selected capsule provenance, with no manifest-only fallback or new execution authority"
+      "reason": "Capture the complete bounded installed input set and imported module bytes; require inert independently selected archive hash, positive bounded safe-integer byte count and manifest hash; compare exact extraction custody schema/authority/state/tuple before returning frozen selected capsule provenance, with no manifest-only fallback or new execution authority; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary"
     },
     "integrations/alpha-agent/discovery-installed-runtime.test.mjs": {
       "before": null,
@@ -385,9 +385,9 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "7eb338f7e47973481f49f8e677beb02ec8513ad4ae6e5ef7f35edf3e6ba34f52"
+        "sha256": "2050a019dbfbd8242c9ba912903c408e11b3ec064a752f44ee3932ca658795de"
       },
-      "reason": "Preserve proposed rc18 metadata and the Next15.5.28 fixes for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r; patch only direct DOMPurify3.3.0 and nested3.4.16 to3.4.17 for GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr, deduplicating the compatible root node while preserving all seven protected contract/compiler dependency identities"
+      "reason": "Preserve proposed rc18 metadata and the Next15.5.28 fixes for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r; patch only direct DOMPurify3.3.0 and nested3.4.16 to3.4.17 for GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr, deduplicating the compatible root node while preserving all seven protected contract/compiler dependency identities; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary"
     },
     "package.json": {
       "before": {
@@ -396,9 +396,9 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "2593efa7bd90eb75ab52eb9f935e7a62cbf614cee87d190eea84411d9618f856"
+        "sha256": "f4c27d30c61c6eaa4256285de62146dc9720c2a31da50109849ea4fa83c05c27"
       },
-      "reason": "Preserve proposed rc18 metadata and the Next15.5.28 fixes for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r; patch only direct DOMPurify3.3.0 and nested3.4.16 to3.4.17 for GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr, deduplicating the compatible root node while preserving all seven protected contract/compiler dependency identities"
+      "reason": "Preserve proposed rc18 metadata and the Next15.5.28 fixes for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r; patch only direct DOMPurify3.3.0 and nested3.4.16 to3.4.17 for GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr, deduplicating the compatible root node while preserving all seven protected contract/compiler dependency identities; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary"
     },
     "scripts/release/capture-discovery-browser-input.cjs": {
       "before": null,
@@ -436,25 +436,25 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "2aa325ea7c22e2038a5023986a4c80b350363140044edaacb0ac7dafa2aa306c"
+        "sha256": "dc86dfa9bbe9553d13988ba5569586c8ad1869a606520c6269889f36cb09da97"
       },
-      "reason": "Preserve the complete reviewed public Alpha profile, selected-attempt/main-branch leases, all source/capsule/native/scanner/deployment checks and byte identities; acquire only the selected Jobs Actions job logs and artifact ZIPs as bounded raw bytes through fixed API GET and credential-free approved storage redirects, with one total60s deadline, unchanged64MB cap and no terminal rendering or CLI escape-guard opt-out; use the official JSON Accept on the fixed metadata API and octet-stream only on redirected storage; await each original-byte consumer"
+      "reason": "Retain existing Actions byte selectors, initial JSON media, redirect/authentication/error behavior, shared60s deadline,64MB bound and complete qualification gates; add only fixed own-repository positive releaseasset-ID byte reads using documented initial octet media and anonymous existing approved release storage with the same bounds and safe fixed-route/status diagnostics; select explicit rc19 while preserving reviewed Alpha615 and original source/profile/scanner/asset checks"
     },
     "scripts/release/discovery-installed-release-dispatch.cjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "b28b8c29c54abadbe41a22a2ba6e9647a99d70892d61c730497e4fa722bac3bb"
+        "sha256": "47efc4d9c0f2a99060d123e7bfc6af4b28bbf43107fd8a96b7c5816b784f9f3f"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Explicitly recognize rc17 plus installed rc18 and rc19 only; retain rc18 as the existing installed-suite output name for both installed editions, the full original rc17 command, every installed check and the historical publisher selected=false boundary"
     },
     "scripts/release/discovery-installed-release.test.cjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "af5487c9386f26899f7e94827889feb4a97c8a3cf689a4766bd9ad134e5d9736"
+        "sha256": "4e1d19538236c66b01061765961302d43c185c1d0e2c828d142c5e96a9e1c9aa"
       },
-      "reason": "Preserve all72 preceding release/caller/private-fixture/byte-transport test bodies byte-for-byte; append three inert actual publisher/API diagnostic cases for fixed route/status visibility before output or release operations, expected404 absence and successful JSON preservation, and403/500 refusal without reading remote bodies or exposing credentials; no network, captured-code or product execution"
+      "reason": "Retain all75 preceding release/caller/private-fixture/transport/diagnostic cases and assertions, updating only draft-lease inventory/by-ID fixture framing and explicit rc19 dispatcher compatibility versus unknown rc20; append14 inert owned cases for complete bounded pagination, private collisions, exact new draft metadata, fixed-ID seven-asset uploads and readbacks, returned-ID substitution, safe HTTP diagnostics, full actualP.publish ID retention and pre-output collision refusal without network or real release commands"
     },
     "scripts/release/discovery-lab-profile.py": {
       "before": null,
@@ -484,9 +484,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "d9830b28c64252070ab04f0b9034d8251a4400851b1c9467b8dda2ce6a91b101"
+        "sha256": "72ce72776669f16e91fa1fae4fcea7f8df29baca2fc5003cf62b2e4411d112cd"
       },
-      "reason": "Preserve exact source/record/archive/asset checks, requests, existing authentication, redirect refusal, deadlines, body bounds, expected absence and message-only CLI catch; expose only the fixed own-repository GET relative route and numeric HTTP status when the existing metadata read fails, to identify the actual refused resource without response body, token, signed URL, retry or permission change"
+      "reason": "Preserve safe fixed own-repository metadata route/status diagnostics and all exact-source, record, scanner, archive, Alpha and final-main gates; refuse any existing candidate draft or public release through complete bounded inventory, capture only one new exact-title/notes/tag/source release ID, upload exactly seven authenticated owned files to that ID, retain returned asset IDs, and verify draft/public bytes by exact asset IDs with unchanged zero authority; never adopt, overwrite, delete or finalize historical rc18 draft421509220"
     },
     "scripts/release/test-discovery-installed-archive.py": {
       "before": null,
@@ -519,9 +519,9 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "a62bd276f37d6cd9177f5098ae5fae2ae80b5a6322ecb56d886117937c43059d"
+        "sha256": "628858f05026bfc116b8a49231ae82bcfdc752642d9106ca8efe37b08ca7f2c1"
       },
-      "reason": "Retain owner2425 committed edition/source/control selection, offline authenticated Git object capture, exact original ba67 generator and all transport refusals; prove exclusive ownership and unchanged link/ordinary dependency-target identity plus baseline HEAD/index before removing only the provisioning symlink created by this invocation before the unfiltered complete generated-source comparison; recheck all seven protected lock identity triplets and retain final source/index/byte/mode proofs"
+      "reason": "Preserve hardened immutable committed-package selection, original dependency identities and complete authenticated generated-source comparison; recognize only explicitly enumerated installed rc18 and rc19 versions so rc19 cannot fall through to legacy handling"
     },
     "scripts/security/test/dependency-preservation.test.cjs": {
       "before": {
@@ -617,25 +617,25 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "65e762d17116c38ea619ec88cedfec1d542788b98fdeef28ed8edfecf3057090"
+        "sha256": "8111b23a41a1334ac535cb3a4238e5ed53d53c9abc5770157e9e0fc0dda250f8"
       },
-      "reason": "Retain all26 prior owned dependency/source/capture fixture bodies; add three ordinary owned cases reproducing Git directory-ignore versus provisioning-symlink inventory, exact owned-link cleanup with generated output retained, changed link/target/index refusal and arbitrary node_modules source refusal; no product/native/release approval or executed-test claim"
+      "reason": "Preserve all preceding owned Git/source/generated-output fixtures byte-for-byte; append one inert rc19 committed-edition case proving strict Git context and current package-byte authentication remain mandatory"
     },
     "tools/security/discovery-installed-ledger-prefix.mjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "7803b4eef32c4ad7bcd6552b7ee652ba7ba5c94c18e1b7b864ec3b5cfc30bee3"
+        "sha256": "0adbaae9935e95796a5260ce684748b93dbdbaafef900871ee05253acb340d84"
       },
-      "reason": "Compose exact owner2425 separate historical ledger proof: immutable original6a181/83065 set/mode/blob prefix, exactly288 protected originals, independently derived regular additions, exact typed source scope and HEAD/index closure; retain unchanged ledger/query/archive/disposition/deployment bodies"
+      "reason": "Preserve original96 ledger, all288 historical protected path/mode/blob identities, complete ancestry/source/index closure and independent installed additions; recognize only exact committed rc18 and rc19 versions under the same hardened readGit interface"
     },
     "tools/security/discovery-installed-ledger-prefix.test.mjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "652f16ba1eb1b1d6cb8d2945604d56614799388c95474838bc5355085e4174fd"
+        "sha256": "78c540339cbb9fdf29473f97dcbb4caed352b0f8bcfe7d37dd310fd70bf8f7e1"
       },
-      "reason": "Retain exact owner2425 injected-reader ledger-prefix controls for complete historical identities, strict current source/admission metadata, regular additions and immutable closure, without external process/network or owner/release qualification claims"
+      "reason": "Preserve all preceding ledger fixtures byte-for-byte; append one injected data-only case proving exact rc18/rc19 select installed controls while unknown rc20 and tampered rc19 do not"
     },
     "agent-gateway/validator.ts": {
       "before": {

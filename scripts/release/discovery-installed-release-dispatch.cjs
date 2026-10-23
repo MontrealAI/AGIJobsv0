@@ -6,7 +6,8 @@ const fs=require('node:fs');
 const path=require('node:path');
 const inheritedCommand="node --test test/scripts/source-codeql-service-rc16.test.cjs test/scripts/source-profile-rc16.test.cjs test/scripts/source-release-rc16.test.cjs test/scripts/source-release-security-rc16-gate.test.cjs test/scripts/source-release-security-rc16-publish.test.cjs test/scripts/source-release-integrated-rc16.test.cjs test/scripts/source-python-scanner-rc16.test.cjs test/scripts/source-python-evidence-rc16.test.cjs test/scripts/source-review-binding-rc16.test.cjs integrations/alpha-agent/tests/transformational-compatibility.test.mjs";
 function editionForVersion(version) {
-  assert.ok(['2.1.0-rc.17','2.1.0-rc.18'].includes(version),'Only explicit rc17 or Discovery rc18 source editions are supported');
+  assert.ok(['2.1.0-rc.17','2.1.0-rc.18','2.1.0-rc.19'].includes(version),'Only explicit rc17 or Discovery rc18/rc19 source editions are supported');
+  // rc18 names the unchanged installed-suite route; rc19 retains every gate.
   return version==='2.1.0-rc.17'?{edition:'rc17',selected:'true'}:{edition:'rc18',selected:'false'};
 }
 function assertRoutingSource(source) {
