@@ -1060,3 +1060,19 @@ test('Actions byte download shares one60second deadline across redirects and san
   await assert.rejects(Q.download('actions/jobs/12/logs',{token:'inert-token',fetcher:async()=>badCleanup}),
     error=>error.message==='Actions byte download cleanup failed');
 });
+test('Actions metadata API requires JSON Accept while redirected bytes retain octet-stream Accept',async()=>{
+  const calls=[],raw=Buffer.from('original ANSI bytes\x1b[0m\n');
+  const result=await Q.download('actions/jobs/12/logs',{token:'inert-token',fetcher:async(url,options)=>{
+    calls.push({url,options});
+    if(calls.length===1) {
+      if(options.headers.Accept!=='application/vnd.github+json')return actionsByteResponse({status:415});
+      assert.equal(options.headers.Authorization,'Bearer inert-token');
+      assert.equal(options.headers['Accept-Encoding'],'identity');
+      return actionsByteResponse({status:302,headers:{location:'https://owned123.blob.core.windows.net/original'}});
+    }
+    assert.equal(options.headers.Accept,'application/octet-stream');assert.equal(options.headers['Accept-Encoding'],'identity');
+    assert.ok(!Object.hasOwn(options.headers,'Authorization'));
+    return actionsByteResponse({headers:{'content-length':String(raw.length)},chunks:[raw]});
+  }});
+  assert.deepEqual(result,raw);assert.equal(calls.length,2);assert.equal(calls[0].options.signal,calls[1].options.signal);
+});

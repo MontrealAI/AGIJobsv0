@@ -452,7 +452,7 @@ async function download(route,{fetcher=fetch,token=process.env.GH_TOKEN}={}) {
     assert.ok(redirects===0?parsed.hostname==='api.github.com':
       parsed.hostname==='results-receiver.actions.githubusercontent.com'||/^[a-z0-9][a-z0-9-]*\.blob\.core\.windows\.net$/.test(parsed.hostname),
       'Actions download redirect left approved storage');
-    const headers={Accept:'application/octet-stream','Accept-Encoding':'identity',
+    const headers={Accept:redirects===0?'application/vnd.github+json':'application/octet-stream','Accept-Encoding':'identity',
       ...(redirects===0?{Authorization:'Bearer '+token,'X-GitHub-Api-Version':'2022-11-28'}:{})};
     try {response=await fetcher(url,{method:'GET',redirect:'manual',signal,headers});}
     catch {throw Error('Actions byte download request failed');}
