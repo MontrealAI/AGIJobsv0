@@ -486,3 +486,18 @@ test('arbitrary node_modules source changes remain inside the complete generated
   const f=ownedAllTrackedComparison(t);f.writeRoot('node_modules',Buffer.from('owned unexpected source path'));
   assert.throws(()=>checks.compareGeneratedSources(f.root,f.baseline,f.options),/nonhistorical, control or admitted/);
 });
+
+test('explicit rc19 committed edition retains strict source-byte and Git-context authentication',t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'jobs-owned-rc19-edition-'));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const committed=JSON.stringify({name:'owned',version:'2.1.0-rc.19'})+'\n';
+  const fakeGit=(args,cwd,context)=>{
+    assert.equal(cwd,root);assert.equal(context,checks.GIT_SECURITY_CONTEXT.installed);
+    const invocation=checks.gitInvocation(args,cwd,context);
+    assert.ok(invocation.args.includes('protocol.allow=never'));assert.equal(invocation.options.env.GIT_NO_LAZY_FETCH,'1');
+    if(args[0]==='ls-tree')return 'package.json\n';assert.deepEqual(args,['show','HEAD:package.json']);return committed;
+  };
+  fs.writeFileSync(path.join(root,'package.json'),committed);assert.equal(checks.installedEdition(root,fakeGit),true);
+  fs.writeFileSync(path.join(root,'package.json'),committed.replace('rc.19','rc.17'));
+  assert.throws(()=>checks.installedEdition(root,fakeGit),/Tracked installed source bytes or mode differ/);
+});

@@ -28,7 +28,7 @@ function installedEditionForCommit(root,readGit=git,ref='HEAD') {
   const committed=readGit(['show',ref+':package.json'],root,GIT_SECURITY_CONTEXT.installed);
   assert.ok(typeof committed==='string'&&Buffer.byteLength(committed)<=2_000_000,
     'Bounded immutable package metadata is required');
-  const installed=JSON.parse(committed).version==='2.1.0-rc.18';
+  const installed=['2.1.0-rc.18','2.1.0-rc.19'].includes(JSON.parse(committed).version);
   if(installed)assert.deepEqual(boundedInstalledInput(root,'package.json'),Buffer.from(committed,'utf8'),
     'Tracked installed source bytes or mode differ: package.json');
   return installed;

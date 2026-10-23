@@ -232,7 +232,7 @@ test('final publication leases bind prerequisite, exact draft and assets with cu
   const prerequisite={id:20,tag_name:'source-v2.1.0-rc.17',target_commitish:'c'.repeat(40),draft:false,prerelease:true,
     published_at:'2026-10-22T00:00:00Z',assets:[{id:30,name:'source.tar.gz',size:3,digest:'sha256:'+'f'.repeat(64)}]};
   const record={prerequisite:{commit:'c'.repeat(40),tree:'d'.repeat(40)}};
-  const original={['releases/tags/'+Q.TAG]:draft,'releases/tags/source-v2.1.0-rc.17':prerequisite,
+  const original={'releases?per_page=100&page=1':[draft],'releases/10':draft,'releases/tags/source-v2.1.0-rc.17':prerequisite,
     ['git/ref/tags/'+Q.TAG]:{object:{type:'commit',sha:source.sourceCommit}},
     'git/ref/tags/source-v2.1.0-rc.17':{object:{type:'commit',sha:record.prerequisite.commit}},
     ['git/commits/'+record.prerequisite.commit]:{tree:{sha:record.prerequisite.tree}},'git/ref/heads/main':{object:{sha:source.sourceCommit}}};
@@ -241,11 +241,11 @@ test('final publication leases bind prerequisite, exact draft and assets with cu
   assert.equal(await P.verifyPublicationLeases(api,leases),draft.id);assert.equal(calls.at(-1),'git/ref/heads/main');
   for(const mutate of [
     state=>{state['git/ref/heads/main'].object.sha='f'.repeat(40);},
-    state=>{state['releases/tags/'+Q.TAG].id++;},
-    state=>{state['releases/tags/'+Q.TAG].draft=false;},
-    state=>{state['releases/tags/'+Q.TAG].target_commitish='f'.repeat(40);},
-    state=>{state['releases/tags/'+Q.TAG].assets[0].id++;},
-    state=>{state['releases/tags/'+Q.TAG].assets[0].digest='sha256:'+'f'.repeat(64);},
+    state=>{state['releases/10'].id++;},
+    state=>{state['releases/10'].draft=false;},
+    state=>{state['releases/10'].target_commitish='f'.repeat(40);},
+    state=>{state['releases/10'].assets[0].id++;},
+    state=>{state['releases/10'].assets[0].digest='sha256:'+'f'.repeat(64);},
     state=>{state['git/ref/tags/'+Q.TAG].object.sha='f'.repeat(40);},
     state=>{state['releases/tags/source-v2.1.0-rc.17'].id++;},
     state=>{state['git/ref/tags/source-v2.1.0-rc.17'].object.sha='f'.repeat(40);},
@@ -836,7 +836,8 @@ test('rc17 and rc18 applicability retains the original suite and admits no unkno
   const dispatch=require('./discovery-installed-release-dispatch.cjs');
   assert.deepEqual(dispatch.editionForVersion('2.1.0-rc.17'),{edition:'rc17',selected:'true'});
   assert.deepEqual(dispatch.editionForVersion('2.1.0-rc.18'),{edition:'rc18',selected:'false'});
-  for(const version of [null,false,true,'false','2.1.0-rc.16','2.1.0-rc.19','2.1.0-rc.18 '])assert.throws(()=>dispatch.editionForVersion(version));
+  assert.deepEqual(dispatch.editionForVersion('2.1.0-rc.19'),{edition:'rc18',selected:'false'});
+  for(const version of [null,false,true,'false','2.1.0-rc.16','2.1.0-rc.20','2.1.0-rc.18 ','2.1.0-rc.19 '])assert.throws(()=>dispatch.editionForVersion(version));
   const workflow=fs.readFileSync(path.resolve(__dirname,'../../.github/workflows/source-release-rc16.yml'),'utf8');
   assert.equal(dispatch.assertRoutingSource(workflow),true);
   for(const changed of [
@@ -1075,4 +1076,302 @@ test('Actions metadata API requires JSON Accept while redirected bytes retain oc
     return actionsByteResponse({headers:{'content-length':String(raw.length)},chunks:[raw]});
   }});
   assert.deepEqual(result,raw);assert.equal(calls.length,2);assert.equal(calls[0].options.signal,calls[1].options.signal);
+});
+test('publisher reports the fixed metadata GET route and status before any release operation',async()=>{
+  const f=publicationRecordTransportFixture(),originalSourceProof=Q.sourceProof,originalFetch=global.fetch;
+  const keys=['GITHUB_REPOSITORY','GITHUB_EVENT_NAME','GITHUB_REF','GITHUB_ACTOR','GITHUB_REPOSITORY_OWNER','GITHUB_SHA'];
+  const previous=Object.fromEntries(keys.map(key=>[key,process.env[key]]));
+  const fixtureRoot=fs.mkdtempSync(path.join(os.tmpdir(),'discovery-metadata-fixture-')),output=path.join(fixtureRoot,'publish');
+  const token='inert-fixture-token',bodyText='remote-body-and-signed-url-must-not-appear';let failedBodyReads=0;
+  Q.sourceProof=()=>source;
+  Object.assign(process.env,{GITHUB_REPOSITORY:Q.REPOSITORY,GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REF:'refs/heads/main',GITHUB_ACTOR:'MontrealAI',GITHUB_REPOSITORY_OWNER:'MontrealAI',GITHUB_SHA:source.sourceCommit});
+  global.fetch=async(url,options)=>{
+    const prefix='https://api.github.com/repos/'+Q.REPOSITORY+'/';assert.ok(url.startsWith(prefix));
+    const route=url.slice(prefix.length);f.calls.push(route);
+    assert.equal(options.headers.Authorization,'Bearer '+token);assert.equal(options.headers.Accept,'application/vnd.github+json');assert.equal(options.redirect,'error');
+    if(route==='contents/'+P.RECORD_PATH+'?ref='+f.recordCommit)return new Response(JSON.stringify(f.entry),{status:200});
+    assert.equal(route,'releases/tags/source-v2.1.0-rc.17');
+    return {ok:false,status:404,get body(){failedBodyReads++;throw Error(bodyText);}};
+  };
+  try {
+    assert.equal(fs.statSync(fixtureRoot).mode&0o777,0o700);
+    await assert.rejects(P.publish({root:fixtureRoot,output,recordCommit:f.recordCommit,recordSha256:f.recordSha256},
+      {api:P.apiClient(token),command:()=>{throw Error('No release command is permitted in this inert fixture');}}),error=>{
+        assert.equal(error.message,'Publication server read failed: GET repos/'+Q.REPOSITORY+'/releases/tags/source-v2.1.0-rc.17 HTTP 404');
+        assert.ok(!error.message.includes(token)&&!error.message.includes(bodyText)&&!error.message.includes('https://'));return true;
+      });
+    assert.deepEqual(f.calls,['contents/'+P.RECORD_PATH+'?ref='+f.recordCommit,'releases/tags/source-v2.1.0-rc.17']);
+    assert.equal(failedBodyReads,0);assert.equal(fs.existsSync(output),false);assert.deepEqual(fs.readdirSync(fixtureRoot),[]);
+  } finally {
+    Q.sourceProof=originalSourceProof;global.fetch=originalFetch;
+    for(const key of keys)if(previous[key]===undefined)delete process.env[key];else process.env[key]=previous[key];
+    fs.rmSync(fixtureRoot,{recursive:true,force:true});
+  }
+});
+test('publisher metadata diagnostics preserve expected absence and successful JSON reads',async()=>{
+  const originalFetch=global.fetch,calls=[],token='inert-fixture-token';
+  global.fetch=async(url,options)=>{
+    calls.push({url,options});
+    if(calls.length===1)return {ok:false,status:404,get body(){throw Error('Expected absence must not read a body');}};
+    return new Response(JSON.stringify({id:12,state:'original-metadata'}),{status:200});
+  };
+  try {
+    const api=P.apiClient(token);assert.equal(await api('git/ref/tags/inert-absent',{absent:true}),null);
+    assert.deepEqual(await api('actions/runs/12'),{id:12,state:'original-metadata'});assert.equal(calls.length,2);
+    assert.ok(calls.every(item=>item.url.startsWith('https://api.github.com/repos/'+Q.REPOSITORY+'/')));
+    assert.ok(calls.every(item=>item.options.headers.Authorization==='Bearer '+token&&item.options.redirect==='error'));
+  } finally {global.fetch=originalFetch;}
+});
+test('publisher metadata failures expose no response body or credential for other statuses',async()=>{
+  const originalFetch=global.fetch,token='inert-fixture-token';let reads=0,calls=0;
+  try {
+    for(const [route,status] of [['check-runs/12',403],['actions/artifacts/34',500]]) {
+      global.fetch=async()=>{calls++;return {ok:false,status,get body(){reads++;throw Error('untrusted remote body');}};};
+      await assert.rejects(P.apiClient(token)(route),error=>error.message===
+        'Publication server read failed: GET repos/'+Q.REPOSITORY+'/'+route+' HTTP '+status);
+    }
+    assert.equal(reads,0);assert.equal(calls,2);
+  } finally {global.fetch=originalFetch;}
+});
+function ownedReleaseRow(id,extra={}) {
+  return {id,tag_name:'inert-'+id,target_commitish:source.sourceCommit,draft:true,prerelease:true,
+    name:P.RELEASE_TITLE,body:P.RELEASE_NOTES,created_at:'2026-10-23T00:00:00Z',
+    updated_at:'2026-10-23T00:00:00Z',assets:[],...extra};
+}
+test('release inventory reads a second page and requires an empty terminal page at exact multiples',async()=>{
+  const first=Array.from({length:100},(_,i)=>ownedReleaseRow(i+1)),calls=[];
+  const second=ownedReleaseRow(101,{tag_name:Q.TAG});
+  const rows=await P.releaseInventory(async route=>{calls.push(route);return route.endsWith('page=1')?first:[second];});
+  assert.equal(rows.length,101);assert.equal(rows.at(-1).tag_name,Q.TAG);
+  assert.deepEqual(calls,['releases?per_page=100&page=1','releases?per_page=100&page=2']);
+  calls.length=0;
+  assert.equal((await P.releaseInventory(async route=>{calls.push(route);return route.endsWith('page=1')?first:[];})).length,100);
+  assert.equal(calls.length,2);
+});
+test('release inventory refuses malformed duplicate and bounded unterminated pages',async()=>{
+  for(const batch of [null,{},Array.from({length:101},(_,i)=>ownedReleaseRow(i+1)),
+    [ownedReleaseRow(1),ownedReleaseRow(1)],[ownedReleaseRow(0)],[ownedReleaseRow(1,{draft:null})]]) {
+    await assert.rejects(P.releaseInventory(async()=>batch));
+  }
+  let calls=0;
+  await assert.rejects(P.releaseInventory(async()=>{const page=calls++;return Array.from({length:100},(_,i)=>ownedReleaseRow(100*page+i+1));}),/bounded pagination/);
+  assert.equal(calls,20);
+});
+test('private release inventory reserves the candidate tag even when published-by-tag is absent',async()=>{
+  const old=ownedReleaseRow(18,{tag_name:'discovery-v2.1.0-rc.18'}),current=ownedReleaseRow(19,{tag_name:Q.TAG}),calls=[];
+  const api=async(route,options)=>{calls.push(route);if(route.startsWith('git/ref/'))return null;
+    if(route.startsWith('releases/tags/')){assert.equal(options.absent,true);return null;}return [old,current];};
+  await assert.rejects(P.requireAbsent(api,Q.TAG),/private draft or published release/);
+  assert.ok(calls.includes('releases?per_page=100&page=1'));
+  assert.deepEqual(await P.requireAbsent(async route=>route.startsWith('releases?')?[old]:null,Q.TAG),[old]);
+});
+test('created draft uses its unique new ID and exact intended metadata rather than a published tag lookup',async()=>{
+  const draft=ownedReleaseRow(500,{tag_name:Q.TAG}),first=Array.from({length:100},(_,i)=>ownedReleaseRow(i+1)),calls=[];
+  const api=async route=>{calls.push(route);if(route==='releases?per_page=100&page=1')return first;
+    if(route==='releases?per_page=100&page=2')return [draft];assert.equal(route,'releases/500');return structuredClone(draft);};
+  assert.deepEqual(await P.createdDraft(api,source,first),draft);
+  assert.equal(calls.at(-1),'releases/500');assert.ok(!calls.some(route=>route.startsWith('releases/tags/')));
+  for(const mutate of [r=>r.name='substituted',r=>r.body='substituted',r=>r.target_commitish='f'.repeat(40),
+    r=>r.draft=false,r=>r.assets=[{id:1}],r=>r.id=501]) {
+    const changed=structuredClone(draft);mutate(changed);
+    await assert.rejects(P.createdDraft(async route=>route.startsWith('releases?')?[draft]:changed,source,first));
+  }
+  await assert.rejects(P.createdDraft(async()=>[draft,ownedReleaseRow(501,{tag_name:Q.TAG})],source,first),/exactly one/);
+  await assert.rejects(P.createdDraft(async()=>[draft],source,[draft]),/historical release ID/);
+});
+function ownedAssetFixture(t) {
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'discovery-id-assets-'));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const bytes=Object.fromEntries(P.ASSET_NAMES.map(name=>[name,Buffer.from(name==='provenance.json'?
+    JSON.stringify({productionApproved:false,authority:'none',profile:'jobs-discovery-installed-v1'}):'owned inert '+name)]));
+  const expected=Object.fromEntries(Object.entries(bytes).map(([name,raw])=>[name,{bytes:raw.length,sha256:Q.hash(raw)}]));
+  for(const [name,raw]of Object.entries(bytes))fs.writeFileSync(path.join(root,name),raw,{flag:'wx',mode:0o600});
+  const assets=P.ASSET_NAMES.map((name,i)=>({id:800+i,name,state:'uploaded',size:bytes[name].length,digest:'sha256:'+Q.hash(bytes[name])}));
+  return {root,bytes,expected,assets,draft:ownedReleaseRow(500,{tag_name:Q.TAG})};
+}
+test('release ID upload sends only exact seven owned bytes to fixed upload paths and verifies returned IDs',async t=>{
+  const f=ownedAssetFixture(t),calls=[];
+  const uploaded=await P.uploadAssets(f.draft,f.root,f.expected,{token:'inert-existing-token',fetcher:async(url,options)=>{
+    calls.push({url,options});const asset=f.assets[calls.length-1];
+    assert.equal(url,'https://uploads.github.com/repos/'+Q.REPOSITORY+'/releases/500/assets?name='+asset.name);
+    assert.equal(options.method,'POST');assert.equal(options.redirect,'error');
+    assert.equal(options.headers.Accept,'application/vnd.github+json');assert.equal(options.headers['Content-Type'],'application/octet-stream');
+    assert.equal(options.headers.Authorization,'Bearer inert-existing-token');assert.deepEqual(options.body,f.bytes[asset.name]);
+    return new Response(JSON.stringify(asset),{status:201});
+  }});
+  assert.deepEqual(P.assetLease(uploaded,f.expected),P.assetLease(f.assets,f.expected));assert.equal(calls.length,7);
+});
+test('release ID upload refuses remote identity changes local byte drift and unsafe inventories',async t=>{
+  const f=ownedAssetFixture(t);
+  for(const mutate of [a=>a.name='wrong',a=>a.id=0,a=>a.size++,a=>a.digest='sha256:'+'f'.repeat(64),a=>a.state='starter']) {
+    const asset=structuredClone(f.assets[0]);mutate(asset);
+    await assert.rejects(P.uploadAssets(f.draft,f.root,f.expected,{token:'inert',fetcher:async()=>new Response(JSON.stringify(asset),{status:201})}),/identity differs/);
+  }
+  let calls=0;fs.appendFileSync(path.join(f.root,P.ASSET_NAMES[0]),'drift');
+  await assert.rejects(P.uploadAssets(f.draft,f.root,f.expected,{token:'inert',fetcher:async()=>{calls++;}}));assert.equal(calls,0);
+  await assert.rejects(P.uploadAssets(f.draft,f.root,{...f.expected,'../outside':{bytes:0,sha256:'0'.repeat(64)}},{token:'inert',fetcher:async()=>{calls++;}}));
+  assert.equal(calls,0);
+});
+test('release ID upload cancels refusals and bounds JSON while sanitizing read failures',async t=>{
+  const f=ownedAssetFixture(t);
+  const refused=actionsByteResponse({status:403});
+  await assert.rejects(P.uploadAssets(f.draft,f.root,f.expected,{token:'inert',fetcher:async()=>refused}),
+    error=>error.message==='Release asset POST repos/'+Q.REPOSITORY+'/releases/500/assets?name='+P.ASSET_NAMES[0]+' HTTP 403');
+  assert.equal(refused.state.reads,0);assert.equal(refused.state.cancels,1);
+  for(const response of [actionsByteResponse({status:201,chunks:[Buffer.alloc(1_000_001)]}),
+    actionsByteResponse({status:201,readError:Error('private response or credential')})]) {
+    await assert.rejects(P.uploadAssets(f.draft,f.root,f.expected,{token:'inert',fetcher:async()=>response}),
+      error=>!error.message.includes('private response or credential'));
+    assert.equal(response.state.cancels,1);
+  }
+});
+test('release asset byte route uses octet media and anonymous approved release storage with one shared deadline',async()=>{
+  for(const host of ['release-assets.githubusercontent.com','objects.githubusercontent.com']) {
+    const calls=[],raw=Buffer.from([0x1b,0x00,0xff]),redirect=actionsByteResponse({status:302,headers:{location:'https://'+host+'/owned?sig=inert'}}),
+      response=actionsByteResponse({headers:{'content-length':'3'},chunks:[raw]});
+    const bytes=await Q.downloadReleaseAsset(800,{token:'inert',fetcher:async(url,options)=>{
+      calls.push({url,options});return calls.length===1?redirect:response;
+    }});
+    assert.deepEqual(bytes,raw);assert.equal(calls[0].url,'https://api.github.com/repos/'+Q.REPOSITORY+'/releases/assets/800');
+    assert.equal(calls[0].options.headers.Accept,'application/octet-stream');assert.equal(calls[0].options.headers.Authorization,'Bearer inert');
+    assert.deepEqual(calls[1].options.headers,{Accept:'application/octet-stream','Accept-Encoding':'identity'});
+    assert.equal(calls[0].options.signal,calls[1].options.signal);assert.equal(redirect.state.cancels,1);assert.equal(response.state.cancels,1);
+  }
+  const response=actionsByteResponse({chunks:[Buffer.from('direct')]});
+  assert.equal((await Q.downloadReleaseAsset(800,{token:'inert',fetcher:async()=>response})).toString(),'direct');
+});
+test('release asset byte route rejects other selectors hosts encodings and inaccurate bytes under existing bounds',async()=>{
+  let calls=0;for(const id of [0,-1,1.5,'800',NaN,Number.MAX_SAFE_INTEGER+1])
+    await assert.rejects(Q.downloadReleaseAsset(id,{token:'inert',fetcher:async()=>{calls++;}}));
+  assert.equal(calls,0);
+  for(const location of ['https://results-receiver.actions.githubusercontent.com/x','https://owned.blob.core.windows.net/x',
+    'https://release-assets.githubusercontent.com.evil.invalid/x','https://user@release-assets.githubusercontent.com/x',
+    'http://release-assets.githubusercontent.com/x','https://release-assets.githubusercontent.com:444/x',
+    'https://%72elease-assets.githubusercontent.com/x','https://objects.githubusercontent.com/x#fragment']) {
+    let requests=0;
+    await assert.rejects(Q.downloadReleaseAsset(800,{token:'inert',fetcher:async()=>{requests++;return actionsByteResponse({status:302,headers:{location}});}}));
+    assert.equal(requests,1);
+  }
+  for(const headers of [{'content-encoding':'gzip'},{'content-length':'64000001'},{'content-length':'4'}])
+    await assert.rejects(Q.downloadReleaseAsset(800,{token:'inert',fetcher:async()=>actionsByteResponse({headers,chunks:[Buffer.from('abc')]})}));
+});
+test('release asset ID readback retains exact inventory hashes sizes and exclusive private files',async t=>{
+  const f=ownedAssetFixture(t),directory=path.join(f.root,'download');fs.mkdirSync(directory,{mode:0o700});
+  const calls=[],release={...f.draft,assets:f.assets};
+  await P.downloadAssets(directory,release,f.expected,{download:async id=>{calls.push(id);return f.bytes[f.assets.find(a=>a.id===id).name];}});
+  assert.deepEqual(calls,P.assetLease(f.assets,f.expected).map(a=>a.id));
+  assert.deepEqual(fs.readdirSync(directory).sort(),P.ASSET_NAMES);
+  await assert.rejects(P.downloadAssets(directory,release,f.expected,{download:async id=>f.bytes[f.assets.find(a=>a.id===id).name]}));
+  const other=path.join(f.root,'wrong');fs.mkdirSync(other,{mode:0o700});
+  await assert.rejects(P.downloadAssets(other,release,f.expected,{download:async()=>Buffer.from('wrong')}));assert.deepEqual(fs.readdirSync(other),[]);
+});
+test('actual publisher rejects a private candidate collision before qualification output or any command',async()=>{
+  const prerequisite={id:20,tag_name:'source-v2.1.0-rc.17',target_commitish:'c'.repeat(40),draft:false,prerelease:true,published_at:'2026-10-22T00:00:00Z',
+    assets:[{id:30,name:'prior.tar.gz',size:3,digest:'sha256:'+'f'.repeat(64)}]};
+  const f=publicationRecordTransportFixture({bytes:Buffer.from(JSON.stringify({source:{commit:source.sourceCommit,tree:source.sourceTree},
+    prerequisite:{commit:'c'.repeat(40),tree:'d'.repeat(40)}})+'\n')});
+  const originalProof=Q.sourceProof,originalQualify=Q.qualify,keys=['GITHUB_REPOSITORY','GITHUB_EVENT_NAME','GITHUB_REF','GITHUB_ACTOR','GITHUB_REPOSITORY_OWNER','GITHUB_SHA'],
+    previous=Object.fromEntries(keys.map(key=>[key,process.env[key]])),root=fs.mkdtempSync(path.join(os.tmpdir(),'discovery-collision-')),output=path.join(root,'publish');
+  let commands=0,qualifications=0;Q.sourceProof=()=>source;Q.qualify=async()=>{qualifications++;throw Error('Must not qualify collided release');};
+  Object.assign(process.env,{GITHUB_REPOSITORY:Q.REPOSITORY,GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REF:'refs/heads/main',GITHUB_ACTOR:'MontrealAI',GITHUB_REPOSITORY_OWNER:'MontrealAI',GITHUB_SHA:source.sourceCommit});
+  try {
+    const api=async route=>{if(route.startsWith('contents/'))return f.api(route);
+      if(route==='releases/tags/source-v2.1.0-rc.17')return prerequisite;
+      if(route==='git/ref/tags/source-v2.1.0-rc.17')return {object:{type:'commit',sha:'c'.repeat(40)}};
+      if(route==='git/commits/'+'c'.repeat(40))return {tree:{sha:'d'.repeat(40)}};
+      if(route==='releases?per_page=100&page=1')return [ownedReleaseRow(19,{tag_name:Q.TAG})];
+      if(route==='git/ref/tags/'+Q.TAG||route==='releases/tags/'+Q.TAG)return null;
+      throw Error('Unexpected collision fixture route');};
+    await assert.rejects(P.publish({root,output,recordCommit:f.recordCommit,recordSha256:f.recordSha256},
+      {api,command:()=>{commands++;}}),/private draft or published release/);
+    assert.equal(commands,0);assert.equal(qualifications,0);assert.equal(fs.existsSync(output),false);
+  } finally {Q.sourceProof=originalProof;Q.qualify=originalQualify;
+    for(const key of keys)if(previous[key]===undefined)delete process.env[key];else process.env[key]=previous[key];
+    fs.rmSync(root,{recursive:true,force:true});}
+});
+async function ownedPublisherIdRun({substituteUploadedId=false}={}) {
+  const parent=fs.mkdtempSync(path.join(os.tmpdir(),'discovery-owned-publish-')),root=path.join(parent,'source'),output=path.join(parent,'publish');
+  fs.mkdirSync(root,{mode:0o700});
+  const prerequisite={id:20,tag_name:'source-v2.1.0-rc.17',target_commitish:'c'.repeat(40),draft:false,prerelease:true,published_at:'2026-10-22T00:00:00Z',
+    assets:[{id:30,name:'prior.tar.gz',size:3,digest:'sha256:'+'f'.repeat(64)}]};
+  const f=publicationRecordTransportFixture({bytes:Buffer.from(JSON.stringify({source:{commit:source.sourceCommit,tree:source.sourceTree},
+    prerequisite:{commit:'c'.repeat(40),tree:'d'.repeat(40)}})+'\n')});
+  const originals={sourceProof:Q.sourceProof,qualify:Q.qualify},keys=['GITHUB_REPOSITORY','GITHUB_EVENT_NAME','GITHUB_REF','GITHUB_ACTOR','GITHUB_REPOSITORY_OWNER','GITHUB_SHA'],
+    previous=Object.fromEntries(keys.map(key=>[key,process.env[key]])),calls=[],commands=[],assetReads=[],uploads=[];
+  let draft=null,tag=null,qualifications=0;
+  Q.sourceProof=()=>source;
+  Q.qualify=async options=>{
+    qualifications++;fs.mkdirSync(options.output,{mode:0o700});
+    for(const [name,raw]of [['jobs-discovery-installed.tar.gz',Buffer.from('inert archive bytes')],
+      [Q.INSTALLER_ASSET,Buffer.from('# inert installer, never executed\n')],['qualification.json',Buffer.from('{}\n')]])
+      fs.writeFileSync(path.join(options.output,name),raw,{flag:'wx',mode:0o600});
+    return {selection:{profile:'jobs-discovery-installed-v1'},alpha,capsule:{},installer:{},producerRun:{id:1}};
+  };
+  Object.assign(process.env,{GITHUB_REPOSITORY:Q.REPOSITORY,GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REF:'refs/heads/main',GITHUB_ACTOR:'MontrealAI',GITHUB_REPOSITORY_OWNER:'MontrealAI',GITHUB_SHA:source.sourceCommit});
+  try {
+    const api=async route=>{
+      calls.push(route);
+      if(route.startsWith('contents/'))return f.api(route);
+      if(route==='releases/tags/source-v2.1.0-rc.17')return structuredClone(prerequisite);
+      if(route==='git/ref/tags/source-v2.1.0-rc.17')return {object:{type:'commit',sha:'c'.repeat(40)}};
+      if(route==='git/commits/'+'c'.repeat(40))return {tree:{sha:'d'.repeat(40)}};
+      if(route==='git/ref/heads/main')return {object:{sha:source.sourceCommit}};
+      if(route==='git/ref/tags/'+Q.TAG)return tag?{object:{type:'commit',sha:tag}}:null;
+      if(route==='releases/tags/'+Q.TAG){assert.equal(draft,null,'A private draft must never be read by published-tag lookup');return null;}
+      if(route==='releases?per_page=100&page=1')return [structuredClone(prerequisite),...(draft?[structuredClone(draft)]:[])];
+      if(route==='releases/500')return structuredClone(draft);
+      throw Error('Unexpected owned publisher ID route: '+route);
+    };
+    const command=values=>{
+      commands.push(values);
+      if(values[0]==='release') {
+        assert.deepEqual(values.slice(0,3),['release','create',Q.TAG]);assert.equal(draft,null);
+        assert.equal(values[values.indexOf('--title')+1],P.RELEASE_TITLE);
+        assert.equal(values[values.indexOf('--notes')+1],P.RELEASE_NOTES);
+        draft=ownedReleaseRow(500,{tag_name:Q.TAG});return Buffer.from('inert created draft\n');
+      }
+      assert.deepEqual(values,['api','--method','PATCH','repos/'+Q.REPOSITORY+'/releases/500','--field','draft=false','--field','prerelease=true']);
+      assert.equal(calls.at(-1),'git/ref/heads/main','The source lease must remain the final server read before publication');
+      draft.draft=false;tag=source.sourceCommit;return Buffer.from('{}\n');
+    };
+    const upload=async(release,directory,expected)=>{
+      const uploaded=await P.uploadAssets(release,directory,expected,{token:'inert',fetcher:async(url,options)=>{
+        const name=P.ASSET_NAMES[uploads.length];uploads.push(url);assert.deepEqual(options.body,fs.readFileSync(path.join(directory,name)));
+        const asset={id:800+uploads.length,name,state:'uploaded',size:expected[name].bytes,digest:'sha256:'+expected[name].sha256};
+        draft.assets.push(asset);return new Response(JSON.stringify(asset),{status:201});
+      }});
+      if(substituteUploadedId)draft.assets[0].id+=1000;
+      return uploaded;
+    };
+    const download=(directory,release,expected)=>P.downloadAssets(directory,release,expected,{download:async id=>{
+      assetReads.push(id);const asset=release.assets.find(row=>row.id===id);assert.ok(asset);
+      return fs.readFileSync(path.join(output,asset.name));
+    }});
+    if(substituteUploadedId) {
+      await assert.rejects(P.publish({root,output,recordCommit:f.recordCommit,recordSha256:f.recordSha256},{api,command,upload,download}),
+        /Uploaded asset IDs changed/);
+      assert.equal(commands.length,1);assert.equal(assetReads.length,0);assert.equal(draft.draft,true);
+    } else {
+      const result=await P.publish({root,output,recordCommit:f.recordCommit,recordSha256:f.recordSha256},{api,command,upload,download});
+      assert.equal(result.releaseId,500);assert.equal(result.tag,Q.TAG);assert.equal(result.assets.length,7);
+      assert.equal(qualifications,2);assert.equal(commands.length,2);assert.equal(uploads.length,7);assert.equal(assetReads.length,21);
+      assert.ok(uploads.every(url=>url.startsWith('https://uploads.github.com/repos/'+Q.REPOSITORY+'/releases/500/assets?name=')));
+      assert.equal(calls.filter(route=>route.startsWith('releases/tags/'+Q.TAG)).length,2,'Only precreation published absence probes are allowed');
+      assert.equal(draft.draft,false);assert.equal(tag,source.sourceCommit);
+    }
+  } finally {
+    Q.sourceProof=originals.sourceProof;Q.qualify=originals.qualify;
+    for(const key of keys)if(previous[key]===undefined)delete process.env[key];else process.env[key]=previous[key];
+    fs.rmSync(parent,{recursive:true,force:true});
+  }
+}
+test('actual publisher retains one new release ID and seven asset IDs through all inert draft and public readbacks',()=>ownedPublisherIdRun());
+test('actual publisher refuses same-byte asset ID substitution before initial draft lease',()=>ownedPublisherIdRun({substituteUploadedId:true}));
+test('release asset HTTP refusals retain only exact fixed method route and actual status',async()=>{
+  for(const status of [403,404,500]) {
+    const response=actionsByteResponse({status});
+    await assert.rejects(Q.downloadReleaseAsset(800,{token:'inert',fetcher:async()=>response}),
+      error=>error.message==='Release asset GET repos/'+Q.REPOSITORY+'/releases/assets/800 HTTP '+status);
+    assert.equal(response.state.reads,0);assert.equal(response.state.cancels,1);
+  }
 });
