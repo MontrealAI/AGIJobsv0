@@ -897,19 +897,23 @@ test('publisher authenticates a large immutable Contents record before any relea
   const f=publicationRecordTransportFixture({large:true}),checkpoint=Error('inert authenticated prerequisite checkpoint');
   const originalSourceProof=Q.sourceProof,keys=['GITHUB_REPOSITORY','GITHUB_EVENT_NAME','GITHUB_REF','GITHUB_ACTOR','GITHUB_REPOSITORY_OWNER','GITHUB_SHA'];
   const previous=Object.fromEntries(keys.map(key=>[key,process.env[key]]));
-  const output=path.join(os.tmpdir(),'discovery-record-no-write-'+require('node:crypto').randomUUID());
+  const fixtureRoot=fs.mkdtempSync(path.join(os.tmpdir(),'discovery-record-fixture-')),output=path.join(fixtureRoot,'publish');
   Q.sourceProof=()=>source;
   Object.assign(process.env,{GITHUB_REPOSITORY:Q.REPOSITORY,GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REF:'refs/heads/main',GITHUB_ACTOR:'MontrealAI',GITHUB_REPOSITORY_OWNER:'MontrealAI',GITHUB_SHA:source.sourceCommit});
   try {
+    assert.equal(fs.statSync(fixtureRoot).mode&0o777,0o700,'The owned publisher fixture must stage only under a private directory');
+    assert.equal(fs.existsSync(output),false);
     const api=async route=>{if(route==='releases/tags/source-v2.1.0-rc.17'){f.calls.push(route);throw checkpoint;}return f.api(route);};
-    await assert.rejects(P.publish({root:os.tmpdir(),output,recordCommit:f.recordCommit,recordSha256:f.recordSha256},
+    await assert.rejects(P.publish({root:fixtureRoot,output,recordCommit:f.recordCommit,recordSha256:f.recordSha256},
       {api,command:()=>{throw Error('No release command is permitted in this inert fixture');}}),error=>error===checkpoint);
     assert.deepEqual(f.calls,['contents/'+P.RECORD_PATH+'?ref='+f.recordCommit,'git/blobs/'+f.sha,'releases/tags/source-v2.1.0-rc.17']);
     assert.equal(fs.existsSync(output),false);
   } finally {
     Q.sourceProof=originalSourceProof;
     for(const key of keys)if(previous[key]===undefined)delete process.env[key];else process.env[key]=previous[key];
+    fs.rmSync(fixtureRoot,{recursive:true,force:true});
   }
+  assert.equal(fs.existsSync(fixtureRoot),false);
 });
 test('publication record transport preserves the small Contents base64 route',async()=>{
   const f=publicationRecordTransportFixture();

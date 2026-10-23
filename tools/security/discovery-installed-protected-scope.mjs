@@ -6,7 +6,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 export const REVIEWED_INSTALLED_POLICY=Object.freeze({
-  manifest:'772518a3ab02ef655fec5c1c5291192d810b273bbe65691b9d128a82d31b41c7',verifier:'25349e6875ab6d458e7b8244f2eb2a6506e361296d705300d9b37250cf42aa34'
+  manifest:'987b02231e0716597e1db0c0e5bff033b62744f1ca81c0ebe5df72485be6cd38',verifier:'e8a6c8933e8b1c822c44475620b1ae11a5d804b3a29b28f3d47802a6a79bf634'
 });
 export const INSTALLED_PROTECTED_BASELINE='83065adf18a6ee987f8fa479a496a052d35db682';
 const MANIFEST='config/discovery-installed-candidate-v1.json';

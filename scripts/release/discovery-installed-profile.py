@@ -267,12 +267,15 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                                         'operator, retained mission evidence '
                                                                         'and release qualification'},
  'scripts/release/discovery-installed-release.test.cjs': {'before': None,
- 'after': {'mode': '100644', 'sha256': '5f3ffe9c0b9257dc20985b12b4af8b30f23c3c531dcb5c3bfa1dc100ddf0773b'},
+ 'after': {'mode': '100644', 'sha256': '16247c2ce87b6e2a7df50c3ff6ba813c50e6b3bc6e03a3c8628fdee9485dd9ab'},
  'reason': 'Retain all57 existing inert release test bodies, including the original33 bodies and24 '
            'source-specific Alpha615 profile/job/publication cases; append seven ordinary fake-API cases '
            'reproducing the actual large-record publisher caller and preserving small Contents reads while '
            'rejecting missing or mismatched metadata, substitution, truncation, noncanonical base64, oversize and '
-           'changed record selectors; no actual public download or qualification claim'},
+           'changed record selectors; no actual public download or qualification claim; stage the actual caller '
+           'fixture in its own mkdtemp-created private0700 directory with an absent child output, retain the '
+           'exact prerequisite checkpoint and no-output assertion, and finally clean up only that allocated '
+           'directory without changing production code or suppressing security findings'},
  'scripts/release/discovery-lab-profile.py': {'after': {'mode': '100644',
                                                         'sha256': '4da6958cd88f4e596aaa5947f398d2367009bb9bfe487fcfa1d0bf17b4cd348b'},
                                               'before': None,
