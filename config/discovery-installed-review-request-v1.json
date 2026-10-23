@@ -2,7 +2,7 @@
   "schema": "agijobsv0/discovery-owner-review-request/v1",
   "status": "UNACCEPTED_PROPOSAL_ONLY",
   "targetProfile": "jobs-discovery-installed-v1",
-  "proposedVersion": "2.1.0-rc.19",
+  "proposedVersion": "2.1.0-rc.20",
   "versionReservation": "UNRESERVED_PROPOSAL",
   "qualifiedPrerequisiteMain": null,
   "finalReviewedAlphaPin": null,

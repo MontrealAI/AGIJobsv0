@@ -837,7 +837,8 @@ test('rc17 and rc18 applicability retains the original suite and admits no unkno
   assert.deepEqual(dispatch.editionForVersion('2.1.0-rc.17'),{edition:'rc17',selected:'true'});
   assert.deepEqual(dispatch.editionForVersion('2.1.0-rc.18'),{edition:'rc18',selected:'false'});
   assert.deepEqual(dispatch.editionForVersion('2.1.0-rc.19'),{edition:'rc18',selected:'false'});
-  for(const version of [null,false,true,'false','2.1.0-rc.16','2.1.0-rc.20','2.1.0-rc.18 ','2.1.0-rc.19 '])assert.throws(()=>dispatch.editionForVersion(version));
+  assert.deepEqual(dispatch.editionForVersion('2.1.0-rc.20'),{edition:'rc18',selected:'false'});
+  for(const version of [null,false,true,'false','2.1.0-rc.16','2.1.0-rc.21','2.1.0-rc.18 ','2.1.0-rc.19 ','2.1.0-rc.20 '])assert.throws(()=>dispatch.editionForVersion(version));
   const workflow=fs.readFileSync(path.resolve(__dirname,'../../.github/workflows/source-release-rc16.yml'),'utf8');
   assert.equal(dispatch.assertRoutingSource(workflow),true);
   for(const changed of [
@@ -1289,7 +1290,7 @@ test('actual publisher rejects a private candidate collision before qualificatio
     for(const key of keys)if(previous[key]===undefined)delete process.env[key];else process.env[key]=previous[key];
     fs.rmSync(root,{recursive:true,force:true});}
 });
-async function ownedPublisherIdRun({substituteUploadedId=false,hideCreatedId=false}={}) {
+async function ownedPublisherIdRun({substituteUploadedId=false,hideCreatedId=false,retryInterrupted=false}={}) {
   const parent=fs.mkdtempSync(path.join(os.tmpdir(),'discovery-owned-publish-')),root=path.join(parent,'source'),output=path.join(parent,'publish');
   fs.mkdirSync(root,{mode:0o700});
   const prerequisite={id:20,tag_name:'source-v2.1.0-rc.17',target_commitish:'c'.repeat(40),draft:false,prerelease:true,published_at:'2026-10-22T00:00:00Z',
@@ -1317,7 +1318,8 @@ async function ownedPublisherIdRun({substituteUploadedId=false,hideCreatedId=fal
       if(route==='git/commits/'+'c'.repeat(40))return {tree:{sha:'d'.repeat(40)}};
       if(route==='git/ref/heads/main')return {object:{sha:source.sourceCommit}};
       if(route==='git/ref/tags/'+Q.TAG)return tag?{object:{type:'commit',sha:tag}}:null;
-      if(route==='releases/tags/'+Q.TAG){assert.equal(draft,null,'A private draft must never be read by published-tag lookup');return null;}
+      if(route==='releases/tags/'+Q.TAG){
+        assert.ok(draft===null||(retryInterrupted&&draft.draft===true),'Only precreation or interrupted-draft absence is expected');return null;}
       if(route==='releases?per_page=100&page=1')return [structuredClone(prerequisite),...(draft?[structuredClone(draft)]:[])];
       if(route==='releases/500')return hideCreatedId?null:structuredClone(draft);
       throw Error('Unexpected owned publisher ID route: '+route);
@@ -1365,6 +1367,16 @@ async function ownedPublisherIdRun({substituteUploadedId=false,hideCreatedId=fal
       assert.equal(calls.filter(route=>route.startsWith('releases/tags/'+Q.TAG)).length,2,'Only precreation published absence probes are allowed');
       assert.equal(draft.draft,false);assert.equal(tag,source.sourceCommit);
     }
+    if(retryInterrupted) {
+      const preserved=structuredClone(draft),receipt=fs.readFileSync(output+'.creation-response.json'),
+        retryOutput=output+'-retry',qualifiedBefore=qualifications;
+      await assert.rejects(P.publish({root,output:retryOutput,recordCommit:f.recordCommit,recordSha256:f.recordSha256},
+        {api,command,upload,download}),/private draft or published release/);
+      assert.equal(commands.length,1,'An interrupted retry must never send another POST or PATCH');
+      assert.equal(qualifications,qualifiedBefore,'A reserved tag must fail before another qualification');
+      assert.equal(fs.existsSync(retryOutput),false);assert.deepEqual(draft,preserved);
+      assert.deepEqual(fs.readFileSync(output+'.creation-response.json'),receipt);
+    }
   } finally {
     Q.sourceProof=originals.sourceProof;Q.qualify=originals.qualify;
     for(const key of keys)if(previous[key]===undefined)delete process.env[key];else process.env[key]=previous[key];
@@ -1409,5 +1421,9 @@ test('publisher failure evidence retains only the bounded creation response outs
 });
 
 test('actual publisher preserves creation receipt and empty draft without duplicate POST after invisible ID',async()=>{
- await ownedPublisherIdRun({hideCreatedId:true});
+ await ownedPublisherIdRun({hideCreatedId:true,retryInterrupted:true});
+});
+
+test('interrupted seven-asset upload retry preserves original IDs and bytes without replacement',async()=>{
+ await ownedPublisherIdRun({substituteUploadedId:true,retryInterrupted:true});
 });

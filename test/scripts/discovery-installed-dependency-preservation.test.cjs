@@ -501,3 +501,18 @@ test('explicit rc19 committed edition retains strict source-byte and Git-context
   fs.writeFileSync(path.join(root,'package.json'),committed.replace('rc.19','rc.17'));
   assert.throws(()=>checks.installedEdition(root,fakeGit),/Tracked installed source bytes or mode differ/);
 });
+
+test('explicit rc20 edition keeps committed-byte and hardened Git authentication',t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'jobs-owned-rc20-edition-'));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const committed=JSON.stringify({name:'owned',version:'2.1.0-rc.20'})+'\n';
+  const fakeGit=(args,cwd,context)=>{
+    assert.equal(cwd,root);assert.equal(context,checks.GIT_SECURITY_CONTEXT.installed);
+    const invocation=checks.gitInvocation(args,cwd,context);
+    assert.ok(invocation.args.includes('protocol.allow=never'));assert.equal(invocation.options.env.GIT_NO_LAZY_FETCH,'1');
+    if(args[0]==='ls-tree')return 'package.json\n';assert.deepEqual(args,['show','HEAD:package.json']);return committed;
+  };
+  fs.writeFileSync(path.join(root,'package.json'),committed);assert.equal(checks.installedEdition(root,fakeGit),true);
+  fs.writeFileSync(path.join(root,'package.json'),committed.replace('rc.20','rc.17'));
+  assert.throws(()=>checks.installedEdition(root,fakeGit),/Tracked installed source bytes or mode differ/);
+});
