@@ -255,9 +255,9 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
  'scripts/release/discovery-installed-package.py': {'after': {'mode': '100644', 'sha256': 'deb3a9631eddcbb8588c1f9532e17393c434c5f185c10e43604a4f76ac4a3d24'},
                                                     'before': None,
                                                     'reason': 'Retain the deterministic installed archive builder, complete source/Alpha capture, manifest and standalone installer provenance; update only generated README instructions to require the authenticated original archive hash and byte count alongside installed-manifest hash'},
- 'scripts/release/discovery-installed-qualification.cjs': {'after': {'mode': '100644', 'sha256': 'd6c5ac4e79280e8aa10a3444b6335c1ca4b0c153f015262a460eb30913fafbd3'},
+ 'scripts/release/discovery-installed-qualification.cjs': {'after': {'mode': '100644', 'sha256': '5823758ab5019c97396910990d43fadfe2d28612de92476b4db6871f7892f271'},
                                                            'before': None,
-                                                           'reason': 'Retain original actual-main producer, two-runtime native/raw/browser/source/scanner/review qualification and fresh leased publication checks; require all97 fixed reviewed Alpha615 version1.38.0 outputs plus every declared distribution/validation pack and source/attempt/main-branch-bound successful package/pages/publish jobs before and after anonymous public-byte acceptance, retaining checksum/manifest/provenance and operator catalog/source-body bridge without authenticated-artifact substitution'},
+                                                           'reason': 'Preserve the complete reviewed public Alpha profile, selected-attempt/main-branch leases, all source/capsule/native/scanner/deployment checks and byte identities; acquire only the selected Jobs Actions job logs and artifact ZIPs as bounded raw bytes through fixed API GET and credential-free approved storage redirects, with one total60s deadline, unchanged64MB cap and no terminal rendering or CLI escape-guard opt-out; await each original-byte consumer'},
  'scripts/release/discovery-installed-release-dispatch.cjs': {'after': {'mode': '100644',
                                                                         'sha256': 'b28b8c29c54abadbe41a22a2ba6e9647a99d70892d61c730497e4fa722bac3bb'},
                                                               'before': None,
@@ -267,15 +267,8 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                                         'operator, retained mission evidence '
                                                                         'and release qualification'},
  'scripts/release/discovery-installed-release.test.cjs': {'before': None,
- 'after': {'mode': '100644', 'sha256': '16247c2ce87b6e2a7df50c3ff6ba813c50e6b3bc6e03a3c8628fdee9485dd9ab'},
- 'reason': 'Retain all57 existing inert release test bodies, including the original33 bodies and24 '
-           'source-specific Alpha615 profile/job/publication cases; append seven ordinary fake-API cases '
-           'reproducing the actual large-record publisher caller and preserving small Contents reads while '
-           'rejecting missing or mismatched metadata, substitution, truncation, noncanonical base64, oversize and '
-           'changed record selectors; no actual public download or qualification claim; stage the actual caller '
-           'fixture in its own mkdtemp-created private0700 directory with an absent child output, retain the '
-           'exact prerequisite checkpoint and no-output assertion, and finally clean up only that allocated '
-           'directory without changing production code or suppressing security findings'},
+ 'after': {'mode': '100644', 'sha256': 'aaeda5318fca79d54ae9716673853c7d207f579b70f822589a8013815c35a127'},
+ 'reason': 'Preserve all64 preceding release/caller/private-fixture test bodies byte-for-byte; append seven inert fake-fetch cases for exact ANSI/binary bytes, fixed Actions selectors, API-only credentials, approved redirects, shared deadline, HTTP/encoding/size/truncation refusal, cleanup and safe failures; no network, captured-code or product execution'},
  'scripts/release/discovery-lab-profile.py': {'after': {'mode': '100644',
                                                         'sha256': '4da6958cd88f4e596aaa5947f398d2367009bb9bfe487fcfa1d0bf17b4cd348b'},
                                               'before': None,
