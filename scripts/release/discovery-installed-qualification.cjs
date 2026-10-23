@@ -431,10 +431,22 @@ function liveApi(token,repository=REPOSITORY) {
     const response=await fetch('https://api.github.com/repos/'+repository+'/'+route,
       {headers:{Accept:'application/vnd.github+json',...(token?{Authorization:'Bearer '+token}:{}),'X-GitHub-Api-Version':'2022-11-28'},
         redirect:'error',signal:AbortSignal.timeout(30_000)});
-    assert.ok(response.ok,'Cannot authenticate hosted evidence: HTTP '+response.status);
+    assert.ok(response.ok,'Hosted metadata read failed: GET repos/'+repository+'/'+route+' HTTP '+response.status+
+      ' (authentication='+(token?'existing-workflow-token':'anonymous')+')');
     const chunks=[];let size=0;const reader=response.body.getReader();
     try {while(true){const item=await reader.read();if(item.done)break;size+=item.value.length;assert.ok(size<=32_000_000);chunks.push(Buffer.from(item.value));}}
     finally{await reader.cancel();}return json(Buffer.concat(chunks));
+  };
+}
+function alphaMetadataApi(token) {
+  assert.ok(typeof token==='string'&&token,'Existing workflow token is required for Alpha metadata');
+  const read=liveApi(token,ALPHA_REPOSITORY);
+  return route=>{
+    assert.ok(typeof route==='string'&&/^[A-Za-z0-9_./?=&-]+$/.test(route)&&!route.startsWith('/')&&
+      !route.includes('..')&&!route.includes('/zip')&&
+      !route.startsWith('git/blobs/')&&!route.startsWith('contents/'),
+    'Alpha metadata cannot select body-byte or archive transport');
+    return read(route);
   };
 }
 async function download(route,options={}) {return downloadBytes(route,options,false);}
@@ -1020,7 +1032,7 @@ async function qualify(options) {
       GIT_CONFIG_NOSYSTEM:'1',GIT_CONFIG_GLOBAL:'/dev/null',GIT_NO_LAZY_FETCH:'1',GIT_ALLOW_PROTOCOL:'',GIT_TERMINAL_PROMPT:'0'}}));
   assert.equal(String(git('merge-base',record.prerequisite.commit,source.sourceCommit)).trim(),record.prerequisite.commit,
     'Qualified prerequisite main source must be retained in actual ancestry');
-  const capture=require('./capture-discovery-browser-input.cjs'),alphaRead=options.alphaApi||capture.publicApi,alphaCache=new Map();
+  const capture=require('./capture-discovery-browser-input.cjs'),alphaRead=options.alphaApi||alphaMetadataApi(process.env.GH_TOKEN),alphaCache=new Map();
   const alphaApi=async route=>{if(!alphaCache.has(route))alphaCache.set(route,Promise.resolve(alphaRead(route)));
     return structuredClone(await alphaCache.get(route));};
   const observedReviews=await reviewReferences(api,record,source);
@@ -1120,7 +1132,7 @@ async function qualify(options) {
     productionApproved:false,authority:'none',currencyCapBaseUnits:'0'};
   fs.writeFileSync(path.join(output,'qualification.json'),JSON.stringify(proof,null,2)+'\n',{flag:'wx'});return proof;
 }
-module.exports={REPOSITORY,WORKFLOW,VERSION,TAG,NODES,PRODUCER,CONSUMER,INSTALLER_PATH,INSTALLER_ASSET,hash,json,canonical,fields,bounded,sourceProof,plan,
+module.exports={REPOSITORY,WORKFLOW,VERSION,TAG,NODES,PRODUCER,CONSUMER,INSTALLER_PATH,INSTALLER_ASSET,hash,json,canonical,fields,bounded,sourceProof,plan,alphaMetadataApi,
   validateRun,validateJob,validateArtifact,validateRetainedHistory,verifyBrowserInput,verifyAlphaPublication,verifyAlphaPublicAssets,reviewedAlphaReleaseProfile,verifyAlphaProfileInventory,verifyAlphaProfilePacks,alphaReleaseAttemptJobs,alphaReleaseJobsLease,alphaPublicAssetIdentity,alphaPublicAssetInventory,readPublicAlphaAsset,ALPHA_ASSET_MAX_BYTES,reviewReferences,zipMembers,installedArchive,validateInstaller,assertProducerInventory,custodyFromProducer,validateBootstrap,validateNative,publicationRecord,scannerReview,download,downloadReleaseAsset,qualify};
 if(require.main===module) {
   const [command,root,manifestSha256,verifierSha256,scopeVerifierSha256,runId,recordFile,recordSha256,output]=process.argv.slice(2);
