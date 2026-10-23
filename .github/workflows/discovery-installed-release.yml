@@ -1,0 +1,238 @@
+name: Discovery installed release
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      qualification_run_id:
+        description: Successful original exact-main push producer run
+        required: true
+      publication_record_commit:
+        description: Immutable public evidence commit containing the exact-source review record
+        required: true
+      publication_record_sha256:
+        description: Independently reviewed publication-record SHA-256
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: discovery-installed-${{ github.workflow }}-${{ github.sha }}-${{ github.event_name }}
+  cancel-in-progress: false
+jobs:
+  select:
+    name: Select reviewed Discovery source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      frozen: ${{ steps.source.outputs.frozen }}
+      alpha_commit: ${{ steps.source.outputs.alpha_commit }}
+      manifest_sha256: ${{ steps.source.outputs.manifest_sha256 }}
+      verifier_sha256: ${{ steps.source.outputs.verifier_sha256 }}
+      scope_verifier_sha256: ${{ steps.source.outputs.scope_verifier_sha256 }}
+      installer_sha256: ${{ steps.source.outputs.installer_sha256 }}
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.21.0
+      - name: Verify actual release-route behavior
+        run: node --test scripts/release/discovery-installed-release.test.cjs
+      - name: Read source-bound preparation selection
+        id: source
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs'), crypto = require('node:crypto'), assert = require('node:assert/strict');
+          const sha = name => crypto.createHash('sha256').update(fs.readFileSync(name)).digest('hex');
+          const pin = JSON.parse(fs.readFileSync('config/discovery-installed-alpha-v1.json','utf8'));
+          const frozen = pin.status === 'REVIEWED_FINAL_SOURCE';
+          if (frozen) assert.match(pin.commit,/^[a-f0-9]{40}$/);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,
+            'frozen=' + frozen + '\nalpha_commit=' + (frozen ? pin.commit : '') + '\n' +
+            'manifest_sha256=' + sha('config/discovery-installed-candidate-v1.json') + '\n' +
+            'verifier_sha256=' + sha('scripts/release/discovery-installed-profile.py') + '\n' +
+            'scope_verifier_sha256=' + sha('tools/security/discovery-installed-protected-scope.mjs') + '\n' +
+            'installer_sha256=' + sha('scripts/release/install-discovery-installed.py') + '\n');
+          console.log(frozen ? 'Reviewed source selected; installed gates still required.' : 'Alpha pin UNSET; installed acceptance NOT_RUN and publication held.');
+          NODE
+  producer:
+    name: Build source-bound Discovery installed archive
+    needs: select
+    if: needs.select.outputs.frozen == 'true' && github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: jobs-source
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          path: jobs-source
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          repository: MontrealAI/AGI-Alpha-Agent-v0
+          ref: ${{ needs.select.outputs.alpha_commit }}
+          path: alpha-source
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.21.0
+      - name: Validate complete selected source
+        env:
+          MANIFEST_SHA256: ${{ needs.select.outputs.manifest_sha256 }}
+          VERIFIER_SHA256: ${{ needs.select.outputs.verifier_sha256 }}
+          SCOPE_VERIFIER_SHA256: ${{ needs.select.outputs.scope_verifier_sha256 }}
+        run: python3 -I scripts/release/discovery-installed-profile.py --manifest-sha256 "$MANIFEST_SHA256" --verifier-sha256 "$VERIFIER_SHA256" --scope-verifier-sha256 "$SCOPE_VERIFIER_SHA256" --require-git
+      - name: Build one source-bound installed archive
+        env:
+          MANIFEST_SHA256: ${{ needs.select.outputs.manifest_sha256 }}
+          VERIFIER_SHA256: ${{ needs.select.outputs.verifier_sha256 }}
+          SCOPE_VERIFIER_SHA256: ${{ needs.select.outputs.scope_verifier_sha256 }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/discovery-installed-producer"
+          python3 -I scripts/release/discovery-installed-package.py build --root "$PWD" --manifest-sha256 "$MANIFEST_SHA256" --verifier-sha256 "$VERIFIER_SHA256" --scope-verifier-sha256 "$SCOPE_VERIFIER_SHA256" --alpha-root "$GITHUB_WORKSPACE/alpha-source" --output "$RUNNER_TEMP/discovery-installed-producer/jobs-discovery-installed.tar.gz"
+      - name: Capture actual source-bound browser export
+        # Retain the common 17 original packet files and both exact Jobs primary aliases.
+        # This helper reads public immutable Git blobs and original producer metadata.
+        run: node scripts/release/capture-discovery-browser-input.cjs "$PWD" "$RUNNER_TEMP/discovery-installed-producer/browser-inputs"
+      - name: Retain original installed producer archive
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: discovery-installed-capsule-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/discovery-installed-producer/jobs-discovery-installed.tar.gz
+            ${{ runner.temp }}/discovery-installed-producer/jobs-discovery-installed.tar.gz.custody.json
+            ${{ runner.temp }}/discovery-installed-producer/install-discovery-installed.py
+            ${{ runner.temp }}/discovery-installed-producer/browser-inputs/
+          if-no-files-found: error
+  native:
+    name: Extracted Discovery native ${{ matrix.node }}
+    needs: [select, producer]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22.23.3', '24.21.0']
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Download saved producer archive
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: discovery-installed-capsule-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/discovery-saved-producer
+      - name: Verify saved standalone installer
+        env:
+          INSTALLER_SHA256: ${{ needs.select.outputs.installer_sha256 }}
+          MANIFEST_SHA256: ${{ needs.select.outputs.manifest_sha256 }}
+          VERIFIER_SHA256: ${{ needs.select.outputs.verifier_sha256 }}
+          SCOPE_VERIFIER_SHA256: ${{ needs.select.outputs.scope_verifier_sha256 }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs'), crypto = require('node:crypto'), assert = require('node:assert/strict');
+          const base = process.env.RUNNER_TEMP + '/discovery-saved-producer/';
+          const archive = base + 'jobs-discovery-installed.tar.gz';
+          const custody = JSON.parse(fs.readFileSync(archive + '.custody.json','utf8'));
+          for (const name of ['archiveSha256','installedManifestSha256']) assert.match(custody[name],/^[a-f0-9]{64}$/);
+          const installer = fs.readFileSync(base + 'install-discovery-installed.py');
+          assert.match(process.env.INSTALLER_SHA256,/^[a-f0-9]{64}$/);
+          assert.equal(crypto.createHash('sha256').update(installer).digest('hex'),process.env.INSTALLER_SHA256);
+          assert.deepEqual(custody.installer,{path:'install-discovery-installed.py',sourcePath:'scripts/release/install-discovery-installed.py',
+            sha256:process.env.INSTALLER_SHA256,bytes:installer.length});
+          assert.equal(custody.jobsCommit,process.env.GITHUB_SHA);
+          const sourceSelection={profile:'jobs-discovery-installed-v1',manifestSha256:process.env.MANIFEST_SHA256,
+            verifierSha256:process.env.VERIFIER_SHA256,scopeVerifierSha256:process.env.SCOPE_VERIFIER_SHA256};
+          for (const name of ['manifestSha256','verifierSha256','scopeVerifierSha256']) assert.match(sourceSelection[name],/^[a-f0-9]{64}$/);
+          const output = process.env.RUNNER_TEMP + '/discovery-native-evidence/bootstrap';
+          fs.mkdirSync(output,{recursive:true});
+          fs.writeFileSync(output + '/install-discovery-installed.py',installer,{flag:'wx'});
+          fs.writeFileSync(output + '/installer-custody.json',JSON.stringify({schema:'agijobsv0/discovery-installed-bootstrap/v1',node:process.version,
+            installer:custody.installer,jobsCommit:custody.jobsCommit,sourceSelection,archiveSha256:custody.archiveSha256,
+            installedManifestSha256:custody.installedManifestSha256,authority:'none'},null,2) + '\n',{flag:'wx'});
+          NODE
+      - name: Verify and extract original installed archive
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs'), cp = require('node:child_process'), assert = require('node:assert/strict');
+          const base = process.env.RUNNER_TEMP + '/discovery-saved-producer/';
+          const archive = base + 'jobs-discovery-installed.tar.gz';
+          const custody = JSON.parse(fs.readFileSync(archive + '.custody.json','utf8'));
+          const installer = process.env.RUNNER_TEMP + '/discovery-native-evidence/bootstrap/install-discovery-installed.py';
+          cp.execFileSync('python3',['-I',installer,'--archive',archive,
+            '--sha256',custody.archiveSha256,'--manifest-sha256',custody.installedManifestSha256,
+            '--output',process.env.RUNNER_TEMP + '/discovery-installed'],{stdio:'inherit'});
+          fs.copyFileSync(process.env.RUNNER_TEMP + '/discovery-installed/INSTALLATION_CUSTODY.json',
+            process.env.RUNNER_TEMP + '/discovery-native-evidence/bootstrap/installation-custody.json',fs.constants.COPYFILE_EXCL);
+          NODE
+      - name: Run extracted operator and same-history native acceptance
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs'), cp = require('node:child_process'), assert = require('node:assert/strict');
+          const base = process.env.RUNNER_TEMP + '/';
+          const custody = JSON.parse(fs.readFileSync(base + 'discovery-saved-producer/jobs-discovery-installed.tar.gz.custody.json','utf8'));
+          assert.match(custody.installedManifestSha256,/^[a-f0-9]{64}$/);
+          assert.match(custody.archiveSha256,/^[a-f0-9]{64}$/);
+          assert.ok(Number.isSafeInteger(custody.archiveBytes) && custody.archiveBytes > 0 && custody.archiveBytes <= 20000000);
+          cp.execFileSync(process.execPath,[base + 'discovery-installed/integrations/alpha-agent/discovery-installed-operator.mjs',
+            'status',base + 'discovery-installed',custody.installedManifestSha256,custody.archiveSha256,String(custody.archiveBytes)],{stdio:'inherit'});
+          fs.mkdirSync(base + 'discovery-native-evidence',{recursive:true});
+          cp.execFileSync(process.execPath,[base + 'discovery-installed/integrations/alpha-agent/discovery-installed-native.mjs',
+            '--installed-root',base + 'discovery-installed','--manifest-sha256',custody.installedManifestSha256,
+            '--archive-sha256',custody.archiveSha256,'--archive-bytes',String(custody.archiveBytes),
+            '--output',base + 'discovery-native-evidence/native-evidence.json',
+            '--workspace',base + 'discovery-saved-producer/browser-inputs/workspace.json',
+            '--request',base + 'discovery-saved-producer/browser-inputs/request.txt'],{stdio:'inherit'});
+          NODE
+      - name: Retain original installed native evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: discovery-installed-native-${{ matrix.node }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/discovery-native-evidence/
+          if-no-files-found: error
+  publish:
+    name: Publish qualified Discovery installed prerelease
+    needs: select
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' && github.actor == github.repository_owner && needs.select.outputs.frozen == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 95
+    permissions:
+      contents: write
+      actions: read
+      checks: read
+      security-events: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      QUALIFICATION_RUN_ID: ${{ inputs.qualification_run_id }}
+      PUBLICATION_RECORD_COMMIT: ${{ inputs.publication_record_commit }}
+      PUBLICATION_RECORD_SHA256: ${{ inputs.publication_record_sha256 }}
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.21.0
+      - name: Qualify original hosted bytes and publish verified software assets
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs'), cp = require('node:child_process'), crypto = require('node:crypto'), assert = require('node:assert/strict');
+          const hash = name => crypto.createHash('sha256').update(fs.readFileSync(name)).digest('hex');
+          assert.match(process.env.QUALIFICATION_RUN_ID,/^[1-9][0-9]*$/);
+          assert.match(process.env.PUBLICATION_RECORD_COMMIT,/^[a-f0-9]{40}$/);
+          assert.match(process.env.PUBLICATION_RECORD_SHA256,/^[a-f0-9]{64}$/);
+          cp.execFileSync(process.execPath,['scripts/release/publish-discovery-installed.cjs',process.cwd(),
+            hash('config/discovery-installed-candidate-v1.json'),hash('scripts/release/discovery-installed-profile.py'),
+            hash('tools/security/discovery-installed-protected-scope.mjs'),
+            process.env.QUALIFICATION_RUN_ID,process.env.PUBLICATION_RECORD_COMMIT,process.env.PUBLICATION_RECORD_SHA256,
+            process.env.RUNNER_TEMP + '/discovery-installed-release-assets'],{stdio:'inherit'});
+          NODE

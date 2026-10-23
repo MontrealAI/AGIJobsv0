@@ -1,0 +1,39 @@
+name: Discovery installed preparation
+on:
+  workflow_dispatch:
+    inputs:
+      manifest_sha256:
+        description: Externally reviewed preparation manifest SHA-256
+        required: true
+      verifier_sha256:
+        description: Externally reviewed preparation verifier SHA-256
+        required: true
+      scope_verifier_sha256:
+        description: Externally reviewed installed scanner scope verifier SHA-256
+        required: true
+permissions:
+  contents: read
+jobs:
+  preparation:
+    name: Source proof and explicit NOT_RUN status
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          persist-credentials: false
+      - name: Validate finite source and preserve all unresolved gates
+        env:
+          MANIFEST_SHA256: ${{ inputs.manifest_sha256 }}
+          VERIFIER_SHA256: ${{ inputs.verifier_sha256 }}
+          SCOPE_VERIFIER_SHA256: ${{ inputs.scope_verifier_sha256 }}
+        run: |
+          set -euo pipefail
+          python3 -I scripts/release/discovery-installed-profile.py --manifest-sha256 "$MANIFEST_SHA256" --verifier-sha256 "$VERIFIER_SHA256" --scope-verifier-sha256 "$SCOPE_VERIFIER_SHA256"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.21.0
+      - name: Check inert module parser and resolver decisions
+        run: node --test integrations/alpha-agent/discovery-installed-module-graph.test.mjs
+      - name: Test installed preparation boundaries
+        run: python3 scripts/release/test-discovery-installed-profile.py

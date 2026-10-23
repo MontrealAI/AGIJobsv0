@@ -1,0 +1,131 @@
+{
+  "schema": "successor/discovery-lab-source-candidate/v1",
+  "repository": "MontrealAI/AGIJobsv0",
+  "profile": "discovery-lab-source-candidate-v1",
+  "baseCommit": "83065adf18a6ee987f8fa479a496a052d35db682",
+  "baseTree": "77ded62b991e8cca28bfd849593153f61ac72d86",
+  "claims": {
+    "sourcePackageOnly": true,
+    "releaseQualified": false,
+    "releaseIdentity": null,
+    "publicationApproved": false,
+    "executionApproved": false
+  },
+  "changes": {
+    ".github/workflows/discovery-lab-receiver.yml": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "1d745e792b5e3f167be5c5d00e5b94c4aaff5aedba576dc07d66ceeebe0271ff"
+      },
+      "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
+    },
+    "config/discovery-lab-alpha-source.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "a463a01423d1b64fa9c5dc793716279890d02e1d4a004202fa3f63ac427dbbe9"
+      },
+      "reason": "Explicit native compatibility harness/source pin; authenticated Alpha code only, no execution or publication approval."
+    },
+    "docs/successor/DISCOVERY_LAB.md": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "55e75ea1f35de29b2486d819c56e04ac042c6397225a3fbccb74f5435186dc4b"
+      },
+      "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
+    },
+    "integrations/alpha-agent/discovery-lab-contract.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "98c8de8ce2774b7650bf4ee11eeedfb0a69b75fa6d1b080ef823637d77d0ab47"
+      },
+      "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
+    },
+    "integrations/alpha-agent/discovery-lab-native-test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "21265da0be01079dbc5d83572fae716d4dd4cdcfb39b876c96ff01cb793216ee"
+      },
+      "reason": "Explicit native compatibility harness/source pin; authenticated Alpha code only, no execution or publication approval."
+    },
+    "integrations/alpha-agent/discovery-lab-work-request.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "337fabca02ece2a25b8cc50e56fea5bf5338f2b6f18343eb4a3353a634aefec4"
+      },
+      "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
+    },
+    "integrations/alpha-agent/discovery-lab-work-request.test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "799ab68c0077ffb7849133ee53d228928ef8d0e20000c813bb3cec30cff4a30d"
+      },
+      "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
+    },
+    "integrations/alpha-agent/fixtures/discovery-lab-request.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "891e11f3fed142db55e36934b4f1b5869200973216bfdd9257789fd66fb0a82f"
+      },
+      "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
+    },
+    "scripts/release/test-discovery-lab-profile.py": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "603f6f26515803bde617f977a2a1cbd9c48e09fafc9b77dcc9f61eb18ca7728f"
+      },
+      "reason": "Explicit additive Discovery Lab source and tests; no historical source exemption or publication qualification."
+    },
+    "test/security/discovery-protected-scope.test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "725d0fd5683e491aff69d34e64dda4392924aefb9bac7889cba830f834b86927"
+      },
+      "reason": "Finite explicit three-configuration protected-scope proof and independent adversarial tests; no scanner or publication waiver."
+    }
+  },
+  "transitions": {
+    "tools/security/validate-codeql-remediation.mjs": {
+      "before": {
+        "blob": "9657ecd2c072276276079e55fde51c5b66b8b37c",
+        "mode": "100644"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "a9bea3725ba78204609bb7f446d1b79ead911137d1ff4486177dba64a235f175"
+      },
+      "reason": "Replace blanket no-change assertion only with exact three additive configurations plus complete source-package proof; preserve the96 findings and every deployed-source/scanner gate."
+    },
+    "hardhat.config.js": {
+      "before": {
+        "mode": "100644",
+        "blob": "8d201a5f8af39ccefa4970e6839584abcc1720ba"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "738518441596cb1e6a9c691fa2c2ca68fc158a96f8856ab71f0ebc70ad0590b6"
+      },
+      "reason": "Exclude only the new Discovery node:test suite from native Mocha discovery; all other selection and mandatory dedicated Node execution remain enforced."
+    },
+    "test/scripts/hardhat-test-discovery.test.cjs": {
+      "before": {
+        "mode": "100644",
+        "blob": "25707f312769272f1f88a6d12b1c709ac07d0ae9"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "9887b51bbc81599ff9a725b0f81747c8f9b1f3de3219015d789125216438b7dd"
+      },
+      "reason": "Exercise actual aggregate and explicit Hardhat selection plus mandatory exact-source dedicated Discovery execution; preserve existing isolation/native-suite checks."
+    }
+  }
+}

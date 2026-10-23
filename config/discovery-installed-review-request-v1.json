@@ -1,0 +1,184 @@
+{
+  "schema": "agijobsv0/discovery-owner-review-request/v1",
+  "status": "UNACCEPTED_PROPOSAL_ONLY",
+  "targetProfile": "jobs-discovery-installed-v1",
+  "proposedVersion": "2.1.0-rc.18",
+  "versionReservation": "UNRESERVED_PROPOSAL",
+  "qualifiedPrerequisiteMain": null,
+  "finalReviewedAlphaPin": null,
+  "actualFinalSourceScannerReview": null,
+  "trueUnclearedQualityWarnings": 8,
+  "qualityCases": [
+    {
+      "rawResultIndex": 11,
+      "rawResultSha256": "f1ad5ab543d6f71395f521b94dd2ff27bd67d2c5b641c21bd2254c32dde7fb7f",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 12,
+      "rawResultSha256": "a0c8fc26914b809981a63f528384d25155879d6130caf02e86a216c0b3f616a9",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 13,
+      "rawResultSha256": "9adc80398bbc3729d06eb0c7ba71fc2a1a1b36969736d070571fa4dcc9dad7df",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 14,
+      "rawResultSha256": "3ef562fae3b94d3923e1eb4e8b984ffb0ef5a190fd33622332c34a403753fc3a",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 15,
+      "rawResultSha256": "d3b8e0db1968d7639877e74eb4c613d2fa9d43b7cb11b61348179edae7e1cd2a",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 16,
+      "rawResultSha256": "1792282aede4a74926902c5dde76a06258672bc2a2d70b87c150e9b4aa087249",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 17,
+      "rawResultSha256": "38ad2f13f0bb275b770f299995511ae4df1ac3e332f2ce8c5c76fc2249991d38",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    },
+    {
+      "rawResultIndex": 18,
+      "rawResultSha256": "3935c3137b1d582d2f6bb9acf69955d1b2553bb39053e2b57d26df96d29713b9",
+      "technicalDisposition": "TRUE_NONSECURITY_MAINTAINABILITY_FINDING",
+      "proposedDisposition": "Acknowledged nonsecurity quality",
+      "trueQuality": true,
+      "ownerDispositionPending": true,
+      "independentReviewReference": "https://github.com/MontrealAI/AGIJobsv0/pull/4011#issuecomment-6329679226",
+      "acceptedFindingRecordWritten": false
+    }
+  ],
+  "historicalTechnicalAssessment": {
+    "publicHead": "852420e82ae3f5bbf0c397a4c1d550d210d4916f",
+    "executedSource": "afa1d740b68f34a8823f7c331cf8c12fc317dbb2",
+    "sourceTree": "cb29f676e1e6d43f0d19ed72b34c248bca9a3af1",
+    "evidenceCommit": "d7b9252bd4471898a4836dfcc78ebf3e27e2bc97",
+    "proposalSha256": "bd321917a5dfbca5b8e4fcbfeeb8d9451e9d8c820711e83357545bfab1cf7b91",
+    "scope": "Same-session AI technical assessment, not human or organization approval; cannot qualify new source."
+  },
+  "blockingRules": [
+    {
+      "source": "scripts/release/source-scanner-review-bindings-rc16.cjs",
+      "rule": "A quality disposition requires exact sourceBlob/ruleMetadata/queryComponent/configSummary identities plus case-specific behavior and independent-review evidence; true warnings cannot be relabeled false positive."
+    },
+    {
+      "source": "scripts/release/source-profile-rc16.cjs:verifyPublicationReview",
+      "rule": "Installed immutable source-profile review slots and actual-source ancestry are mandatory; historical accepted slots cannot be replaced by this proposal."
+    },
+    {
+      "source": "scripts/release/source-profile-rc16.cjs:verifySourceScope",
+      "rule": "Frozen rc17 admits only its finite owner source and exact metadata transitions; Discovery requires a separately reviewed profile, not an rc16/rc17 exemption."
+    }
+  ],
+  "requestedDisposition": [
+    {
+      "case": 11,
+      "allowedNextAction": [
+        "Source cleanup with fresh exact-source scanner production and independent review",
+        "Explicit case-specific nonsecurity-quality acknowledgment with complete identities and owner decision"
+      ],
+      "current": "PENDING_OWNER_DECISION_TRUE_WARNING_UNCLEARED"
+    },
+    {
+      "case": 12,
+      "allowedNextAction": [
+        "Source cleanup with fresh exact-source scanner production and independent review",
+        "Explicit case-specific nonsecurity-quality acknowledgment with complete identities and owner decision"
+      ],
+      "current": "PENDING_OWNER_DECISION_TRUE_WARNING_UNCLEARED"
+    },
+    {
+      "case": 13,
+      "allowedNextAction": [
+        "Source cleanup with fresh exact-source scanner production and independent review",
+        "Explicit case-specific nonsecurity-quality acknowledgment with complete identities and owner decision"
+      ],
+      "current": "PENDING_OWNER_DECISION_TRUE_WARNING_UNCLEARED"
+    },
+    {
+      "case": 14,
+      "allowedNextAction": [
+        "Source cleanup with fresh exact-source scanner production and independent review",
+        "Explicit case-specific nonsecurity-quality acknowledgment with complete identities and owner decision"
+      ],
+      "current": "PENDING_OWNER_DECISION_TRUE_WARNING_UNCLEARED"
+    },
+    {
+      "case": 15,
+      "allowedNextAction": [
+        "Source cleanup with fresh exact-source scanner production and independent review",
+        "Explicit case-specific nonsecurity-quality acknowledgment with complete identities and owner decision"
+      ],
+      "current": "PENDING_OWNER_DECISION_TRUE_WARNING_UNCLEARED"
+    },
+    {
+      "case": 16,
+      "allowedNextAction": [
+        "Source cleanup with fresh exact-source scanner production and independent review",
+        "Explicit case-specific nonsecurity-quality acknowledgment with complete identities and owner decision"
+      ],
+      "current": "PENDING_OWNER_DECISION_TRUE_WARNING_UNCLEARED"
+    },
+    {
+      "case": 17,
+      "allowedNextAction": [
+        "Source cleanup with fresh exact-source scanner production and independent review",
+        "Explicit case-specific nonsecurity-quality acknowledgment with complete identities and owner decision"
+      ],
+      "current": "PENDING_OWNER_DECISION_TRUE_WARNING_UNCLEARED"
+    },
+    {
+      "case": 18,
+      "allowedNextAction": [
+        "Source cleanup with fresh exact-source scanner production and independent review",
+        "Explicit case-specific nonsecurity-quality acknowledgment with complete identities and owner decision"
+      ],
+      "current": "PENDING_OWNER_DECISION_TRUE_WARNING_UNCLEARED"
+    }
+  ],
+  "acceptedRecordsChanged": false,
+  "productionApproved": false,
+  "publicationApproved": false
+}

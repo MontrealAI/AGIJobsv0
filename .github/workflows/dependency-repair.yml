@@ -5,6 +5,9 @@ on:
     paths:
       - 'package.json'
       - 'package-lock.json'
+      - 'demo/CULTURE-v0/indexers/culture-graph-indexer/package.json'
+      - 'demo/CULTURE-v0/indexers/culture-graph-indexer/package-lock.json'
+      - 'demo/CULTURE-v0/pnpm-lock.yaml'
       - 'scripts/security/**'
       - 'scripts/release/audit-dependencies.cjs'
       - 'vendor/braces/**'
@@ -54,7 +57,8 @@ jobs:
         run: |
           set +e
           set -uo pipefail
-          evidence="reports/dependency-repair-$SURFACE"
+          artifact_root="$RUNNER_TEMP/dependency-repair-$SURFACE"
+          evidence="$artifact_root/reports/dependency-repair-$SURFACE"
           mkdir -p "$evidence"
           failed=0
           run_check() {
@@ -70,6 +74,7 @@ jobs:
           run_check braces-provenance node scripts/security/verify-braces-patch.cjs --source
           case "$SURFACE" in
             libraries)
+              run_check audit-workflow node --test test/scripts/dependency-audit.test.cjs
               run_check preflight npm run ci:preflight
               run_check compatibility npm run test:dependency-compat
               run_check eas-receipts node --test attestation/eas/test/receipt-digest.test.mjs
@@ -79,8 +84,9 @@ jobs:
             contracts)
               if run_check compile npm run compile; then
                 run_check size npm run release:check-size
-                run_check local-deploy npm run deploy:local
+                run_check local-deploy env DEPLOY_DEFAULTS_OUTPUT="$artifact_root/reports/deployment-hardhat.json" npm run deploy:local
                 run_check deployer-tests npx --no-install hardhat test --no-compile test/v2/Deployer.test.js test/v2/DeploymentScripts.test.js test/v2/DeploymentCli.test.js
+                run_check generated-source-status git status --porcelain=v1 --untracked-files=all
                 run_check generated-preservation node scripts/security/check-dependency-preservation.cjs generated
               fi
               ;;
@@ -95,28 +101,40 @@ jobs:
               code=$?
               printf 'production-audit %s\n' "$code" | tee -a "$evidence/exits.txt"
               if [ "$code" != 0 ]; then failed=1; fi
-              node -e 'const a=require("./reports/dependency-repair-production-audit/audit-production.json");if(a.error||!a.metadata?.vulnerabilities)process.exit(1);console.log(JSON.stringify(a.metadata.vulnerabilities));' || failed=1
+              node -e 'const a=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8"));if(a.error||!a.metadata?.vulnerabilities)process.exit(1);console.log(JSON.stringify(a.metadata.vulnerabilities));' "$evidence/audit-production.json" || failed=1
               ;;
             full-audit)
               npm audit --package-lock-only --ignore-scripts --include=dev --include=optional --include=peer --json --audit-level=high > "$evidence/audit-full.json"
               code=$?
               printf 'full-audit %s\n' "$code" | tee -a "$evidence/exits.txt"
               if [ "$code" != 0 ]; then failed=1; fi
-              node -e 'const a=require("./reports/dependency-repair-full-audit/audit-full.json");if(a.error||!a.metadata?.vulnerabilities)process.exit(1);console.log(JSON.stringify(a.metadata.vulnerabilities));for(const [n,v]of Object.entries(a.vulnerabilities||{}))if(["high","critical"].includes(v.severity))console.log(n,v.severity,JSON.stringify(v.via));' || failed=1
+              node -e 'const a=JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8"));if(a.error||!a.metadata?.vulnerabilities)process.exit(1);console.log(JSON.stringify(a.metadata.vulnerabilities));for(const [n,v]of Object.entries(a.vulnerabilities||{}))if(["high","critical"].includes(v.severity))console.log(n,v.severity,JSON.stringify(v.via));' "$evidence/audit-full.json" || failed=1
               ;;
           esac
           git rev-parse HEAD > "$evidence/candidate.txt"
           node --version > "$evidence/node-version.txt"
           npm --version > "$evidence/npm-version.txt"
           exit "$failed"
+      - name: Stage retained dependency evidence outside authenticated source
+        if: always()
+        env:
+          SURFACE: ${{ matrix.surface }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifact_root="$RUNNER_TEMP/dependency-repair-$SURFACE"
+          mkdir -p "$artifact_root"
+          for source_path in reports/release/dependency-audit reports/sbom cypress/screenshots; do
+            if [ -d "$source_path" ]; then
+              parent_path="$(dirname "$source_path")"
+              mkdir -p "$artifact_root/$parent_path"
+              cp -a -- "$source_path" "$artifact_root/$parent_path/"
+            fi
+          done
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: dependency-${{ matrix.surface }}-${{ github.event.pull_request.head.sha }}
-          path: |
-            reports/dependency-repair-${{ matrix.surface }}/
-            reports/release/dependency-audit/
-            reports/sbom/
-            cypress/screenshots/
+          path: ${{ runner.temp }}/dependency-repair-${{ matrix.surface }}/
           if-no-files-found: warn
           retention-days: 14

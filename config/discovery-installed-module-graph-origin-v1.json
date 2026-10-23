@@ -1,0 +1,25 @@
+{
+  "schema": "agijobsv0/discovery-module-boundary-origin/v1",
+  "repository": "MontrealAI/AGI-Fleet-Linux",
+  "path": "discovery-lab/release/module-closure.mjs",
+  "localReviewedSource": "e4bc09db09f7b2b0bf5e1fd20dfd88d6791fe5ad",
+  "sourceSha256": "8d3575ece582c158c30f3cc1c5f438b9b32ad2a31f190d6867acf9712beedad5",
+  "copiedByteForByte": true,
+  "license": "Apache-2.0 SPDX retained",
+  "scope": "Shared bounded parse-only static dependency decisions and captured-byte loader; no acceptance transferred.",
+  "licenseText": {
+    "path": "integrations/alpha-agent/vendor/alpha/LICENSE",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "sourceRepository": "MontrealAI/AGI-Alpha-Agent-v0",
+    "sourceCommit": "f73820b4873364a67b36d6a46f30977aeff5946e",
+    "sourcePath": "LICENSE",
+    "sourceGitBlob": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64"
+  },
+  "noticePath": "integrations/alpha-agent/DISCOVERY_MODULE_BOUNDARY_NOTICE.txt",
+  "installedAdaptation": {
+    "path": "integrations/alpha-agent/discovery-installed-module-graph-runtime.mjs",
+    "baseSha256": "8d3575ece582c158c30f3cc1c5f438b9b32ad2a31f190d6867acf9712beedad5",
+    "sha256": "ce8d370d494e347926838ee8d061ea303334b1b1b2e47b486985bd2306dc5feb",
+    "changes": "Add node:fs to the fixed eligible builtin set; the runtime permits it only for the reviewed Jobs receiver parent that hashes its own captured source. All Alpha parents retain an empty builtin allowlist."
+  }
+}
