@@ -38,6 +38,7 @@ import {
   assertStoredValidationRound,
 } from './validationRound';
 import { assertAutomaticValidationAllowed } from './validationContext';
+import { fetchArtifactBytes } from '../apps/orchestrator/artifactSource';
 import {
   prepareValidationCommitment,
   assertValidationReveal,
@@ -830,24 +831,15 @@ async function fetchResultUri(
   if (!uri.startsWith('http://') && !uri.startsWith('https://')) {
     return { payload: null };
   }
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(uri, { signal: controller.signal });
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    }
-    const payload = await res.text();
+    const bytes = await fetchArtifactBytes(uri, process.env.IPFS_GATEWAY_URL);
     return {
-      payload,
-      type: res.headers.get('content-type') || undefined,
+      payload: new TextDecoder().decode(bytes),
       source: uri,
     };
   } catch (err) {
     console.warn('Failed to fetch result URI', uri, err);
     return { payload: null };
-  } finally {
-    clearTimeout(timer);
   }
 }
 
