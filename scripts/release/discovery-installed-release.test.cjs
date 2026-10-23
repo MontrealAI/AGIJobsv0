@@ -878,3 +878,88 @@ test('installed consumers cannot rebuild semantically equal original browser req
   Q.validateNative(f.members,{source,alpha,custody:f.custody,version:'24.21.0',browser});
   assert.throws(()=>Q.validateNative(f.members,{source,alpha,custody:f.custody,version:'24.21.0',browser:{...browser,request:Buffer.from('{ }')}}),/rebuilt or replaced/);
 });
+
+function publicationRecordTransportFixture({large=false,bytes=null}={}) {
+  const raw=bytes||Buffer.from(JSON.stringify({source:{commit:source.sourceCommit,tree:source.sourceTree},padding:large?'x'.repeat(1_100_000):'inert'})+'\n');
+  const sha=require('node:crypto').createHash('sha1').update(Buffer.from('blob '+raw.length+'\0')).update(raw).digest('hex');
+  const encoded=raw.toString('base64'),recordCommit='e'.repeat(40),calls=[];
+  const entry={type:'file',path:P.RECORD_PATH,sha,size:raw.length,encoding:large?'none':'base64',content:large?'':encoded};
+  const blob={sha,size:raw.length,encoding:'base64',content:encoded.match(/.{1,76}/g).join('\n')+'\n'};
+  const api=async route=>{
+    calls.push(route);
+    if(route==='contents/'+P.RECORD_PATH+'?ref='+recordCommit)return structuredClone(entry);
+    if(route==='git/blobs/'+sha)return structuredClone(blob);
+    throw Error('Unexpected inert record route: '+route);
+  };
+  return {raw,sha,recordCommit,recordSha256:Q.hash(raw),entry,blob,calls,api};
+}
+test('publisher authenticates a large immutable Contents record before any release operation',async()=>{
+  const f=publicationRecordTransportFixture({large:true}),checkpoint=Error('inert authenticated prerequisite checkpoint');
+  const originalSourceProof=Q.sourceProof,keys=['GITHUB_REPOSITORY','GITHUB_EVENT_NAME','GITHUB_REF','GITHUB_ACTOR','GITHUB_REPOSITORY_OWNER','GITHUB_SHA'];
+  const previous=Object.fromEntries(keys.map(key=>[key,process.env[key]]));
+  const fixtureRoot=fs.mkdtempSync(path.join(os.tmpdir(),'discovery-record-fixture-')),output=path.join(fixtureRoot,'publish');
+  Q.sourceProof=()=>source;
+  Object.assign(process.env,{GITHUB_REPOSITORY:Q.REPOSITORY,GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REF:'refs/heads/main',GITHUB_ACTOR:'MontrealAI',GITHUB_REPOSITORY_OWNER:'MontrealAI',GITHUB_SHA:source.sourceCommit});
+  try {
+    assert.equal(fs.statSync(fixtureRoot).mode&0o777,0o700,'The owned publisher fixture must stage only under a private directory');
+    assert.equal(fs.existsSync(output),false);
+    const api=async route=>{if(route==='releases/tags/source-v2.1.0-rc.17'){f.calls.push(route);throw checkpoint;}return f.api(route);};
+    await assert.rejects(P.publish({root:fixtureRoot,output,recordCommit:f.recordCommit,recordSha256:f.recordSha256},
+      {api,command:()=>{throw Error('No release command is permitted in this inert fixture');}}),error=>error===checkpoint);
+    assert.deepEqual(f.calls,['contents/'+P.RECORD_PATH+'?ref='+f.recordCommit,'git/blobs/'+f.sha,'releases/tags/source-v2.1.0-rc.17']);
+    assert.equal(fs.existsSync(output),false);
+  } finally {
+    Q.sourceProof=originalSourceProof;
+    for(const key of keys)if(previous[key]===undefined)delete process.env[key];else process.env[key]=previous[key];
+    fs.rmSync(fixtureRoot,{recursive:true,force:true});
+  }
+  assert.equal(fs.existsSync(fixtureRoot),false);
+});
+test('publication record transport preserves the small Contents base64 route',async()=>{
+  const f=publicationRecordTransportFixture();
+  assert.deepEqual(await P.publicationRecordBytes(f.api,f.recordCommit,f.recordSha256),f.raw);
+  assert.deepEqual(f.calls,['contents/'+P.RECORD_PATH+'?ref='+f.recordCommit]);
+});
+test('publication record transport resolves large encoding-none metadata only by immutable blob SHA',async()=>{
+  const f=publicationRecordTransportFixture({large:true});
+  f.entry.download_url='https://example.invalid/mutable-record';
+  assert.ok(f.raw.length>1_048_576);
+  assert.deepEqual(await P.publicationRecordBytes(f.api,f.recordCommit,f.recordSha256),f.raw);
+  assert.deepEqual(f.calls,['contents/'+P.RECORD_PATH+'?ref='+f.recordCommit,'git/blobs/'+f.sha]);
+});
+test('publication record transport refuses missing or mismatched Contents identity and size',async()=>{
+  const mutations=[entry=>{delete entry.sha;},entry=>{entry.sha='not-a-blob';},entry=>{entry.path+='-other';},
+    entry=>{entry.type='symlink';},entry=>{delete entry.size;},entry=>{entry.size=0;},entry=>{entry.size=-1;},
+    entry=>{entry.size=1.5;},entry=>{entry.size=8_000_001;},entry=>{entry.encoding='utf-8';},entry=>{delete entry.content;}];
+  for(const mutate of mutations){const f=publicationRecordTransportFixture();mutate(f.entry);await assert.rejects(P.publicationRecordBytes(f.api,f.recordCommit,f.recordSha256));}
+  const f=publicationRecordTransportFixture({large:true});f.entry.content='unexpected embedded data';
+  await assert.rejects(P.publicationRecordBytes(f.api,f.recordCommit,f.recordSha256));
+  assert.equal(f.calls.length,1);
+});
+test('publication record transport refuses blob substitution and mismatched blob metadata',async()=>{
+  for(const mutate of [blob=>{delete blob.sha;},blob=>{blob.sha='f'.repeat(40);},blob=>{blob.size++;},
+    blob=>{blob.encoding='none';},blob=>{delete blob.content;},blob=>{blob.content={data:'invalid'};}]) {
+    const f=publicationRecordTransportFixture({large:true});mutate(f.blob);
+    await assert.rejects(P.publicationRecordBytes(f.api,f.recordCommit,f.recordSha256));
+  }
+  const f=publicationRecordTransportFixture({large:true});f.blob.content=Buffer.alloc(f.raw.length,120).toString('base64');
+  await assert.rejects(P.publicationRecordBytes(f.api,f.recordCommit,f.recordSha256));
+});
+test('publication record transport rejects truncated and noncanonical base64 before trusting decoded bytes',async()=>{
+  for(const mutate of [entry=>{entry.content=entry.content.slice(0,-1);},entry=>{entry.content=entry.content.slice(0,-4);},
+    entry=>{entry.content+='AAAA';},entry=>{entry.content='!'+entry.content;},entry=>{entry.size++;}]) {
+    const f=publicationRecordTransportFixture();mutate(f.entry);
+    await assert.rejects(P.publicationRecordBytes(f.api,f.recordCommit,f.recordSha256));
+  }
+  const f=publicationRecordTransportFixture({bytes:Buffer.from('a')});f.entry.content='YR==';
+  assert.deepEqual(Buffer.from(f.entry.content,'base64'),f.raw);
+  await assert.rejects(P.publicationRecordBytes(f.api,f.recordCommit,f.recordSha256));
+});
+test('publication record transport retains independent record SHA256 and exact commit selectors',async()=>{
+  const f=publicationRecordTransportFixture();
+  await assert.rejects(P.publicationRecordBytes(f.api,f.recordCommit,'0'.repeat(64)));
+  assert.deepEqual(f.calls,['contents/'+P.RECORD_PATH+'?ref='+f.recordCommit]);
+  for(const [commit,hash] of [['main',f.recordSha256],[f.recordCommit,'not-a-digest']]) {
+    const g=publicationRecordTransportFixture();await assert.rejects(P.publicationRecordBytes(g.api,commit,hash));assert.equal(g.calls.length,0);
+  }
+});
