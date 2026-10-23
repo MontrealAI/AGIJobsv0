@@ -437,9 +437,43 @@ function liveApi(token,repository=REPOSITORY) {
     finally{await reader.cancel();}return json(Buffer.concat(chunks));
   };
 }
-function download(route) {
+async function download(route,{fetcher=fetch,token=process.env.GH_TOKEN}={}) {
   assert.ok(/^actions\/(?:artifacts\/[1-9][0-9]*\/zip|jobs\/[1-9][0-9]*\/logs)$/.test(route));
-  return execFileSync('gh',['api','repos/'+REPOSITORY+'/'+route],{timeout:60_000,maxBuffer:64_000_000});
+  assert.equal(typeof fetcher,'function');assert.ok(typeof token==='string'&&token,'Existing workflow token is required');
+  const cancel=async body=>{if(body)try{await body.cancel();}catch{throw Error('Actions byte download cleanup failed');}};
+  const signal=AbortSignal.timeout(60_000);let url='https://api.github.com/repos/'+REPOSITORY+'/'+route,response;
+  for(let redirects=0;redirects<=4;redirects++) {
+    // Preserve original bytes as data in memory; never send log/ZIP bodies to a terminal or pager.
+    assert.ok(!/[\\\x00-\x20\x7f#]/.test(url),'Actions download URL syntax is invalid');
+    const authority=/^https:\/\/([^/?#]+)/.exec(url)?.[1];
+    assert.ok(authority&&!/[%@]/.test(authority),'Actions download authority is invalid');
+    const parsed=new URL(url);assert.equal(parsed.protocol,'https:');
+    assert.equal(parsed.username,'');assert.equal(parsed.password,'');assert.equal(parsed.port,'');
+    assert.ok(redirects===0?parsed.hostname==='api.github.com':
+      parsed.hostname==='results-receiver.actions.githubusercontent.com'||/^[a-z0-9][a-z0-9-]*\.blob\.core\.windows\.net$/.test(parsed.hostname),
+      'Actions download redirect left approved storage');
+    const headers={Accept:redirects===0?'application/vnd.github+json':'application/octet-stream','Accept-Encoding':'identity',
+      ...(redirects===0?{Authorization:'Bearer '+token,'X-GitHub-Api-Version':'2022-11-28'}:{})};
+    try {response=await fetcher(url,{method:'GET',redirect:'manual',signal,headers});}
+    catch {throw Error('Actions byte download request failed');}
+    if([301,302,303,307,308].includes(response.status)) {
+      const location=response.headers.get('location');await cancel(response.body);
+      assert.ok(location&&redirects<4,'Actions download redirect is absent or excessive');
+      assert.ok(/^https:\/\//.test(location),'Actions download redirect must be absolute HTTPS');url=location;continue;
+    }
+    if(response.status!==200) {await cancel(response.body);throw Error('Actions byte download did not return HTTP200');}break;
+  }
+  let reader,size=0;const chunks=[];
+  try {
+    const length=response.headers.get('content-length');
+    if(length!==null) {assert.match(length,/^(0|[1-9][0-9]*)$/);assert.ok(Number(length)<=64_000_000,'Actions byte download exceeds existing bound');}
+    const encoding=response.headers.get('content-encoding');assert.ok(encoding===null||encoding==='identity','Actions byte download was content-encoded');
+    assert.ok(response.body,'Actions byte download body is absent');reader=response.body.getReader();
+    while(true) {let item;try{item=await reader.read();}catch{throw Error('Actions byte download stream failed');}if(item.done)break;size+=item.value.byteLength;
+      assert.ok(size<=64_000_000,'Actions byte download exceeds existing bound');chunks.push(Buffer.from(item.value));}
+    if(length!==null)assert.equal(size,Number(length),'Actions byte download is truncated');
+    return Buffer.concat(chunks);
+  } finally {await cancel(reader||response.body);}
 }
 async function verifyBrowserInput(api,browser,alpha,pin,binding,rawBody) {
   const capture=require('./capture-discovery-browser-input.cjs');
@@ -992,9 +1026,9 @@ async function qualify(options) {
     ...NODES.map(version=>[CONSUMER(version),'discovery-installed-native-'+version+'-'+runId+'-'+run.run_attempt,
       ['Download saved producer archive','Verify saved standalone installer','Verify and extract original installed archive','Run extracted operator and same-history native acceptance','Retain original installed native evidence'],version])]) {
     const matches=jobs.filter(job=>job.name===name);assert.equal(matches.length,1);const job=matches[0];validateJob(job,run,name,steps);
-    const rawLog=get('actions/jobs/'+job.id+'/logs');assert.ok(rawLog.length>0 && rawLog.length<=64_000_000);
+    const rawLog=await get('actions/jobs/'+job.id+'/logs');assert.ok(rawLog.length>0 && rawLog.length<=64_000_000);
     const selected=artifacts.filter(item=>item.name===artifactName);assert.equal(selected.length,1);const artifact=selected[0];
-    const bytes=get('actions/artifacts/'+artifact.id+'/zip');validateArtifact(artifact,run,artifactName,bytes);const members=zipMembers(bytes);
+    const bytes=await get('actions/artifacts/'+artifact.id+'/zip');validateArtifact(artifact,run,artifactName,bytes);const members=zipMembers(bytes);
     if(!version) {producer=custodyFromProducer(members,source,alpha,{finite:json(bounded(path.join(root,'config/discovery-installed-candidate-v1.json'))),git});assert.deepEqual(producer.manifest.sourceSelection,selection);
       producer.browserObservation=await verifyBrowserInput(alphaApi,producer.browser,alpha,pin,json(bounded(path.join(root,'config/discovery-installed-browser-input-v1.json'))),options.alphaRawBody);}
     else {assert.ok(producer);validateNative(members,{source,alpha,custody:producer.custody,version,browser:producer.browser,
@@ -1042,8 +1076,8 @@ async function qualify(options) {
       'Initialize Python CodeQL','Perform Python CodeQL analysis','Recheck exact source after Python CodeQL analysis',
       'Retain and enforce actual complete Python extraction','Upload Python CodeQL artefacts'];
     validateJob(jobMatches[0],scannerRun,jobName,steps);
-    const scannerLog=get('actions/jobs/'+jobMatches[0].id+'/logs');assert.ok(scannerLog.length>0);
-    const artifact=await api('actions/artifacts/'+review.artifactId),bytes=get('actions/artifacts/'+review.artifactId+'/zip');
+    const scannerLog=await get('actions/jobs/'+jobMatches[0].id+'/logs');assert.ok(scannerLog.length>0);
+    const artifact=await api('actions/artifacts/'+review.artifactId),bytes=await get('actions/artifacts/'+review.artifactId+'/zip');
     validateArtifact(artifact,scannerRun,review.artifactName,bytes);assert.equal(hash(bytes),review.archiveSha256);
     scanners.push({...scannerReview(zipMembers(bytes),review,{source,language:language==='installedPython'?'python':language,git,producerRun:scannerRun}),
       role:language,producerRunId:scannerRun.id,producerRunAttempt:scannerRun.run_attempt,artifactId:artifact.id,archiveSha256:hash(bytes),archiveBytes:bytes.length,
@@ -1079,7 +1113,7 @@ async function qualify(options) {
   fs.writeFileSync(path.join(output,'qualification.json'),JSON.stringify(proof,null,2)+'\n',{flag:'wx'});return proof;
 }
 module.exports={REPOSITORY,WORKFLOW,VERSION,TAG,NODES,PRODUCER,CONSUMER,INSTALLER_PATH,INSTALLER_ASSET,hash,json,canonical,fields,bounded,sourceProof,plan,
-  validateRun,validateJob,validateArtifact,validateRetainedHistory,verifyBrowserInput,verifyAlphaPublication,verifyAlphaPublicAssets,reviewedAlphaReleaseProfile,verifyAlphaProfileInventory,verifyAlphaProfilePacks,alphaReleaseAttemptJobs,alphaReleaseJobsLease,alphaPublicAssetIdentity,alphaPublicAssetInventory,readPublicAlphaAsset,ALPHA_ASSET_MAX_BYTES,reviewReferences,zipMembers,installedArchive,validateInstaller,assertProducerInventory,custodyFromProducer,validateBootstrap,validateNative,publicationRecord,scannerReview,qualify};
+  validateRun,validateJob,validateArtifact,validateRetainedHistory,verifyBrowserInput,verifyAlphaPublication,verifyAlphaPublicAssets,reviewedAlphaReleaseProfile,verifyAlphaProfileInventory,verifyAlphaProfilePacks,alphaReleaseAttemptJobs,alphaReleaseJobsLease,alphaPublicAssetIdentity,alphaPublicAssetInventory,readPublicAlphaAsset,ALPHA_ASSET_MAX_BYTES,reviewReferences,zipMembers,installedArchive,validateInstaller,assertProducerInventory,custodyFromProducer,validateBootstrap,validateNative,publicationRecord,scannerReview,download,qualify};
 if(require.main===module) {
   const [command,root,manifestSha256,verifierSha256,scopeVerifierSha256,runId,recordFile,recordSha256,output]=process.argv.slice(2);
   (async()=>{

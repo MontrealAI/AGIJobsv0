@@ -963,3 +963,116 @@ test('publication record transport retains independent record SHA256 and exact c
     const g=publicationRecordTransportFixture();await assert.rejects(P.publicationRecordBytes(g.api,commit,hash));assert.equal(g.calls.length,0);
   }
 });
+function actionsByteResponse({status=200,headers={},chunks=[],readError,cancelError}={}) {
+  const state={reads:0,cancels:0};
+  const reader={async read(){state.reads++;if(readError)throw readError;
+    return chunks.length?{done:false,value:chunks.shift()}:{done:true};},
+    async cancel(){state.cancels++;if(cancelError)throw cancelError;}};
+  return {status,headers:new Headers(headers),body:{getReader:()=>reader,cancel:reader.cancel},state};
+}
+test('Actions byte download preserves ANSI log and binary archive bytes without terminal rendering',async()=>{
+  for(const route of ['actions/jobs/12/logs','actions/artifacts/34/zip']) {
+    const raw=Buffer.from([0x1b,0x5b,0x33,0x31,0x6d,0x00,0xff,0x0a]),calls=[];
+    const response=actionsByteResponse({headers:{'content-length':String(raw.length)},chunks:[raw.subarray(0,3),raw.subarray(3)]});
+    const bytes=await Q.download(route,{token:'inert-token',fetcher:async(url,options)=>{calls.push({url,options});return response;}});
+    assert.deepEqual(bytes,raw);assert.equal(Q.hash(bytes),Q.hash(raw));assert.equal(calls.length,1);
+    assert.equal(calls[0].url,'https://api.github.com/repos/'+Q.REPOSITORY+'/'+route);
+    assert.equal(calls[0].options.method,'GET');assert.equal(calls[0].options.redirect,'manual');
+    assert.equal(calls[0].options.headers.Authorization,'Bearer inert-token');assert.equal(response.state.cancels,1);
+  }
+});
+test('Actions byte download follows approved storage redirects without forwarding credentials',async()=>{
+  for(const host of ['results-receiver.actions.githubusercontent.com','owned123.blob.core.windows.net']) {
+    const calls=[],raw=Buffer.from('original log\n'),redirect=actionsByteResponse({status:302,headers:{location:'https://'+host+'/signed?sig=inert'}}),
+      response=actionsByteResponse({headers:{'content-length':String(raw.length),'content-encoding':'identity'},chunks:[raw]});
+    const actual=await Q.download('actions/jobs/12/logs',{token:'inert-token',fetcher:async(url,options)=>{calls.push({url,options});return calls.length===1?redirect:response;}});
+    assert.deepEqual(actual,raw);assert.equal(calls.length,2);assert.equal(redirect.state.cancels,1);
+    assert.equal(calls[1].options.redirect,'manual');assert.equal(calls[1].options.signal,calls[0].options.signal);
+    assert.deepEqual(calls[1].options.headers,{Accept:'application/octet-stream','Accept-Encoding':'identity'});
+    assert.ok(!Object.values(calls[1].options.headers).includes('inert-token'));
+  }
+});
+test('Actions byte download refuses malformed selectors and missing existing token before any request',async()=>{
+  let calls=0;const fetcher=async()=>{calls++;throw Error('must not request');};
+  for(const route of ['actions/jobs/0/logs','actions/jobs/12/logs?other=1','actions/artifacts/34/zip#other',
+    'actions/runs/12/logs','../actions/jobs/12/logs','https://api.github.com/actions/jobs/12/logs'])
+    await assert.rejects(Q.download(route,{token:'inert-token',fetcher}));
+  await assert.rejects(Q.download('actions/jobs/12/logs',{token:'',fetcher}));assert.equal(calls,0);
+});
+test('Actions byte download rejects unsafe redirect authorities and schemes before a second request',async()=>{
+  for(const location of ['http://owned123.blob.core.windows.net/x','https://evil.invalid/x',
+    'https://api.github.com/repos/'+Q.REPOSITORY+'/actions/jobs/99/logs',
+    'https://owned123.blob.core.windows.net.evil.invalid/x','https://results-receiver.actions.githubusercontent.com.evil.invalid/x',
+    'https://name:secret@owned123.blob.core.windows.net/x','https://@owned123.blob.core.windows.net/x',
+    'https://owned123.blob.core.windows.net:444/x','https://%6fwned123.blob.core.windows.net/x',
+    'https://owned123.blob.core.windows.net/x#fragment','https://owned123.blob.core.windows.net/x#',
+    'https://owned123.blob.core.windows.net\\other/x','//owned123.blob.core.windows.net/x',
+    'https://127.0.0.1/x','https://localhost/x','https://owned123.blob.core.windows.net./x']) {
+    let calls=0;const response=actionsByteResponse({status:302,headers:{location}});
+    await assert.rejects(Q.download('actions/jobs/12/logs',{token:'inert-token',fetcher:async()=>{calls++;return response;}}));
+    assert.equal(calls,1);assert.equal(response.state.cancels,1);
+  }
+});
+test('Actions byte download bounds redirects and rejects missing locations and non-success HTTP',async()=>{
+  for(const status of [301,302,303,307,308]) {
+    let calls=0;const responses=[];
+    await assert.rejects(Q.download('actions/jobs/12/logs',{token:'inert-token',fetcher:async()=>{
+      calls++;const response=actionsByteResponse({status,headers:{location:'https://owned123.blob.core.windows.net/loop'}});responses.push(response);return response;
+    }}),/redirect is absent or excessive/);
+    assert.equal(calls,5);assert.ok(responses.every(x=>x.state.cancels===1));
+  }
+  for(const status of [302,300,304,400,403,404,500]) {
+    let calls=0;const response=actionsByteResponse({status});
+    await assert.rejects(Q.download('actions/jobs/12/logs',{token:'inert-token',fetcher:async()=>{calls++;return response;}}));
+    assert.equal(calls,1);assert.equal(response.state.cancels,1);
+  }
+});
+test('Actions byte download retains the64MB stream bound and exact unencoded Content-Length',async()=>{
+  for(const headers of [{'content-length':'64000001'},{'content-length':'2x'},{'content-length':'-1'},
+    {'content-length':''},{'content-encoding':'gzip'},{'content-encoding':'br'}]) {
+    const response=actionsByteResponse({headers,chunks:[Buffer.from('data')]});
+    await assert.rejects(Q.download('actions/artifacts/34/zip',{token:'inert-token',fetcher:async()=>response}));
+    assert.equal(response.state.reads,0);assert.equal(response.state.cancels,1);
+  }
+  for(const declared of ['2','4']) {
+    const response=actionsByteResponse({headers:{'content-length':declared},chunks:[Buffer.from('abc')]});
+    await assert.rejects(Q.download('actions/jobs/12/logs',{token:'inert-token',fetcher:async()=>response}),/truncated/);
+    assert.equal(response.state.cancels,1);
+  }
+  const chunk=Buffer.alloc(32_000_000),response=actionsByteResponse({chunks:[chunk,chunk,Buffer.from('x')]});
+  await assert.rejects(Q.download('actions/artifacts/34/zip',{token:'inert-token',fetcher:async()=>response}),/existing bound/);
+  assert.equal(response.state.reads,3);assert.equal(response.state.cancels,1);
+});
+test('Actions byte download shares one60second deadline across redirects and sanitizes failures',async()=>{
+  const original=AbortSignal.timeout,controller=new AbortController();let deadlines=0,calls=0;
+  AbortSignal.timeout=millis=>{assert.equal(millis,60_000);deadlines++;return controller.signal;};
+  const redirect=actionsByteResponse({status:302,headers:{location:'https://owned123.blob.core.windows.net/signed?sig=secret'}}),
+    response=actionsByteResponse({readError:Error('untrusted signed URL or terminal text')});
+  try {
+    await assert.rejects(Q.download('actions/jobs/12/logs',{token:'inert-token',fetcher:async(_url,options)=>{
+      assert.equal(options.signal,controller.signal);calls++;if(calls===1)return redirect;controller.abort();return response;
+    }}),error=>error.message==='Actions byte download stream failed');
+    assert.equal(deadlines,1);assert.equal(calls,2);assert.equal(response.state.cancels,1);
+  } finally {AbortSignal.timeout=original;}
+  await assert.rejects(Q.download('actions/jobs/12/logs',{token:'inert-token',fetcher:async()=>{throw Error('secret signed URL');}}),
+    error=>error.message==='Actions byte download request failed');
+  const badCleanup=actionsByteResponse({cancelError:Error('secret signed URL')});
+  await assert.rejects(Q.download('actions/jobs/12/logs',{token:'inert-token',fetcher:async()=>badCleanup}),
+    error=>error.message==='Actions byte download cleanup failed');
+});
+test('Actions metadata API requires JSON Accept while redirected bytes retain octet-stream Accept',async()=>{
+  const calls=[],raw=Buffer.from('original ANSI bytes\x1b[0m\n');
+  const result=await Q.download('actions/jobs/12/logs',{token:'inert-token',fetcher:async(url,options)=>{
+    calls.push({url,options});
+    if(calls.length===1) {
+      if(options.headers.Accept!=='application/vnd.github+json')return actionsByteResponse({status:415});
+      assert.equal(options.headers.Authorization,'Bearer inert-token');
+      assert.equal(options.headers['Accept-Encoding'],'identity');
+      return actionsByteResponse({status:302,headers:{location:'https://owned123.blob.core.windows.net/original'}});
+    }
+    assert.equal(options.headers.Accept,'application/octet-stream');assert.equal(options.headers['Accept-Encoding'],'identity');
+    assert.ok(!Object.hasOwn(options.headers,'Authorization'));
+    return actionsByteResponse({headers:{'content-length':String(raw.length)},chunks:[raw]});
+  }});
+  assert.deepEqual(result,raw);assert.equal(calls.length,2);assert.equal(calls[0].options.signal,calls[1].options.signal);
+});
