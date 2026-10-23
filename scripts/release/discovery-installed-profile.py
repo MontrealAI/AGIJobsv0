@@ -451,7 +451,42 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
            'sha256': '652f16ba1eb1b1d6cb8d2945604d56614799388c95474838bc5355085e4174fd'},
  'reason': 'Retain exact owner2425 injected-reader ledger-prefix controls for complete historical '
            'identities, strict current source/admission metadata, regular additions and immutable '
-           'closure, without external process/network or owner/release qualification claims'}}
+           'closure, without external process/network or owner/release qualification claims'},
+ 'agent-gateway/validator.ts': {'before': {'mode': '100644',
+                                           'blob': '457f22649a18abdf372d2130267fc4495b5cd6bd'},
+                                'after': {'mode': '100644',
+                                          'sha256': '59b4b2f3d3184f1376996f5b049456b48ac2b2f01b2d200a2614f3772a4f2a6a'},
+                                'reason': 'Close the current-main86 worker-controlled HTTP result '
+                                          'fetch issue by delegating only that branch to the '
+                                          'existing exact operator-origin and checked '
+                                          'gateway-route artifact reader, with redirect rejection, '
+                                          '15-second abort and 4 MiB streaming bound; preserve '
+                                          'local and inline handling, text decoding, '
+                                          'unavailable-result refusal and existing result-hash '
+                                          'validation without granting production authority'},
+ 'docs/computer-work.md': {'before': {'mode': '100644',
+                                      'blob': '9aef256ab45be5a95f7d568c1e34e43ed328652b'},
+                           'after': {'mode': '100644',
+                                     'sha256': 'c15540872365afe0d9d5a7e91176a68ae56ee4e4950051b00925e922ae84d85a'},
+                           'reason': 'Describe the automatic gateway HTTP result reader migration '
+                                     'to the existing 15-second and 4 MiB operator-origin policy, '
+                                     'distinguish whole-origin trust from the additional checked '
+                                     'gateway route, and retain DNS/egress and unchanged '
+                                     'inline/local/IPFS limitations'},
+ 'test/security/inherited-codeql.test.cjs': {'before': {'mode': '100644',
+                                                        'blob': '9e8742d4b3f468a7324a334e11667f23b95d5bb7'},
+                                             'after': {'mode': '100644',
+                                                       'sha256': 'd826c548b430b1db32ca661fcd0026f8d778b865657d2492987ef31ad924d781'},
+                                             'reason': 'Retain all preceding 47084 test-file bytes '
+                                                       'exactly and append seven inert '
+                                                       'mocked-fetch/stream/timer cases for the '
+                                                       'actual private automatic-validator caller: '
+                                                       'unapproved origins and credentials, HTTP '
+                                                       'decoding, gateway-route containment, '
+                                                       'redirect rejection/no retry, exact 4 MiB '
+                                                       'and overflow cancellation, 15-second abort '
+                                                       'and unchanged inline/local behavior; no '
+                                                       'socket, provider or chain probe'}}
 # END FIXED DISCOVERY INSTALLED DELTA
 DENIALS = {'releaseQualified': False, 'publicationApproved': False,
            'executionApproved': False, 'settlementApproved': False}

@@ -638,3 +638,144 @@ test('ENS registration rejects oversized labels before wallet, contract or provi
     assert.deepEqual(calls, { wallet: 0, contract: 0, provider: 0 });
   }
 });
+// The automatic gateway uses the same admitted artifact transport as committed
+// specifications. These fixtures never open a socket or contact a provider.
+function resultUriFixture() {
+  const { fetchResultUri } = loadTs('agent-gateway/validator.ts', {
+    './utils': { FETCH_TIMEOUT_MS: 5000 },
+    './identity': {}, './stakeCoordinator': {}, '../shared/energyMonitor': {},
+    './telemetry': { recordValidationFlowMetrics() {} }, '../shared/trainingRecords': {}, './security': {},
+    '../shared/worldModel': {}, './validationStore': {}, './validationRound': {},
+    './validationContext': {}, '../shared/validationProtocol': {},
+  }, { expose: ['fetchResultUri'] });
+  const original = { fetch: global.fetch, warn: console.warn,
+    origins: process.env.ORCHESTRATOR_ARTIFACT_ORIGINS,
+    gateway: process.env.IPFS_GATEWAY_URL };
+  process.env.ORCHESTRATOR_ARTIFACT_ORIGINS = '["https://artifacts.example.invalid"]';
+  delete process.env.IPFS_GATEWAY_URL;
+  console.warn = () => {};
+  const calls = [];
+  const stream = (chunks) => {
+    let offset = 0, cancelled = false;
+    return { response: { ok: true, headers: new Headers({ 'content-type': 'text/plain' }),
+      body: { getReader: () => ({ read: async () => offset < chunks.length
+        ? { done: false, value: chunks[offset++] } : { done: true },
+        cancel: async () => { cancelled = true; } }) },
+      text: async () => 'unbounded-text-path-must-not-be-used' },
+      cancelled: () => cancelled };
+  };
+  return { fetchResultUri, calls, stream, respond(response) {
+    global.fetch = async (url, options) => { calls.push({ url: String(url), options }); return response; };
+  }, restore() {
+    global.fetch = original.fetch; console.warn = original.warn;
+    for (const [key, value] of [['ORCHESTRATOR_ARTIFACT_ORIGINS', original.origins], ['IPFS_GATEWAY_URL', original.gateway]]) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
+  } };
+}
+
+test('automatic validator admits only operator-approved result origins before any HTTP request', async () => {
+  const f = resultUriFixture();
+  try {
+    f.respond(f.stream([Buffer.from('result')]).response);
+    for (const uri of ['https://unapproved.example.invalid/result', 'http://127.0.0.1/result',
+      'https://artifacts.example.invalid:444/result', 'https://user:pass@artifacts.example.invalid/result',
+      'https://artifacts.example.invalid/result?token=worker', 'https://artifacts.example.invalid/result#worker']) {
+      assert.deepEqual(await f.fetchResultUri(uri), { payload: null }, uri);
+    }
+    assert.equal(f.calls.length, 0, 'Worker input cannot grant an origin or credentials');
+  } finally { f.restore(); }
+});
+
+test('automatic validator keeps HTTP text decoding and source while using the existing bounded transport', async () => {
+  const f = resultUriFixture();
+  try {
+    f.respond(f.stream([Uint8Array.of(0xef, 0xbb, 0xbf, 0x61, 0xff)]).response);
+    assert.deepEqual(await f.fetchResultUri('https://artifacts.example.invalid/result'),
+      { payload: 'a\ufffd', source: 'https://artifacts.example.invalid/result' });
+    assert.equal(f.calls.length, 1);
+    const { options } = f.calls[0];
+    assert.equal(options.redirect, 'error');
+    assert.equal(options.headers.Accept, 'application/json, text/plain;q=0.9');
+    assert.equal(options.headers.Authorization, undefined);
+    assert.equal(options.signal.aborted, true, 'Completed transfers release their abort controller');
+  } finally { f.restore(); }
+});
+
+test('automatic validator configured gateway authority remains confined to its checked IPFS route', async () => {
+  const f = resultUriFixture();
+  try {
+    process.env.ORCHESTRATOR_ARTIFACT_ORIGINS = '[]';
+    process.env.IPFS_GATEWAY_URL = 'https://gateway.example.invalid/ipfs';
+    f.respond(f.stream([Buffer.from('result')]).response);
+    for (const uri of ['https://gateway.example.invalid/admin',
+      'https://gateway.example.invalid/ipfs/%2e%2e/admin',
+      'https://gateway.example.invalid/ipfs/cid/%252e%252e/admin'])
+      assert.deepEqual(await f.fetchResultUri(uri), { payload: null }, uri);
+    assert.equal(f.calls.length, 0);
+    assert.deepEqual(await f.fetchResultUri('https://gateway.example.invalid/ipfs/fixture/result.txt'),
+      { payload: 'result', source: 'https://gateway.example.invalid/ipfs/fixture/result.txt' });
+    assert.equal(f.calls.length, 1);
+  } finally { f.restore(); }
+});
+
+test('automatic validator requests redirect rejection and does not retry a failed result transfer', async () => {
+  const f = resultUriFixture();
+  try {
+    global.fetch = async (url, options) => {
+      f.calls.push({ url: String(url), options });
+      assert.equal(options.redirect, 'error');
+      throw new TypeError('Inert fixture: redirect rejected by fetch');
+    };
+    assert.deepEqual(await f.fetchResultUri('https://artifacts.example.invalid/result'), { payload: null });
+    assert.equal(f.calls.length, 1);
+    assert.equal(f.calls[0].options.signal.aborted, true);
+  } finally { f.restore(); }
+});
+
+test('automatic validator accepts the 4 MiB boundary and cancels an overflowing result stream', async () => {
+  const f = resultUriFixture();
+  try {
+    const exact = f.stream([Buffer.alloc(4 * 1024 * 1024, 0x61)]);
+    f.respond(exact.response);
+    const admitted = await f.fetchResultUri('https://artifacts.example.invalid/result');
+    assert.equal(admitted.payload.length, 4 * 1024 * 1024);
+    assert.equal(exact.cancelled(), false);
+    const overflow = f.stream([Buffer.alloc(4 * 1024 * 1024, 0x61), Uint8Array.of(0x62)]);
+    f.respond(overflow.response);
+    assert.deepEqual(await f.fetchResultUri('https://artifacts.example.invalid/result'), { payload: null });
+    assert.equal(overflow.cancelled(), true);
+    assert.equal(f.calls.length, 2);
+    assert.equal(f.calls[1].options.signal.aborted, true);
+  } finally { f.restore(); }
+});
+
+test('automatic validator uses the shared 15-second abort bound and clears it after refusal', async () => {
+  const f = resultUriFixture(), set = global.setTimeout, clear = global.clearTimeout;
+  let timeout, cleared = false;
+  try {
+    global.setTimeout = (callback, milliseconds) => {
+      assert.equal(milliseconds, 15_000); timeout = callback; return { fixture: true };
+    };
+    global.clearTimeout = (timer) => { assert.deepEqual(timer, { fixture: true }); cleared = true; };
+    global.fetch = async (_url, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener('abort', () => reject(new Error('Inert fixture: aborted')), { once: true });
+      timeout();
+    });
+    assert.deepEqual(await f.fetchResultUri('https://artifacts.example.invalid/result'), { payload: null });
+    assert.equal(cleared, true);
+  } finally { global.setTimeout = set; global.clearTimeout = clear; f.restore(); }
+});
+
+test('automatic validator retains inline/local refusal behavior without making an HTTP request', async () => {
+  const f = resultUriFixture();
+  try {
+    global.fetch = async () => assert.fail('Inline/local results must not contact an HTTP service');
+    assert.deepEqual(await f.fetchResultUri('data:text/plain,hello%20world'),
+      { payload: 'hello world', type: 'text/plain', source: 'data-uri' });
+    assert.deepEqual(await f.fetchResultUri('data:text/plain;base64,aGVsbG8='),
+      { payload: 'hello', type: 'text/plain', source: 'data-uri' });
+    for (const uri of ['', 'ipfs://local/fixture', 'file:///fixture', 'ipfs://fixture'])
+      assert.deepEqual(await f.fetchResultUri(uri), { payload: null });
+  } finally { f.restore(); }
+});
