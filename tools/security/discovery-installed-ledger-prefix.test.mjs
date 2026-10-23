@@ -218,7 +218,7 @@ test('ordinary closure retains legacy index semantics while refusing source move
 });
 
 test('explicit rc19 committed version retains installed ledger controls without accepting unknown editions',()=>{
-  for(const [version,installed] of [['2.1.0-rc.18',true],['2.1.0-rc.19',true],['2.1.0-rc.20',false],['2.1.0-rc.19-tampered',false]]) {
+  for(const [version,installed] of [['2.1.0-rc.18',true],['2.1.0-rc.19',true],['2.1.0-rc.20',true],['2.1.0-rc.21',false],['2.1.0-rc.19-tampered',false],['2.1.0-rc.20-tampered',false]]) {
     const f=selectionFixture();f.state.payload=JSON.stringify({version})+'\n';
     assert.equal(selectLedgerSource(f.readGit).installed,installed);
     assert.equal(f.state.blobReads,1);

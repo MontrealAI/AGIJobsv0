@@ -236,3 +236,11 @@ jobs:
             process.env.QUALIFICATION_RUN_ID,process.env.PUBLICATION_RECORD_COMMIT,process.env.PUBLICATION_RECORD_SHA256,
             process.env.RUNNER_TEMP + '/discovery-installed-release-assets'],{stdio:'inherit'});
           NODE
+
+      - name: Retain bounded draft creation response
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: discovery-created-release-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/discovery-installed-release-assets.creation-response.json
+          if-no-files-found: ignore
