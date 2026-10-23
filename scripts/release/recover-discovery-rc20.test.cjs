@@ -29,11 +29,12 @@ function fixture() {
   };
   const deps={Q:{...Q,sourceProof:()=>copy(source)},P:{...P,publicationRecordBytes:async()=>Buffer.from(JSON.stringify(record))},api,
     download:async(directory,current,published)=>{state.downloads.push({directory,id:current.id,published});},verify:()=>{},
+    timestamp:()=>R.FIXED.sourceCommitDate,
     validateEpoch:()=>({tooling:{sourceCommit:'3'.repeat(40),sourceTree:'4'.repeat(40)},payload:source}),
     toolingGates:async()=>({sourceCommit:'3'.repeat(40),state:'QUALIFIED_TOOLING_NOT_PAYLOAD_PUBLICATION'}),
     qualify:async()=>{state.qualifications++;state.events.push('qualification');},
     patch:async()=>{state.patches++;state.events.push('PATCH:'+R.FIXED.releaseId);state.release.draft=false;
-      state.release.published_at='2026-10-23T19:00:00Z';state.tag=R.FIXED.sourceCommit;}};
+      state.release.created_at=R.FIXED.sourceCommitDate;state.release.published_at='2026-10-23T19:00:00Z';state.tag=R.FIXED.sourceCommit;}};
   const opts={root,artifact:ARTIFACT,output:path.join(base,'recovery'),execute:true};
   return {state,deps,opts,base,cleanup:()=>fs.rmSync(base,{recursive:true,force:true})};
 }
@@ -79,9 +80,78 @@ test('recovery qualifies tooling and original f7, rechecks both original draft d
   }finally{f.cleanup();}
 });
 test('already-published retry performs anonymous public verification and no second mutation',async()=>{
-  const f=fixture();try{f.state.release.draft=false;f.state.release.published_at='2026-10-23T19:00:00Z';f.state.tag=R.FIXED.sourceCommit;
+  const f=fixture();try{f.state.release.draft=false;f.state.release.created_at=R.FIXED.sourceCommitDate;
+    f.state.release.published_at='2026-10-23T19:00:00Z';f.state.tag=R.FIXED.sourceCommit;
     const value=await R.recover(f.opts,f.deps);assert.equal(value.state,'ALREADY_PUBLIC_VERIFIED');
     assert.equal(f.state.qualifications,0);assert.equal(f.state.patches,0);assert.deepEqual(f.state.downloads.map(d=>d.published),[true]);
+  }finally{f.cleanup();}
+});
+test('phase timestamps are exact: draft receipt time and published original-commit time cannot substitute for each other',()=>{
+  const draft=release(),published={...release(),draft:false,created_at:R.FIXED.sourceCommitDate,published_at:'2026-10-23T21:39:36Z'};
+  assert.equal(R.releaseIdentity(draft,receipt,P),draft);assert.equal(R.releaseIdentity(published,receipt,P,{published:true}),published);
+  for(const [row,options]of [[{...draft,created_at:R.FIXED.sourceCommitDate},{}],[{...published,created_at:receipt.created_at},{published:true}],
+    [{...published,created_at:'2026-10-23T17:20:47Z'},{published:true}],[{...published,created_at:null},{published:true}]])
+    assert.throws(()=>R.releaseIdentity(row,receipt,P,options),/phase timestamp differs/);
+});
+test('real raw f7 commit metadata authenticates its timestamp; substituted metadata and epochs are refused',()=>{
+  const cp=require('node:child_process'),zlib=require('node:zlib'),root=path.resolve(__dirname,'../..');
+  assert.equal(R.sourceCommitTimestamp(root,source),'2026-10-23T17:20:46Z');
+  assert.throws(()=>R.sourceCommitTimestamp(root,{...source,sourceCommit:'a'.repeat(40)}));
+  assert.throws(()=>R.sourceCommitTimestamp(root,{...source,sourceTree:'b'.repeat(40)}));
+  const original=cp.execFileSync('git',['--no-replace-objects','-C',root,'cat-file','commit',R.FIXED.sourceCommit]);
+  for(const raw of [Buffer.from(original.toString().replace('1792776046','1792776047')),
+    Buffer.from(original.toString().replace(R.FIXED.sourceTree,'b'.repeat(40)))]){
+    assert.notDeepEqual(raw,original);const directory=fs.mkdtempSync(path.join(BASE,'object-'));cp.execFileSync('git',['init','--quiet',directory]);
+    const objects=path.join(directory,'.git','objects',R.FIXED.sourceCommit.slice(0,2));fs.mkdirSync(objects);
+    fs.writeFileSync(path.join(objects,R.FIXED.sourceCommit.slice(2)),zlib.deflateSync(Buffer.concat([Buffer.from('commit '+raw.length+'\0'),raw])));
+    assert.throws(()=>R.sourceCommitTimestamp(directory,source),/Original commit metadata object differs/);
+  }
+});
+test('publication timestamp chronology and original author remain strict in both phases',()=>{
+  const published={...release(),draft:false,created_at:R.FIXED.sourceCommitDate,published_at:'2026-10-23T21:39:36Z'};
+  for(const value of [null,'not-a-time','2026-02-31T00:00:00Z','2026-10-23T18:06:10Z'])
+    assert.throws(()=>R.releaseIdentity({...published,published_at:value},receipt,P,{published:true}));
+  assert.throws(()=>R.releaseIdentity({...release(),published_at:'2026-10-23T21:39:36Z'},receipt,P));
+  for(const key of ['id','node_id','login','type'])for(const row of [release(),published]){
+    row.author={...row.author,[key]:key==='id'?1:'different'};
+    assert.throws(()=>R.releaseIdentity(row,receipt,P,{published:!row.draft}),/author differs/);
+  }
+});
+test('post-PATCH commit-date transition completes once and a second supported invocation is strictly read-only',async()=>{
+  const f=fixture();try{
+    assert.equal(f.state.release.created_at,receipt.created_at);
+    assert.equal((await inOwnerContext(()=>R.recover(f.opts,f.deps))).state,'ORIGINAL_RELEASE_RECOVERED_PUBLIC_BYTES_VERIFIED');
+    assert.equal(f.state.release.created_at,R.FIXED.sourceCommitDate);assert.equal(f.state.patches,1);
+    const observed=JSON.parse(fs.readFileSync(path.join(f.opts.output,'post-publication-release-observation.json')));
+    assert.equal(observed.created_at,R.FIXED.sourceCommitDate);assert.equal(observed.author.id,receipt.author.id);
+    f.deps.patch=async()=>{assert.fail('Already-public observation must never PATCH');};
+    f.deps.qualify=async()=>{assert.fail('Read-only public reconciliation must not repeat publication qualification');};
+    f.state.events=[];
+    const again=await R.recover({...f.opts,output:path.join(f.base,'observed-public'),execute:true},f.deps);
+    assert.equal(again.state,'ALREADY_PUBLIC_VERIFIED');assert.equal(f.state.patches,1);
+    assert.equal(f.state.events.some(value=>value.startsWith('PATCH:')),false);
+    assert.equal(fs.existsSync(path.join(f.base,'observed-public','mutation-intent.json')),false);
+  }finally{f.cleanup();}
+});
+test('already-public timestamp, author, tag, source, ownership and seven-asset mismatches refuse before download or mutation',async()=>{
+  for(const mutation of [f=>{f.state.release.created_at=receipt.created_at;},f=>{f.state.release.author.id++;},
+    f=>{f.state.tag='a'.repeat(40);},f=>{f.state.release.target_commitish='a'.repeat(40);},f=>{f.state.duplicates=true;},
+    f=>{f.state.release.assets[0].id++;},f=>{f.state.release.assets[0].digest='sha256:'+'a'.repeat(64);},
+    f=>{f.deps.timestamp=()=>receipt.created_at;},f=>{f.state.release.published_at='2026-10-23T18:06:10Z';}]){
+    const f=fixture();try{f.state.release.draft=false;f.state.release.created_at=R.FIXED.sourceCommitDate;
+      f.state.release.published_at='2026-10-23T21:39:36Z';f.state.tag=R.FIXED.sourceCommit;mutation(f);
+      await assert.rejects(R.recover(f.opts,f.deps));assert.equal(f.state.patches,0);assert.equal(f.state.qualifications,0);assert.equal(f.state.downloads.length,0);
+    }finally{f.cleanup();}
+  }
+});
+test('author movement after the last tooling gate is refused by the final by-ID lease before PATCH intent',async()=>{
+  const f=fixture();try{let observations=0;f.deps.toolingGates=async()=>{
+    observations++;if(observations===2)f.state.release.author.id++;
+    return {sourceCommit:'3'.repeat(40),state:'QUALIFIED_TOOLING_NOT_PAYLOAD_PUBLICATION'};
+  };
+    await assert.rejects(inOwnerContext(()=>R.recover(f.opts,f.deps)),/Original owned release author differs/);
+    assert.equal(observations,2);assert.equal(f.state.patches,0);assert.equal(f.state.release.draft,true);
+    assert.equal(fs.existsSync(path.join(f.opts.output,'mutation-intent.json')),false);
   }finally{f.cleanup();}
 });
 test('missing original ownership/ambiguous tag stops before a recovery mutation',async()=>{
