@@ -1012,6 +1012,8 @@ async function qualify(options) {
   assert.equal(pin.status,'REVIEWED_FINAL_SOURCE');const alpha={commit:pin.commit,tree:pin.tree,sourceHash:pin.sourceHash};
   assert.ok(identity(alpha.commit)&&identity(alpha.tree)&&digest(alpha.sourceHash));
   const recordRaw=bounded(recordFile,8_000_000),record=publicationRecord(json(recordRaw),{source,selection,alpha,selectorSha256:recordSha256,raw:recordRaw});
+  const recoveryEpoch=options.recoveryEpoch===undefined?null:
+    require('./recover-discovery-rc20.cjs').validateRecoveryEpoch(options.recoveryEpoch,source,options);
   const api=options.api||liveApi(process.env.GH_TOKEN),get=options.download||download;
   const git=options.git||((...args)=>execFileSync('git',['--no-replace-objects','--no-pager','-C',root,
     '-c','protocol.allow=never','-c','core.fsmonitor=false','-c','core.hooksPath=/dev/null',
@@ -1024,7 +1026,7 @@ async function qualify(options) {
   const alphaApi=async route=>{if(!alphaCache.has(route))alphaCache.set(route,Promise.resolve(alphaRead(route)));
     return structuredClone(await alphaCache.get(route));};
   const observedReviews=await reviewReferences(api,record,source);
-  const main=await api('git/ref/heads/main');assert.equal(main.object?.sha,source.sourceCommit,'Actual main moved');
+  const main=await api('git/ref/heads/main');assertQualificationMain(main,source,recoveryEpoch,'Actual main moved');
   const run=await api('actions/runs/'+runId);validateRun(run,source);
   const jobs=await pages(api,'actions/runs/'+runId+'/attempts/'+run.run_attempt+'/jobs','jobs');
   const artifacts=await pages(api,'actions/runs/'+runId+'/artifacts','artifacts');
@@ -1091,12 +1093,13 @@ async function qualify(options) {
       role:language,producerRunId:scannerRun.id,producerRunAttempt:scannerRun.run_attempt,artifactId:artifact.id,archiveSha256:hash(bytes),archiveBytes:bytes.length,
       jobId:jobMatches[0].id,logSha256:hash(scannerLog),logBytes:scannerLog.length,bytes,scannerLog});
   }
-  const latestPush=runs.filter(item=>item.path===WORKFLOW && item.event==='push' && item.head_branch==='main')
+  const latestPush=runs.filter(item=>item.path===WORKFLOW && item.event==='push' && item.head_branch==='main'&&
+    (!recoveryEpoch||item.head_sha===source.sourceCommit))
     .sort((a,b)=>b.run_number-a.run_number || b.run_attempt-a.run_attempt)[0];
   assert.equal(latestPush?.id,run.id,'A newer source-bound installed producer must be qualified');
   assert.equal(latestPush?.run_attempt,run.run_attempt);
   const finalMain=await api('git/ref/heads/main'),finalRun=await api('actions/runs/'+run.id);
-  assert.equal(finalMain.object?.sha,source.sourceCommit,'Actual main moved during qualification');
+  assertQualificationMain(finalMain,source,recoveryEpoch,'Actual main moved during qualification');
   validateRun(finalRun,source);assert.equal(finalRun.run_attempt,run.run_attempt);
   const qualities=record.scannerReviews.javascript.results.filter(item=>item.disposition==='Acknowledged nonsecurity quality');
   assert.deepEqual(record.qualityDisposition.cases.map(item=>item.resultSha256).sort(),qualities.map(item=>item.resultSha256).sort(),
@@ -1117,10 +1120,13 @@ async function qualify(options) {
     releaseVersion:VERSION,tag:TAG,source,selection,alpha,producerRun:{id:run.id,attempt:run.run_attempt,path:run.path,event:run.event,headBranch:run.head_branch},
     capsule:producer.custody,installer:producer.installer,browserInput:producer.browserObservation,originalArchives:custody,alphaQualification,observedReviews,scanners,processedCodeql:services,requiredWorkflows:inherited.requiredPaths,
     requiredChecks:inherited.requiredChecks,compilerPolicy:policy,deploymentSnapshots,historicalCodeql,publicationRecordSha256:hash(recordRaw),softwareReleaseQualified:true,
-    productionApproved:false,authority:'none',currencyCapBaseUnits:'0'};
+    productionApproved:false,authority:'none',currencyCapBaseUnits:'0',...(recoveryEpoch?{recoveryEpoch}:{} )};
   fs.writeFileSync(path.join(output,'qualification.json'),JSON.stringify(proof,null,2)+'\n',{flag:'wx'});return proof;
 }
-module.exports={REPOSITORY,WORKFLOW,VERSION,TAG,NODES,PRODUCER,CONSUMER,INSTALLER_PATH,INSTALLER_ASSET,hash,json,canonical,fields,bounded,sourceProof,plan,
+function assertQualificationMain(observation,source,recoveryEpoch=null,label='Actual main moved') {
+  assert.equal(observation.object?.sha,recoveryEpoch?recoveryEpoch.tooling.sourceCommit:source.sourceCommit,label);
+}
+module.exports={REPOSITORY,WORKFLOW,VERSION,TAG,NODES,PRODUCER,CONSUMER,INSTALLER_PATH,INSTALLER_ASSET,hash,json,canonical,fields,bounded,sourceProof,plan,assertQualificationMain,
   validateRun,validateJob,validateArtifact,validateRetainedHistory,verifyBrowserInput,verifyAlphaPublication,verifyAlphaPublicAssets,reviewedAlphaReleaseProfile,verifyAlphaProfileInventory,verifyAlphaProfilePacks,alphaReleaseAttemptJobs,alphaReleaseJobsLease,alphaPublicAssetIdentity,alphaPublicAssetInventory,readPublicAlphaAsset,ALPHA_ASSET_MAX_BYTES,reviewReferences,zipMembers,installedArchive,validateInstaller,assertProducerInventory,custodyFromProducer,validateBootstrap,validateNative,publicationRecord,scannerReview,download,downloadReleaseAsset,qualify};
 if(require.main===module) {
   const [command,root,manifestSha256,verifierSha256,scopeVerifierSha256,runId,recordFile,recordSha256,output]=process.argv.slice(2);

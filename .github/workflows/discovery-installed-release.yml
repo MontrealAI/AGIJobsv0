@@ -5,6 +5,11 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      operation:
+        description: Create a new selected publication or recover only the original owned rc20 draft
+        type: choice
+        options: [publish-new, recover-owned-rc20]
+        default: publish-new
       qualification_run_id:
         description: Successful original exact-main push producer run
         required: true
@@ -201,7 +206,7 @@ jobs:
   publish:
     name: Publish qualified Discovery installed prerelease
     needs: select
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' && github.actor == github.repository_owner && needs.select.outputs.frozen == 'true'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' && github.actor == github.repository_owner && needs.select.outputs.frozen == 'true' && inputs.operation != 'recover-owned-rc20'
     runs-on: ubuntu-24.04
     timeout-minutes: 95
     permissions:
@@ -243,4 +248,66 @@ jobs:
         with:
           name: discovery-created-release-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/discovery-installed-release-assets.creation-response.json
+          if-no-files-found: ignore
+  recover-rc20:
+    name: Recover original Discovery rc20 draft
+    needs: select
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'MontrealAI/AGIJobsv0' && github.actor == github.repository_owner && needs.select.outputs.frozen == 'true' && inputs.operation == 'recover-owned-rc20'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 95
+    permissions:
+      contents: write
+      actions: read
+      checks: read
+      security-events: read
+    defaults:
+      run:
+        working-directory: jobs-tool
+    env:
+      GH_TOKEN: ${{ github.token }}
+      QUALIFICATION_RUN_ID: ${{ inputs.qualification_run_id }}
+      PUBLICATION_RECORD_COMMIT: ${{ inputs.publication_record_commit }}
+      PUBLICATION_RECORD_SHA256: ${{ inputs.publication_record_sha256 }}
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          path: jobs-tool
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          path: jobs-payload
+          ref: f7c00e668fe31ce1ea907f0006b6c14dc9db5e01
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.21.0
+      - name: Requalify original payload and recover only the owned rc20 release ID
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs'), path = require('node:path');
+          const R = require('./scripts/release/recover-discovery-rc20.cjs');
+          (async () => {
+            const root = process.env.GITHUB_WORKSPACE + '/jobs-payload';
+            const artifact = process.env.RUNNER_TEMP + '/jobs-rc20-original-creation.zip';
+            const output = process.env.RUNNER_TEMP + '/jobs-rc20-recovery';
+            const diagnostic = process.env.RUNNER_TEMP + '/jobs-rc20-anonymous-diagnostics.jsonl';
+            R.executionGuard();
+            await R.fetchCreationArtifact(artifact, R.originalModules(root).Q);
+            const result = await R.recover({ root, artifact, output, execute: true }, {
+              observe: value => fs.appendFileSync(diagnostic, JSON.stringify(value) + '\n', { mode: 0o600 })
+            });
+            console.log(JSON.stringify(result, null, 2));
+          })().catch(error => { console.error(error.message); process.exitCode = 1; });
+          NODE
+      - name: Retain original receipt, recovery intent and exact-source diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: discovery-rc20-recovery-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/jobs-rc20-original-creation.zip
+            ${{ runner.temp }}/jobs-rc20-recovery/
+            ${{ runner.temp }}/jobs-rc20-anonymous-diagnostics.jsonl
           if-no-files-found: ignore

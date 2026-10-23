@@ -1427,3 +1427,5 @@ test('actual publisher preserves creation receipt and empty draft without duplic
 test('interrupted seven-asset upload retry preserves original IDs and bytes without replacement',async()=>{
  await ownedPublisherIdRun({substituteUploadedId:true,retryInterrupted:true});
 });
+
+require('./recover-discovery-rc20.test.cjs');
