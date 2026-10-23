@@ -71,6 +71,9 @@ function sourceProof({root, manifestSha256, verifierSha256, scopeVerifierSha256}
 function inheritedPolicy(root) {
   return createRequire(path.join(root,'package.json'))('./scripts/release/qualify-source-release-rc16.cjs');
 }
+function sourceServiceObserver(root) {
+  return createRequire(path.join(root,'package.json'))('./scripts/release/source-codeql-service-rc16.cjs');
+}
 function plan(options) {
   const source = sourceProof(options), inherited = inheritedPolicy(options.root);
   return {schema:'agijobsv0/discovery-installed-qualification-plan/v1',state:'NOT_RUN',source,
@@ -1066,7 +1069,7 @@ async function qualify(options) {
   const historicalCodeql=inherited.verifyHistoricalReviewedCodeql(await api('check-runs/'+inherited.historicalReviewedCodeql.checkId));
   const runs=await pages(api,'actions/runs?head_sha='+source.sourceCommit,'workflow_runs');
   const checks=await pages(api,'commits/'+source.sourceCommit+'/check-runs','check_runs');
-  const codeql=require('./source-codeql-service-rc16.cjs');
+  const codeql=sourceServiceObserver(root);
   const services=await codeql.observeFinalServices({sha:source.sourceCommit,tree:source.sourceTree,git,runs,
     api:async(method,route)=>{assert.equal(method,'GET');return api(route);},download:async id=>get('actions/artifacts/'+id+'/zip')});
   const inheritedState=inherited.evaluate(runs.filter(value=>value.path!==WORKFLOW),checks.filter(value=>
@@ -1126,7 +1129,7 @@ async function qualify(options) {
 function assertQualificationMain(observation,source,recoveryEpoch=null,label='Actual main moved') {
   assert.equal(observation.object?.sha,recoveryEpoch?recoveryEpoch.tooling.sourceCommit:source.sourceCommit,label);
 }
-module.exports={REPOSITORY,WORKFLOW,VERSION,TAG,NODES,PRODUCER,CONSUMER,INSTALLER_PATH,INSTALLER_ASSET,hash,json,canonical,fields,bounded,sourceProof,plan,assertQualificationMain,
+module.exports={REPOSITORY,WORKFLOW,VERSION,TAG,NODES,PRODUCER,CONSUMER,INSTALLER_PATH,INSTALLER_ASSET,hash,json,canonical,fields,bounded,sourceProof,plan,assertQualificationMain,sourceServiceObserver,
   validateRun,validateJob,validateArtifact,validateRetainedHistory,verifyBrowserInput,verifyAlphaPublication,verifyAlphaPublicAssets,reviewedAlphaReleaseProfile,verifyAlphaProfileInventory,verifyAlphaProfilePacks,alphaReleaseAttemptJobs,alphaReleaseJobsLease,alphaPublicAssetIdentity,alphaPublicAssetInventory,readPublicAlphaAsset,ALPHA_ASSET_MAX_BYTES,reviewReferences,zipMembers,installedArchive,validateInstaller,assertProducerInventory,custodyFromProducer,validateBootstrap,validateNative,publicationRecord,scannerReview,download,downloadReleaseAsset,qualify};
 if(require.main===module) {
   const [command,root,manifestSha256,verifierSha256,scopeVerifierSha256,runId,recordFile,recordSha256,output]=process.argv.slice(2);

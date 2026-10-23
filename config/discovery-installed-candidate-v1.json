@@ -436,9 +436,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "243f05fbba11055111a51c25a1585caa725484abb0e65d88d29140e7168c2874"
+        "sha256": "447b47ad50cb3df2c20fd431b732af3ea93be9b0d5b605867821cf55403196f4"
       },
-      "reason": "Retain existing Actions byte selectors, initial JSON media, redirect/authentication/error behavior, shared60s deadline,64MB bound and complete qualification gates; add only fixed own-repository positive releaseasset-ID byte reads using documented initial octet media and anonymous existing approved release storage with the same bounds and safe fixed-route/status diagnostics; select explicit rc19 while preserving reviewed Alpha615 and original source/profile/scanner/asset checks; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Retain default exact-main qualification unchanged; add only an internally validated owned-rc20 recovery epoch that proves original f7 payload and separately qualified current-main tooling through the strict nine-leaf finite delta, binds honest actual-main observations to the tool epoch and all original source/scanner/producer/record checks to f7, without rewriting API data or changing anonymous packet identity"
+      "reason": "Retain existing Actions byte selectors, initial JSON media, redirect/authentication/error behavior, shared60s deadline,64MB bound and complete qualification gates; add only fixed own-repository positive releaseasset-ID byte reads using documented initial octet media and anonymous existing approved release storage with the same bounds and safe fixed-route/status diagnostics; select explicit rc19 while preserving reviewed Alpha615 and original source/profile/scanner/asset checks; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Retain default exact-main qualification unchanged; add only an internally validated owned-rc20 recovery epoch that proves original f7 payload and separately qualified current-main tooling through the strict nine-leaf finite delta, binds honest actual-main observations to the tool epoch and all original source/scanner/producer/record checks to f7, without rewriting API data or changing anonymous packet identity; resolve the authenticated CodeQL service observer from the same fully source-proven payload checkout as its inherited/native consumer, preserving the private per-module observed WeakSet and every live service/source/raw scanner gate instead of mixing byte-identical modules from two roots"
     },
     "scripts/release/discovery-installed-release-dispatch.cjs": {
       "before": null,
@@ -701,9 +701,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "c8e301c80e5664296af2dff29b4c0aec6c8398f5333acd7b893ddd3ab5f36c8c"
+        "sha256": "8ed76967e1b4e188283183fd2c7a54253eb79947fe45ece482549d73949a657f"
       },
-      "reason": "Add24 inert owned recovery/diagnostic/dual-epoch regressions using the exact original creation ZIP; refuse identity/source/asset substitutions, duplicate tags, changed main,403publication, uncertain-outcome duplicate mutation, unqualified tooling, expanded runtime deltas and unauthorized caller context without real release operations"
+      "reason": "Add25 inert owned recovery/diagnostic/dual-epoch regressions using the exact original creation ZIP; refuse identity/source/asset substitutions, duplicate tags, changed main,403publication, uncertain-outcome duplicate mutation, unqualified tooling, expanded runtime deltas and unauthorized caller context without real release operations; add the actual two-root service-module private-brand regression, preserving cross-root, forged, serialized and wrong-epoch refusals plus ordinary same-root behavior"
     }
   },
   "decisions": {

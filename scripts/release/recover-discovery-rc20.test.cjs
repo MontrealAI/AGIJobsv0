@@ -221,3 +221,43 @@ test('workflow keeps owner-main publication guards, sibling complete checkouts a
   assert.equal((recovery.match(/path: jobs-/g)||[]).length,2);assert.equal((recovery.match(/fetch-depth: 0/g)||[]).length,2);
   assert.ok(text.slice(text.indexOf('\n  publish:'),text.indexOf('\n  recover-rc20:')).includes("inputs.operation != 'recover-owned-rc20'"));
 });
+test('payload observer and inherited consumer share their real private module brand across separate checkouts',async()=>{
+  const root=fs.mkdtempSync(path.join(BASE,'service-roots-')),tool=path.join(root,'tool'),payload=path.join(root,'payload');
+  const serviceName='scripts/release/source-codeql-service-rc16.cjs',fixtureName='test/scripts/source-codeql-service-fixture-rc16.cjs';
+  const dependencies=[serviceName,fixtureName,'scripts/release/source-native-gates-rc16.cjs','scripts/release/qualify-source-release.cjs',
+    'scripts/release/check-release-ci.js','ci/required-contexts.json','ci/required-companion-contexts.json',
+    'scripts/release/source-profile-rc16.cjs','scripts/release/source-profile-rc17.json',
+    'integrations/alpha-agent/pinned-alpha-checkout.cjs','scripts/release/source-scanner-review-bindings-rc16.cjs'];
+  for(const checkout of [tool,payload]) {
+    fs.mkdirSync(checkout,{recursive:true});fs.writeFileSync(path.join(checkout,'package.json'),'{}');
+    for(const name of dependencies) {
+      const target=path.join(checkout,name);fs.mkdirSync(path.dirname(target),{recursive:true});
+      fs.copyFileSync(path.join(CODE,'../..',name),target);
+    }
+  }
+  const toolObserver=require(path.join(tool,serviceName)),payloadConsumer=require(path.join(payload,serviceName));
+  assert.equal(fs.readFileSync(path.join(tool,serviceName)).equals(fs.readFileSync(path.join(payload,serviceName))),true);
+  assert.notEqual(toolObserver,payloadConsumer);
+  const toolProof=await require(path.join(tool,fixtureName)).syntheticServiceProof(),
+    payloadProof=await require(path.join(payload,fixtureName)).syntheticServiceProof();
+  const sha='a'.repeat(40),tree='c'.repeat(40);
+  assert.doesNotThrow(()=>toolObserver.assertFinalServices(toolProof,{sha,tree}));
+  assert.throws(()=>payloadConsumer.assertFinalServices(toolProof,{sha,tree}),/Positive authenticated/);
+  const selected=Q.sourceServiceObserver(payload);assert.equal(selected,payloadConsumer);
+  assert.doesNotThrow(()=>selected.assertFinalServices(payloadProof,{sha,tree}));
+  const nativeGate=require(path.join(payload,'scripts/release/source-native-gates-rc16.cjs'));
+  assert.ok(nativeGate.evaluate([],[],sha,toolProof).failures.includes('Processed exact-main CodeQL service evidence: invalid'));
+  const accepted=nativeGate.evaluate([],[],sha,payloadProof);
+  assert.ok(!accepted.failures.includes('Processed exact-main CodeQL service evidence: invalid'));
+  assert.ok(accepted.pending.length+accepted.failures.length>0,'Missing real gates must remain unqualified');
+  for(const proof of [{},structuredClone(payloadProof),JSON.parse(JSON.stringify(payloadProof)),toolProof])
+    {assert.throws(()=>selected.assertFinalServices(proof,{sha,tree}),/Positive authenticated/);
+      assert.ok(nativeGate.evaluate([],[],sha,proof).failures.includes('Processed exact-main CodeQL service evidence: invalid'));}
+  for(const epoch of [{sha:'b'.repeat(40),tree},{sha,tree:'b'.repeat(40)}])
+    assert.throws(()=>selected.assertFinalServices(payloadProof,epoch),/Positive authenticated/);
+  const sameRoot=path.resolve(CODE,'../..'),sameObserver=Q.sourceServiceObserver(sameRoot);
+  assert.equal(sameObserver,require(CODE+'source-codeql-service-rc16.cjs'));
+  const sameProof=await require(path.join(sameRoot,fixtureName)).syntheticServiceProof();
+  assert.doesNotThrow(()=>sameObserver.assertFinalServices(sameProof,{sha,tree}));
+  fs.rmSync(root,{recursive:true,force:true});
+});
