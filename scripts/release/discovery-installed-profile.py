@@ -267,8 +267,8 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                                         'operator, retained mission evidence '
                                                                         'and release qualification'},
  'scripts/release/discovery-installed-release.test.cjs': {'before': None,
- 'after': {'mode': '100644', 'sha256': '89601e61e4acdf1f93e81ee7fa00802859de904baef522bec307154aad890e6f'},
- 'reason': 'Preserve all71 preceding release/caller/private-fixture/byte-transport test bodies byte-for-byte; append one inert reproduction of the actual API415 media mismatch proving official JSON Accept on initial metadata and octet-stream on anonymous redirected storage, while retaining all seven original transport controls; no network, captured-code or product execution'},
+ 'after': {'mode': '100644', 'sha256': 'af5487c9386f26899f7e94827889feb4a97c8a3cf689a4766bd9ad134e5d9736'},
+ 'reason': 'Preserve all72 preceding release/caller/private-fixture/byte-transport test bodies byte-for-byte; append three inert actual publisher/API diagnostic cases for fixed route/status visibility before output or release operations, expected404 absence and successful JSON preservation, and403/500 refusal without reading remote bodies or exposing credentials; no network, captured-code or product execution'},
  'scripts/release/discovery-lab-profile.py': {'after': {'mode': '100644',
                                                         'sha256': '4da6958cd88f4e596aaa5947f398d2367009bb9bfe487fcfa1d0bf17b4cd348b'},
                                               'before': None,
@@ -289,12 +289,8 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                               'and independently authenticated standalone '
                                                               'bootstrap'},
  'scripts/release/publish-discovery-installed.cjs': {'before': None,
- 'after': {'mode': '100644', 'sha256': '8b26384360a61b1d41768fda82ce7047f417949cccc5dc06d31a6d18d899f736'},
- 'reason': 'Preserve all separately gated source-bound installed archive, immutable Alpha transition, operator, '
-           'retained mission evidence and release qualification checks; read the exact bounded immutable '
-           'publication record through Contents metadata and, only for encoding none, its same-repository Git '
-           'blob SHA, requiring canonical base64, exact declared size, Git blob SHA1 and independently selected '
-           'SHA256 before any release operation'},
+ 'after': {'mode': '100644', 'sha256': 'd9830b28c64252070ab04f0b9034d8251a4400851b1c9467b8dda2ce6a91b101'},
+ 'reason': 'Preserve exact source/record/archive/asset checks, requests, existing authentication, redirect refusal, deadlines, body bounds, expected absence and message-only CLI catch; expose only the fixed own-repository GET relative route and numeric HTTP status when the existing metadata read fails, to identify the actual refused resource without response body, token, signed URL, retry or permission change'},
  'scripts/release/test-discovery-installed-archive.py': {'after': {'mode': '100644',
                                                                    'sha256': '41800950cd4d7f4ed9e7d89ead7fb3112b54d138ee4dc4b79790188e2dce85cd'},
                                                          'before': None,

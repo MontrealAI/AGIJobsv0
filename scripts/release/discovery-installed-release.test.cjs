@@ -1076,3 +1076,59 @@ test('Actions metadata API requires JSON Accept while redirected bytes retain oc
   }});
   assert.deepEqual(result,raw);assert.equal(calls.length,2);assert.equal(calls[0].options.signal,calls[1].options.signal);
 });
+test('publisher reports the fixed metadata GET route and status before any release operation',async()=>{
+  const f=publicationRecordTransportFixture(),originalSourceProof=Q.sourceProof,originalFetch=global.fetch;
+  const keys=['GITHUB_REPOSITORY','GITHUB_EVENT_NAME','GITHUB_REF','GITHUB_ACTOR','GITHUB_REPOSITORY_OWNER','GITHUB_SHA'];
+  const previous=Object.fromEntries(keys.map(key=>[key,process.env[key]]));
+  const fixtureRoot=fs.mkdtempSync(path.join(os.tmpdir(),'discovery-metadata-fixture-')),output=path.join(fixtureRoot,'publish');
+  const token='inert-fixture-token',bodyText='remote-body-and-signed-url-must-not-appear';let failedBodyReads=0;
+  Q.sourceProof=()=>source;
+  Object.assign(process.env,{GITHUB_REPOSITORY:Q.REPOSITORY,GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REF:'refs/heads/main',GITHUB_ACTOR:'MontrealAI',GITHUB_REPOSITORY_OWNER:'MontrealAI',GITHUB_SHA:source.sourceCommit});
+  global.fetch=async(url,options)=>{
+    const prefix='https://api.github.com/repos/'+Q.REPOSITORY+'/';assert.ok(url.startsWith(prefix));
+    const route=url.slice(prefix.length);f.calls.push(route);
+    assert.equal(options.headers.Authorization,'Bearer '+token);assert.equal(options.headers.Accept,'application/vnd.github+json');assert.equal(options.redirect,'error');
+    if(route==='contents/'+P.RECORD_PATH+'?ref='+f.recordCommit)return new Response(JSON.stringify(f.entry),{status:200});
+    assert.equal(route,'releases/tags/source-v2.1.0-rc.17');
+    return {ok:false,status:404,get body(){failedBodyReads++;throw Error(bodyText);}};
+  };
+  try {
+    assert.equal(fs.statSync(fixtureRoot).mode&0o777,0o700);
+    await assert.rejects(P.publish({root:fixtureRoot,output,recordCommit:f.recordCommit,recordSha256:f.recordSha256},
+      {api:P.apiClient(token),command:()=>{throw Error('No release command is permitted in this inert fixture');}}),error=>{
+        assert.equal(error.message,'Publication server read failed: GET repos/'+Q.REPOSITORY+'/releases/tags/source-v2.1.0-rc.17 HTTP 404');
+        assert.ok(!error.message.includes(token)&&!error.message.includes(bodyText)&&!error.message.includes('https://'));return true;
+      });
+    assert.deepEqual(f.calls,['contents/'+P.RECORD_PATH+'?ref='+f.recordCommit,'releases/tags/source-v2.1.0-rc.17']);
+    assert.equal(failedBodyReads,0);assert.equal(fs.existsSync(output),false);assert.deepEqual(fs.readdirSync(fixtureRoot),[]);
+  } finally {
+    Q.sourceProof=originalSourceProof;global.fetch=originalFetch;
+    for(const key of keys)if(previous[key]===undefined)delete process.env[key];else process.env[key]=previous[key];
+    fs.rmSync(fixtureRoot,{recursive:true,force:true});
+  }
+});
+test('publisher metadata diagnostics preserve expected absence and successful JSON reads',async()=>{
+  const originalFetch=global.fetch,calls=[],token='inert-fixture-token';
+  global.fetch=async(url,options)=>{
+    calls.push({url,options});
+    if(calls.length===1)return {ok:false,status:404,get body(){throw Error('Expected absence must not read a body');}};
+    return new Response(JSON.stringify({id:12,state:'original-metadata'}),{status:200});
+  };
+  try {
+    const api=P.apiClient(token);assert.equal(await api('git/ref/tags/inert-absent',{absent:true}),null);
+    assert.deepEqual(await api('actions/runs/12'),{id:12,state:'original-metadata'});assert.equal(calls.length,2);
+    assert.ok(calls.every(item=>item.url.startsWith('https://api.github.com/repos/'+Q.REPOSITORY+'/')));
+    assert.ok(calls.every(item=>item.options.headers.Authorization==='Bearer '+token&&item.options.redirect==='error'));
+  } finally {global.fetch=originalFetch;}
+});
+test('publisher metadata failures expose no response body or credential for other statuses',async()=>{
+  const originalFetch=global.fetch,token='inert-fixture-token';let reads=0,calls=0;
+  try {
+    for(const [route,status] of [['check-runs/12',403],['actions/artifacts/34',500]]) {
+      global.fetch=async()=>{calls++;return {ok:false,status,get body(){reads++;throw Error('untrusted remote body');}};};
+      await assert.rejects(P.apiClient(token)(route),error=>error.message===
+        'Publication server read failed: GET repos/'+Q.REPOSITORY+'/'+route+' HTTP '+status);
+    }
+    assert.equal(reads,0);assert.equal(calls,2);
+  } finally {global.fetch=originalFetch;}
+});

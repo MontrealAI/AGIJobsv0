@@ -23,7 +23,7 @@ function apiClient(token) {
     const response=await fetch('https://api.github.com/repos/'+Q.REPOSITORY+'/'+route,{redirect:'error',signal:AbortSignal.timeout(30_000),
       headers:{Accept:'application/vnd.github+json',Authorization:'Bearer '+token,'X-GitHub-Api-Version':'2022-11-28'}});
     if(absent&&response.status===404)return null;
-    assert.ok(response.ok,'Publication server read failed: HTTP '+response.status);
+    assert.ok(response.ok,'Publication server read failed: GET repos/'+Q.REPOSITORY+'/'+route+' HTTP '+response.status);
     const chunks=[];let size=0;const reader=response.body.getReader();
     try {while(true){const item=await reader.read();if(item.done)break;size+=item.value.length;assert.ok(size<=16_000_000);chunks.push(Buffer.from(item.value));}}
     finally{await reader.cancel();}return Q.json(Buffer.concat(chunks));
