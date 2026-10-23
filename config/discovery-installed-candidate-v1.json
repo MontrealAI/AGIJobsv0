@@ -669,6 +669,17 @@
         "sha256": "d826c548b430b1db32ca661fcd0026f8d778b865657d2492987ef31ad924d781"
       },
       "reason": "Retain all preceding 47084 test-file bytes exactly and append seven inert mocked-fetch/stream/timer cases for the actual private automatic-validator caller: unapproved origins and credentials, HTTP decoding, gateway-route containment, redirect rejection/no retry, exact 4 MiB and overflow cancellation, 15-second abort and unchanged inline/local behavior; no socket, provider or chain probe"
+    },
+    ".github/workflows/successor-computer.yml": {
+      "before": {
+        "mode": "100644",
+        "blob": "d158e2b3da0d2fda746a3818ad4342a45278ca60"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "d2bee5d44cd8420569c6432b821f810e488bc4693df993130c2b0b14946c7736"
+      },
+      "reason": "Raise only the inherited native Computer Use overall CI budget from15 to30 minutes after exact-main run39987226782 exhausted15 minutes during slow Ubuntu package installation; preserve every pinned action, dependency, command, per-case bound, permission, security control and acceptance assertion, with no skipped gate or unchanged failed-run retry"
     }
   },
   "decisions": {

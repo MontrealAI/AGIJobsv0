@@ -465,7 +465,8 @@ CHANGES = {'.github/codeql/config-discovery-installed-python.yml': {'after': {'m
                                                        'redirect rejection/no retry, exact 4 MiB '
                                                        'and overflow cancellation, 15-second abort '
                                                        'and unchanged inline/local behavior; no '
-                                                       'socket, provider or chain probe'}}
+                                                       'socket, provider or chain probe'},
+ '.github/workflows/successor-computer.yml': {'before': {'mode': '100644', 'blob': 'd158e2b3da0d2fda746a3818ad4342a45278ca60'}, 'after': {'mode': '100644', 'sha256': 'd2bee5d44cd8420569c6432b821f810e488bc4693df993130c2b0b14946c7736'}, 'reason': 'Raise only the inherited native Computer Use overall CI budget from15 to30 minutes after exact-main run39987226782 exhausted15 minutes during slow Ubuntu package installation; preserve every pinned action, dependency, command, per-case bound, permission, security control and acceptance assertion, with no skipped gate or unchanged failed-run retry'}}
 # END FIXED DISCOVERY INSTALLED DELTA
 DENIALS = {'releaseQualified': False, 'publicationApproved': False,
            'executionApproved': False, 'settlementApproved': False}
