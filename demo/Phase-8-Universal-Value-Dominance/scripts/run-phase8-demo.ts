@@ -1284,7 +1284,29 @@ function shortAddress(label: string, address?: string) {
   return `${label}: ${address.slice(0, 8)}…${address.slice(-6)}`;
 }
 
-export function computeMetrics(config: Phase8Config) {
+type MetricsConfig = {
+  global: Pick<Phase8Config["global"], "guardianReviewWindow">;
+  domains: Pick<Phase8Config["domains"][number],
+    "slug" | "active" | "resilienceIndex" | "valueFlowMonthlyUSD" | "autonomyLevelBps">[];
+  sentinels: SentinelRecord[];
+  capitalStreams: CapitalStreamRecord[];
+  guardianProtocols: { severity?: string; linkedDomains?: string[] }[];
+  selfImprovement?: {
+    plan?: { cadenceSeconds?: number; lastExecutedAt?: number };
+    autonomyGuards?: { maxAutonomyBps?: number };
+  };
+  autonomy?: {
+    session?: { maxHours?: number; contextWindowTokens?: number; checkpointCadenceMinutes?: number };
+    progressCheckpoints?: unknown[];
+  };
+  aiTeams?: { domains?: string[] }[];
+  safety?: { tripwires?: unknown[]; validatorConsoles?: unknown[] };
+  economy?: { stakeTiers?: unknown[]; milestoneTemplates?: unknown[] };
+  models?: { adapters?: unknown[]; evaluationCadenceHours?: number; safetyTests?: unknown[] };
+  governance?: { proposalTemplates?: unknown[]; humanPolicyControls?: unknown[] };
+};
+
+export function computeMetrics(config: MetricsConfig) {
   const domains = (config.domains ?? []).filter((entry) => entry.active !== false);
   const sentinels = (config.sentinels ?? []).filter((entry) => entry.active !== false);
   const streams = (config.capitalStreams ?? []).filter((entry) => entry.active !== false);
@@ -1492,7 +1514,7 @@ type MetricToleranceOverrides = Partial<
   , number>
 >;
 
-export function crossVerifyMetrics(config: Phase8Config, overrides: MetricToleranceOverrides = {}) {
+export function crossVerifyMetrics(config: MetricsConfig, overrides: MetricToleranceOverrides = {}) {
   const metrics = computeMetrics(config);
   const domains = (config.domains ?? []).filter((entry) => entry.active !== false);
   const sentinels = (config.sentinels ?? []).filter((entry) => entry.active !== false);

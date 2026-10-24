@@ -235,9 +235,9 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "7b53e70de7fcd06328d0c4deeaf7c3270c67ddc6a3447ef6a72102ad3c1f3e1c"
+        "sha256": "9f5b3c4b9c4cd9f44c92e11d234139d8b9d13665ea24df18a878a5af223ccfd9"
       },
-      "reason": "Patch only the CULTURE indexer Fastify5.12.5 to5.12.6 for GHSA-389g-gv7q-r4x8 and transitive ip-address10.7.3 to10.7.4 for GHSA-rxp7-6hxx-x8q5, with matching npm/pnpm lock records; preserve existing strict high/critical and failed-command audit checks, protected contract/compiler identities and legacy release bodies"
+      "reason": "Patch only the CULTURE indexer Fastify5.12.5 to5.12.6 for GHSA-389g-gv7q-r4x8 and transitive ip-address10.7.3 to10.7.4 for GHSA-rxp7-6hxx-x8q5, with matching npm/pnpm lock records; preserve existing strict high/critical and failed-command audit checks, protected contract/compiler identities and legacy release bodies; Patch the observed application dependency advisories using actual Zod4.6.6 and preserve existing schema semantics, fixed source binding and the seven protected root dependency identities"
     },
     "docs/successor/DISCOVERY_INSTALLED_RELEASE.md": {
       "before": null,
@@ -775,7 +775,7 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "a99bfd8d3b8abd77830c67bfeef0e52c736b0f5363ee8b1a94b4f9b1f4896a5a"
+        "sha256": "ebed3eb0a66604b146c46719dac6040200b0b9dcac2ece9dd7858c5e710e9473"
       },
       "reason": "Patch the observed application dependency advisories using actual Zod4.6.6 and preserve existing schema semantics, fixed source binding and the seven protected root dependency identities"
     },
@@ -874,7 +874,7 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "80eaa37699f97a392f6cb4dd6d79f1cc258d7a7775b88f18aa8acaafefdb7b67"
+        "sha256": "88483e191eb29ebbbab99073b9f37efa26682065bacf29e14360a37b2e5a2ffd"
       },
       "reason": "Patch the observed application dependency advisories using actual Zod4.6.6 and preserve existing schema semantics, fixed source binding and the seven protected root dependency identities"
     },
@@ -1059,6 +1059,28 @@
       "after": {
         "mode": "100644",
         "sha256": "dcc8515f044dabd5c47a499a72132b73438ca88e6021b74dde5999680057da83"
+      },
+      "reason": "Patch the observed application dependency advisories using actual Zod4.6.6 and preserve existing schema semantics, fixed source binding and the seven protected root dependency identities"
+    },
+    "demo/sovereign-constellation/server/package-lock.json": {
+      "before": {
+        "blob": "25ad5ef80fdf9a93e4c83bb3254bfcf5245a51c4",
+        "mode": "100644"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "4b89e11752da53dcceb5c4c25b6e47ad2227d8583b43b441618a8f89a9269728"
+      },
+      "reason": "Patch the observed application dependency advisories using actual Zod4.6.6 and preserve existing schema semantics, fixed source binding and the seven protected root dependency identities"
+    },
+    "demo/sovereign-mesh/server/package-lock.json": {
+      "before": {
+        "blob": "4955d1e7b717048638ca249be7daf694cce2f69a",
+        "mode": "100644"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "c60661935f616fae98ddad047b8f2726e8ee4296bdac8c3e8fb7383d3985af0d"
       },
       "reason": "Patch the observed application dependency advisories using actual Zod4.6.6 and preserve existing schema semantics, fixed source binding and the seven protected root dependency identities"
     }
