@@ -350,6 +350,7 @@ const ManifestSchema = z.object({
   settlementProtocols: z.array(SettlementProtocolSchema).min(1),
   logisticsCorridors: z.array(LogisticsCorridorSchema).min(1),
   interplanetaryBridges: z.record(
+    z.string(),
     z.object({
       latencySeconds: z.number().positive(),
       bandwidthGbps: z.number().positive(),
@@ -415,26 +416,26 @@ const FabricConfigSchema = z.object({
 type EnergyFeedsConfig = z.infer<typeof EnergyFeedsConfigSchema>;
 type FabricConfig = z.infer<typeof FabricConfigSchema>;
 
-const MissionTaskSchema = z.lazy(() =>
-  z.object({
-    id: z.string().min(1),
-    name: z.string().min(1),
-    domain: z.string().min(1),
-    federation: z.string().min(1),
-    ownerSafe: AddressSchema,
-    durationDays: z.number().positive(),
-    energyGw: NonNegativeNumberSchema,
-    computeExaflops: NonNegativeNumberSchema,
-    agentQuorum: z.number().nonnegative(),
-    autonomyBps: z.number().int().min(0).max(10_000),
-    risk: z.enum(["low", "medium", "high"]),
-    fallbackPlan: z.string().min(1),
-    sentinel: z.string().min(1),
-    dependencies: z.array(z.string().min(1)).default([]),
-    description: z.string().min(1),
-    children: z.array(MissionTaskSchema).default([]),
-  })
-);
+const MissionTaskSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  domain: z.string().min(1),
+  federation: z.string().min(1),
+  ownerSafe: AddressSchema,
+  durationDays: z.number().positive(),
+  energyGw: NonNegativeNumberSchema,
+  computeExaflops: NonNegativeNumberSchema,
+  agentQuorum: z.number().nonnegative(),
+  autonomyBps: z.number().int().min(0).max(10_000),
+  risk: z.enum(["low", "medium", "high"]),
+  fallbackPlan: z.string().min(1),
+  sentinel: z.string().min(1),
+  dependencies: z.array(z.string().min(1)).default([]),
+  description: z.string().min(1),
+  get children(): z.ZodDefault<z.ZodArray<typeof MissionTaskSchema>> {
+    return z.array(MissionTaskSchema).default([]);
+  },
+});
 
 type MissionTask = z.infer<typeof MissionTaskSchema>;
 
@@ -2221,7 +2222,9 @@ function buildOwnerControlProof(
   ];
 
   const requiredFunctionProof = requiredFunctions.map((fn) => {
-    const selector = managerInterface.getFunction(fn.signature).selector.toLowerCase();
+    const fragment = managerInterface.getFunction(fn.signature);
+    if (!fragment) throw new Error(`Manager interface function is missing: ${fn.signature}`);
+    const selector = fragment.selector.toLowerCase();
     const occurrences = selectorCount.get(selector) ?? 0;
     const minimumRequired = fn.minimum;
     const present = occurrences >= Math.max(1, minimumRequired);
@@ -2403,6 +2406,7 @@ function triangulateOwnerOverride(params: {
 
     try {
       const parsed = managerInterface.parseTransaction({ data: tx.data });
+      if (!parsed) throw new Error("Transaction does not match the manager interface");
       const signature = parsed.signature;
       signatureCounts.set(signature, (signatureCounts.get(signature) ?? 0) + 1);
 

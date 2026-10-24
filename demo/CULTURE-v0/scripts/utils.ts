@@ -83,8 +83,8 @@ export const CultureConfigSchema = z.object({
       selfPlayArena: z.string().optional(),
     })
     .default({}),
-  seed: z.record(z.any()).optional(),
-  sampleRound: z.record(z.any()).optional(),
+  seed: z.record(z.string(), z.any()).optional(),
+  sampleRound: z.record(z.string(), z.any()).optional(),
 });
 
 export type CultureConfig = z.infer<typeof CultureConfigSchema>;
@@ -169,7 +169,7 @@ export function parseAddressesBlob(
     return {};
   }
   try {
-    const addresses = z.record(z.string()).parse(JSON.parse(blob));
+    const addresses = z.record(z.string(), z.string()).parse(JSON.parse(blob));
     return Object.fromEntries(
       Object.entries(addresses).map(([key, value]) => [
         key,

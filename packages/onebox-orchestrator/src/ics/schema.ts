@@ -27,17 +27,17 @@ const amountSchema = z
   );
 
 const deadlineDaysSchema = z
-  .number({ invalid_type_error: 'Deadline must be a number of days' })
+  .number({ error: (issue) => issue.input === undefined ? "Required" : 'Deadline must be a number of days' })
   .int('Deadline must be a whole number of days')
   .positive('Deadline must be at least one day');
 
 const jobTitleSchema = z
-  .string({ invalid_type_error: 'Job title must be a string' })
+  .string({ error: (issue) => issue.input === undefined ? "Required" : 'Job title must be a string' })
   .min(3, 'Job title must be at least 3 characters long')
   .max(120, 'Job title must be at most 120 characters long');
 
 const jobDescriptionSchema = z
-  .string({ invalid_type_error: 'Job description must be a string' })
+  .string({ error: (issue) => issue.input === undefined ? "Required" : 'Job description must be a string' })
   .min(12, 'Describe the job in at least one sentence');
 
 const attachmentSchema = z
@@ -50,7 +50,7 @@ const attachmentSchema = z
   );
 
 const ensNameSchema = z
-  .string({ invalid_type_error: 'ENS name must be a string' })
+  .string({ error: (issue) => issue.input === undefined ? "Required" : 'ENS name must be a string' })
   .min(3, 'ENS name must be at least 3 characters long')
   .max(253, 'ENS name must be shorter than 253 characters')
   .regex(/^[a-z0-9-_.]+\.(eth|agi\.eth)$/u, 'ENS name must use .eth or .agi.eth');
@@ -72,7 +72,7 @@ const jobIdentifierSchema = z.union([
 
 const metaSchema = z
   .object({
-    traceId: z.string().uuid().optional(),
+    traceId: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'Invalid uuid').optional(),
     userId: z.string().min(1).optional(),
     planner: z.string().optional(),
   })
@@ -120,7 +120,7 @@ const SubmitWorkIntentSchema = baseIntentSchema.extend({
     result: z.object({
       uri: z.string().url('Result URI must be a valid URL').optional(),
       description: z
-        .string({ invalid_type_error: 'Result description must be a string' })
+        .string({ error: (issue) => issue.input === undefined ? "Required" : 'Result description must be a string' })
         .max(2000)
         .optional(),
       hash: bytes32Schema.optional(),
@@ -173,9 +173,9 @@ const AdminSetIntentSchema = baseIntentSchema.extend({
   intent: z.literal('admin_set'),
   params: z.object({
     key: z
-      .string({ invalid_type_error: 'Admin setting key must be provided' })
+      .string({ error: (issue) => issue.input === undefined ? "Required" : 'Admin setting key must be provided' })
       .min(1),
-    value: z.any(),
+    value: z.any().optional(),
   }),
 });
 

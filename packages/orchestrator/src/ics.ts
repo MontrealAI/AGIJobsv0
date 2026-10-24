@@ -28,7 +28,7 @@ const txModeSchema = z
 
 const metaSchema = z
   .object({
-    traceId: z.string().uuid().optional(),
+    traceId: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "Invalid uuid").optional(),
     userId: z.string().min(1).optional(),
     txMode: txModeSchema,
   })
@@ -46,7 +46,7 @@ const CreateJobIntentSchema = z
       job: z.object({
         rewardAGIA: amountSchema,
         deadline: deadlineSchema,
-        spec: z.record(z.any()),
+        spec: z.record(z.string(), z.any()),
         title: z.string().optional(),
       }),
     }),
@@ -70,7 +70,7 @@ const SubmitWorkIntentSchema = z
       jobId: jobIdSchema,
       result: z
         .object({
-          payload: z.record(z.any()).optional(),
+          payload: z.record(z.string(), z.any()).optional(),
           uri: z.string().optional(),
           hash: bytes32Schema.optional(),
         })
@@ -120,21 +120,21 @@ const WithdrawIntentSchema = z
 const ValidateIntentSchema = z
   .object({
     intent: z.literal("validate"),
-    params: z.record(z.any()).default({}),
+    params: z.record(z.string(), z.any()).default({}),
   })
   .extend(baseFields);
 
 const DisputeIntentSchema = z
   .object({
     intent: z.literal("dispute"),
-    params: z.record(z.any()).default({}),
+    params: z.record(z.string(), z.any()).default({}),
   })
   .extend(baseFields);
 
 const AdminSetIntentSchema = z
   .object({
     intent: z.literal("admin_set"),
-    params: z.record(z.any()).default({}),
+    params: z.record(z.string(), z.any()).default({}),
   })
   .extend(baseFields);
 

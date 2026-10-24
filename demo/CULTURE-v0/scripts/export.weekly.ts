@@ -14,7 +14,7 @@ const CultureSnapshotSchema = z.object({
   artifacts: z.object({
     created: z.number(),
     updated: z.number(),
-    byKind: z.record(z.number()),
+    byKind: z.record(z.string(), z.number()),
     averageCitations: z.number(),
     maxLineageDepth: z.number()
   }),

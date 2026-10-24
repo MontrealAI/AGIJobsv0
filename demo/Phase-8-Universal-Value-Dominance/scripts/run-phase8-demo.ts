@@ -67,7 +67,7 @@ function computeDominanceScore(input: DominanceScoreInput): number {
 }
 
 const AddressSchema = z
-  .string({ invalid_type_error: "Address must be provided as a string" })
+  .string({ error: (issue) => issue.input === undefined ? "Required" : "Address must be provided as a string" })
   .regex(/^0x[a-fA-F0-9]{40}$/, "Must be a valid 20-byte hex address")
   .transform((value) => value.toLowerCase());
 
@@ -94,7 +94,8 @@ const BigNumberishSchema = z
       throw new Error("BigInt fields must be provided as a base-10 string");
     }
     return trimmed;
-  });
+  })
+  .default("0");
 
 const ChainIdSchema = z
   .preprocess((value) => {
@@ -109,7 +110,7 @@ const ChainIdSchema = z
     }
     return value;
   }, z
-    .number({ invalid_type_error: "Chain ID must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Chain ID must be a number" })
     .int("Chain ID must be a whole number").safe("Chain ID must be a safe integer")
     .positive("Chain ID must be positive")
     .optional())
@@ -136,34 +137,34 @@ const EnvironmentSchema = z
 
 const AutonomySessionSchema = z.object({
   maxHours: z
-    .number({ invalid_type_error: "Autonomy session maxHours must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Autonomy session maxHours must be a number" })
     .positive("Autonomy session maxHours must be positive"),
   contextWindowTokens: z
-    .number({ invalid_type_error: "Autonomy session contextWindowTokens must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Autonomy session contextWindowTokens must be a number" })
     .int("Autonomy session contextWindowTokens must be an integer")
     .positive("Autonomy session contextWindowTokens must be positive"),
   checkpointCadenceMinutes: z
-    .number({ invalid_type_error: "Autonomy session checkpointCadenceMinutes must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Autonomy session checkpointCadenceMinutes must be a number" })
     .int("Autonomy session checkpointCadenceMinutes must be an integer")
     .positive("Autonomy session checkpointCadenceMinutes must be positive"),
   memoryBacking: z
-    .string({ required_error: "Autonomy session memoryBacking is required" })
+    .string({ error: (issue) => issue.input === undefined ? "Autonomy session memoryBacking is required" : undefined })
     .min(1, "Autonomy session memoryBacking is required"),
   environment: z
-    .string({ required_error: "Autonomy session environment is required" })
+    .string({ error: (issue) => issue.input === undefined ? "Autonomy session environment is required" : undefined })
     .min(1, "Autonomy session environment is required"),
   persistence: z
-    .string({ required_error: "Autonomy session persistence is required" })
+    .string({ error: (issue) => issue.input === undefined ? "Autonomy session persistence is required" : undefined })
     .min(1, "Autonomy session persistence is required"),
 });
 
 const AutonomyCheckpointSchema = z.object({
-  name: z.string({ required_error: "Autonomy checkpoint name is required" }).min(1),
+  name: z.string({ error: (issue) => issue.input === undefined ? "Autonomy checkpoint name is required" : undefined }).min(1),
   description: z
-    .string({ required_error: "Autonomy checkpoint description is required" })
+    .string({ error: (issue) => issue.input === undefined ? "Autonomy checkpoint description is required" : undefined })
     .min(1),
   intervalMinutes: z
-    .number({ invalid_type_error: "Autonomy checkpoint intervalMinutes must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Autonomy checkpoint intervalMinutes must be a number" })
     .int("Autonomy checkpoint intervalMinutes must be an integer")
     .positive("Autonomy checkpoint intervalMinutes must be positive"),
   outputs: z.array(z.string()).default([]),
@@ -174,10 +175,10 @@ const AutonomySchema = z.object({
   persistentExecution: z
     .object({
       runtime: z
-        .string({ required_error: "Autonomy persistentExecution.runtime is required" })
+        .string({ error: (issue) => issue.input === undefined ? "Autonomy persistentExecution.runtime is required" : undefined })
         .min(1, "Autonomy persistentExecution.runtime is required"),
       image: z
-        .string({ required_error: "Autonomy persistentExecution.image is required" })
+        .string({ error: (issue) => issue.input === undefined ? "Autonomy persistentExecution.image is required" : undefined })
         .min(1, "Autonomy persistentExecution.image is required"),
       resources: z
         .object({
@@ -191,38 +192,38 @@ const AutonomySchema = z.object({
     .optional(),
   progressCheckpoints: z.array(AutonomyCheckpointSchema).default([]),
   memoryStrategy: z
-    .string({ required_error: "Autonomy memoryStrategy is required" })
+    .string({ error: (issue) => issue.input === undefined ? "Autonomy memoryStrategy is required" : undefined })
     .min(1, "Autonomy memoryStrategy is required"),
 });
 
 const AiSpecialistSchema = z.object({
-  role: z.string({ required_error: "AI specialist role is required" }).min(1),
+  role: z.string({ error: (issue) => issue.input === undefined ? "AI specialist role is required" : undefined }).min(1),
   agent: AddressSchema,
-  model: z.string({ required_error: "AI specialist model is required" }).min(1),
+  model: z.string({ error: (issue) => issue.input === undefined ? "AI specialist model is required" : undefined }).min(1),
   capabilities: z.array(z.string()).default([]),
   contextWindowTokens: z
-    .number({ invalid_type_error: "AI specialist contextWindowTokens must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "AI specialist contextWindowTokens must be a number" })
     .int("AI specialist contextWindowTokens must be an integer")
     .positive("AI specialist contextWindowTokens must be positive"),
   maxAutonomyMinutes: z
-    .number({ invalid_type_error: "AI specialist maxAutonomyMinutes must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "AI specialist maxAutonomyMinutes must be a number" })
     .int("AI specialist maxAutonomyMinutes must be an integer")
     .positive("AI specialist maxAutonomyMinutes must be positive"),
 });
 
 const AiTeamSchema = z.object({
-  slug: z.string({ required_error: "AI team slug is required" }).min(1),
-  name: z.string({ required_error: "AI team name is required" }).min(1),
-  mission: z.string({ required_error: "AI team mission is required" }).min(1),
+  slug: z.string({ error: (issue) => issue.input === undefined ? "AI team slug is required" : undefined }).min(1),
+  name: z.string({ error: (issue) => issue.input === undefined ? "AI team name is required" : undefined }).min(1),
+  mission: z.string({ error: (issue) => issue.input === undefined ? "AI team mission is required" : undefined }).min(1),
   leadAgent: AddressSchema,
-  leadModel: z.string({ required_error: "AI team leadModel is required" }).min(1),
+  leadModel: z.string({ error: (issue) => issue.input === undefined ? "AI team leadModel is required" : undefined }).min(1),
   collaborationProtocol: z
-    .string({ required_error: "AI team collaborationProtocol is required" })
+    .string({ error: (issue) => issue.input === undefined ? "AI team collaborationProtocol is required" : undefined })
     .min(1),
   memoryChannel: z.string().optional(),
   escalationContact: z.string().optional(),
   cadenceMinutes: z
-    .number({ invalid_type_error: "AI team cadenceMinutes must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "AI team cadenceMinutes must be a number" })
     .int("AI team cadenceMinutes must be an integer")
     .positive("AI team cadenceMinutes must be positive"),
   domains: z.array(z.string()).default([]),
@@ -230,17 +231,17 @@ const AiTeamSchema = z.object({
 });
 
 const SafetyTripwireSchema = z.object({
-  name: z.string({ required_error: "Safety tripwire name is required" }).min(1),
-  trigger: z.string({ required_error: "Safety tripwire trigger is required" }).min(1),
-  action: z.string({ required_error: "Safety tripwire action is required" }).min(1),
+  name: z.string({ error: (issue) => issue.input === undefined ? "Safety tripwire name is required" : undefined }).min(1),
+  trigger: z.string({ error: (issue) => issue.input === undefined ? "Safety tripwire trigger is required" : undefined }).min(1),
+  action: z.string({ error: (issue) => issue.input === undefined ? "Safety tripwire action is required" : undefined }).min(1),
   severity: z.enum(["critical", "high", "medium", "low"]).default("high"),
 });
 
 const SafetyLoggingSinkSchema = z.object({
-  name: z.string({ required_error: "Safety logging sink name is required" }).min(1),
-  target: z.string({ required_error: "Safety logging sink target is required" }).min(1),
+  name: z.string({ error: (issue) => issue.input === undefined ? "Safety logging sink name is required" : undefined }).min(1),
+  target: z.string({ error: (issue) => issue.input === undefined ? "Safety logging sink target is required" : undefined }).min(1),
   retentionDays: z
-    .number({ invalid_type_error: "Safety logging sink retentionDays must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Safety logging sink retentionDays must be a number" })
     .int("Safety logging sink retentionDays must be an integer")
     .positive("Safety logging sink retentionDays must be positive"),
   piiHandling: z.string().optional(),
@@ -248,18 +249,18 @@ const SafetyLoggingSinkSchema = z.object({
 
 const SafetySchema = z.object({
   autonomyThresholdMinutes: z
-    .number({ invalid_type_error: "Safety autonomyThresholdMinutes must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Safety autonomyThresholdMinutes must be a number" })
     .int("Safety autonomyThresholdMinutes must be an integer")
     .positive("Safety autonomyThresholdMinutes must be positive"),
   checkInCadenceMinutes: z
-    .number({ invalid_type_error: "Safety checkInCadenceMinutes must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Safety checkInCadenceMinutes must be a number" })
     .int("Safety checkInCadenceMinutes must be an integer")
     .positive("Safety checkInCadenceMinutes must be positive"),
   logging: z
     .object({
       sinks: z.array(SafetyLoggingSinkSchema).default([]),
       traceSampling: z
-        .number({ invalid_type_error: "Safety logging traceSampling must be a number" })
+        .number({ error: (issue) => issue.input === undefined ? "Required" : "Safety logging traceSampling must be a number" })
         .min(0, "Safety logging traceSampling cannot be negative")
         .max(1, "Safety logging traceSampling cannot exceed 1"),
       auditConsole: z.string().optional(),
@@ -269,8 +270,8 @@ const SafetySchema = z.object({
   validatorConsoles: z
     .array(
       z.object({
-        name: z.string({ required_error: "Safety validator console name is required" }).min(1),
-        url: z.string({ required_error: "Safety validator console url is required" }).min(1),
+        name: z.string({ error: (issue) => issue.input === undefined ? "Safety validator console name is required" : undefined }).min(1),
+        url: z.string({ error: (issue) => issue.input === undefined ? "Safety validator console url is required" : undefined }).min(1),
         capabilities: z.array(z.string()).default([]),
       }),
     )
@@ -278,22 +279,22 @@ const SafetySchema = z.object({
 });
 
 const EconomyStakeTierSchema = z.object({
-  name: z.string({ required_error: "Economy stake tier name is required" }).min(1),
+  name: z.string({ error: (issue) => issue.input === undefined ? "Economy stake tier name is required" : undefined }).min(1),
   durationHours: z
-    .number({ invalid_type_error: "Economy stake tier durationHours must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Economy stake tier durationHours must be a number" })
     .int("Economy stake tier durationHours must be an integer")
     .positive("Economy stake tier durationHours must be positive"),
   minimumStake: BigNumberishSchema,
   slashMultiplier: z
-    .number({ invalid_type_error: "Economy stake tier slashMultiplier must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Economy stake tier slashMultiplier must be a number" })
     .positive("Economy stake tier slashMultiplier must be positive"),
 });
 
 const EconomyMilestoneSchema = z.object({
-  name: z.string({ required_error: "Economy milestone name is required" }).min(1),
-  description: z.string({ required_error: "Economy milestone description is required" }).min(1),
+  name: z.string({ error: (issue) => issue.input === undefined ? "Economy milestone name is required" : undefined }).min(1),
+  description: z.string({ error: (issue) => issue.input === undefined ? "Economy milestone description is required" : undefined }).min(1),
   payoutBps: z
-    .number({ invalid_type_error: "Economy milestone payoutBps must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Economy milestone payoutBps must be a number" })
     .int("Economy milestone payoutBps must be an integer")
     .min(0, "Economy milestone payoutBps cannot be negative")
     .max(10_000, "Economy milestone payoutBps cannot exceed 10000"),
@@ -304,20 +305,20 @@ const EconomySchema = z.object({
   milestoneTemplates: z.array(EconomyMilestoneSchema).default([]),
   budgetCaps: z
     .object({
-      maxComputeUSD: z.number({ invalid_type_error: "Economy budget maxComputeUSD must be a number" }).min(0),
-      maxApiSpendUSD: z.number({ invalid_type_error: "Economy budget maxApiSpendUSD must be a number" }).min(0),
-      maxTokenSpendUSD: z.number({ invalid_type_error: "Economy budget maxTokenSpendUSD must be a number" }).min(0),
+      maxComputeUSD: z.number({ error: (issue) => issue.input === undefined ? "Required" : "Economy budget maxComputeUSD must be a number" }).min(0),
+      maxApiSpendUSD: z.number({ error: (issue) => issue.input === undefined ? "Required" : "Economy budget maxApiSpendUSD must be a number" }).min(0),
+      maxTokenSpendUSD: z.number({ error: (issue) => issue.input === undefined ? "Required" : "Economy budget maxTokenSpendUSD must be a number" }).min(0),
     })
     .optional(),
   rewardCurves: z
     .object({
       longTaskBonusBps: z
-        .number({ invalid_type_error: "Economy reward longTaskBonusBps must be a number" })
+        .number({ error: (issue) => issue.input === undefined ? "Required" : "Economy reward longTaskBonusBps must be a number" })
         .int("Economy reward longTaskBonusBps must be an integer")
         .min(0)
         .max(10_000),
       validatorPremiumBps: z
-        .number({ invalid_type_error: "Economy reward validatorPremiumBps must be a number" })
+        .number({ error: (issue) => issue.input === undefined ? "Required" : "Economy reward validatorPremiumBps must be a number" })
         .int("Economy reward validatorPremiumBps must be an integer")
         .min(0)
         .max(10_000),
@@ -326,19 +327,19 @@ const EconomySchema = z.object({
 });
 
 const ModelAdapterSchema = z.object({
-  name: z.string({ required_error: "Model adapter name is required" }).min(1),
-  provider: z.string({ required_error: "Model adapter provider is required" }).min(1),
-  modality: z.string({ required_error: "Model adapter modality is required" }).min(1),
+  name: z.string({ error: (issue) => issue.input === undefined ? "Model adapter name is required" : undefined }).min(1),
+  provider: z.string({ error: (issue) => issue.input === undefined ? "Model adapter provider is required" : undefined }).min(1),
+  modality: z.string({ error: (issue) => issue.input === undefined ? "Model adapter modality is required" : undefined }).min(1),
   maxContextTokens: z
-    .number({ invalid_type_error: "Model adapter maxContextTokens must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Model adapter maxContextTokens must be a number" })
     .int("Model adapter maxContextTokens must be an integer")
     .positive("Model adapter maxContextTokens must be positive"),
   costPer1kTokensUSD: z
-    .number({ invalid_type_error: "Model adapter costPer1kTokensUSD must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Model adapter costPer1kTokensUSD must be a number" })
     .min(0, "Model adapter costPer1kTokensUSD cannot be negative"),
   strengths: z.array(z.string()).default([]),
   evalScore: z
-    .number({ invalid_type_error: "Model adapter evalScore must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Model adapter evalScore must be a number" })
     .min(0, "Model adapter evalScore cannot be negative")
     .max(100, "Model adapter evalScore cannot exceed 100")
     .optional(),
@@ -347,22 +348,22 @@ const ModelAdapterSchema = z.object({
 const ModelSchema = z.object({
   adapters: z.array(ModelAdapterSchema).default([]),
   evaluationCadenceHours: z
-    .number({ invalid_type_error: "Model evaluationCadenceHours must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Model evaluationCadenceHours must be a number" })
     .int("Model evaluationCadenceHours must be an integer")
     .positive("Model evaluationCadenceHours must be positive"),
   evaluationBenchmarks: z.array(z.string()).default([]),
   dynamicRouting: z
     .object({
-      strategy: z.string({ required_error: "Model dynamicRouting.strategy is required" }).min(1),
+      strategy: z.string({ error: (issue) => issue.input === undefined ? "Model dynamicRouting.strategy is required" : undefined }).min(1),
       metrics: z.array(z.string()).default([]),
     })
     .optional(),
   safetyTests: z
     .array(
       z.object({
-        name: z.string({ required_error: "Model safety test name is required" }).min(1),
+        name: z.string({ error: (issue) => issue.input === undefined ? "Model safety test name is required" : undefined }).min(1),
         frequencyHours: z
-          .number({ invalid_type_error: "Model safety test frequencyHours must be a number" })
+          .number({ error: (issue) => issue.input === undefined ? "Required" : "Model safety test frequencyHours must be a number" })
           .int("Model safety test frequencyHours must be an integer")
           .positive("Model safety test frequencyHours must be positive"),
       }),
@@ -371,23 +372,23 @@ const ModelSchema = z.object({
 });
 
 const GovernanceProposalSchema = z.object({
-  title: z.string({ required_error: "Governance proposal title is required" }).min(1),
-  summary: z.string({ required_error: "Governance proposal summary is required" }).min(1),
+  title: z.string({ error: (issue) => issue.input === undefined ? "Governance proposal title is required" : undefined }).min(1),
+  summary: z.string({ error: (issue) => issue.input === undefined ? "Governance proposal summary is required" : undefined }).min(1),
   executionEtaHours: z
-    .number({ invalid_type_error: "Governance proposal executionEtaHours must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Governance proposal executionEtaHours must be a number" })
     .int("Governance proposal executionEtaHours must be an integer")
     .positive("Governance proposal executionEtaHours must be positive"),
 });
 
 const GovernanceSchema = z.object({
   interface: z
-    .string({ required_error: "Governance interface description is required" })
+    .string({ error: (issue) => issue.input === undefined ? "Governance interface description is required" : undefined })
     .min(1, "Governance interface description is required"),
   validatorTools: z
     .array(
       z.object({
-        name: z.string({ required_error: "Governance validator tool name is required" }).min(1),
-        url: z.string({ required_error: "Governance validator tool url is required" }).min(1),
+        name: z.string({ error: (issue) => issue.input === undefined ? "Governance validator tool name is required" : undefined }).min(1),
+        url: z.string({ error: (issue) => issue.input === undefined ? "Governance validator tool url is required" : undefined }).min(1),
         capabilities: z.array(z.string()).default([]),
       }),
     )
@@ -396,37 +397,37 @@ const GovernanceSchema = z.object({
   humanPolicyControls: z
     .array(
       z.object({
-        name: z.string({ required_error: "Governance human policy control name is required" }).min(1),
-        requirement: z.string({ required_error: "Governance human policy control requirement is required" }).min(1),
-        enforcement: z.string({ required_error: "Governance human policy control enforcement is required" }).min(1),
+        name: z.string({ error: (issue) => issue.input === undefined ? "Governance human policy control name is required" : undefined }).min(1),
+        requirement: z.string({ error: (issue) => issue.input === undefined ? "Governance human policy control requirement is required" : undefined }).min(1),
+        enforcement: z.string({ error: (issue) => issue.input === undefined ? "Governance human policy control enforcement is required" : undefined }).min(1),
       }),
     )
     .default([]),
 });
 
 const DomainSchema = z.object({
-  slug: z.string({ required_error: "Domain slug is required" }).min(1, "Domain slug is required"),
-  name: z.string({ required_error: "Domain name is required" }).min(1, "Domain name is required"),
-  metadataURI: z.string({ required_error: "Domain metadataURI is required" }).min(1, "Domain metadataURI is required"),
+  slug: z.string({ error: (issue) => issue.input === undefined ? "Domain slug is required" : undefined }).min(1, "Domain slug is required"),
+  name: z.string({ error: (issue) => issue.input === undefined ? "Domain name is required" : undefined }).min(1, "Domain name is required"),
+  metadataURI: z.string({ error: (issue) => issue.input === undefined ? "Domain metadataURI is required" : undefined }).min(1, "Domain metadataURI is required"),
   orchestrator: AddressSchema,
   capitalVault: AddressSchema,
   validatorModule: AddressSchema,
   policyKernel: AddressSchema,
   heartbeatSeconds: z
-    .number({ invalid_type_error: "Domain heartbeatSeconds must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Domain heartbeatSeconds must be a number" })
     .int("Domain heartbeatSeconds must be an integer")
     .positive("Domain heartbeatSeconds must be positive"),
   tvlLimit: BigNumberishSchema,
   autonomyLevelBps: z
-    .number({ invalid_type_error: "Domain autonomyLevelBps must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Domain autonomyLevelBps must be a number" })
     .int("Domain autonomyLevelBps must be an integer")
     .nonnegative("Domain autonomyLevelBps cannot be negative").max(10000, "Domain autonomyLevelBps cannot exceed 10000"),
   skillTags: z.array(z.string()).default([]),
   resilienceIndex: z
-    .number({ invalid_type_error: "Domain resilienceIndex must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Domain resilienceIndex must be a number" })
     .min(0, "Domain resilienceIndex cannot be negative").max(1, "Domain resilienceIndex cannot exceed 1"),
   valueFlowMonthlyUSD: z
-    .number({ invalid_type_error: "Domain valueFlowMonthlyUSD must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Domain valueFlowMonthlyUSD must be a number" })
     .nonnegative("Domain valueFlowMonthlyUSD cannot be negative")
     .default(0),
   autonomyNarrative: z.string().optional(),
@@ -434,16 +435,16 @@ const DomainSchema = z.object({
 });
 
 const SentinelSchema = z.object({
-  slug: z.string({ required_error: "Sentinel slug is required" }).min(1, "Sentinel slug is required"),
-  name: z.string({ required_error: "Sentinel name is required" }).min(1, "Sentinel name is required"),
-  uri: z.string({ required_error: "Sentinel uri is required" }).min(1, "Sentinel uri is required"),
+  slug: z.string({ error: (issue) => issue.input === undefined ? "Sentinel slug is required" : undefined }).min(1, "Sentinel slug is required"),
+  name: z.string({ error: (issue) => issue.input === undefined ? "Sentinel name is required" : undefined }).min(1, "Sentinel name is required"),
+  uri: z.string({ error: (issue) => issue.input === undefined ? "Sentinel uri is required" : undefined }).min(1, "Sentinel uri is required"),
   agent: AddressSchema,
   coverageSeconds: z
-    .number({ invalid_type_error: "Sentinel coverageSeconds must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Sentinel coverageSeconds must be a number" })
     .int("Sentinel coverageSeconds must be an integer")
     .positive("Sentinel coverageSeconds must be positive"),
   sensitivityBps: z
-    .number({ invalid_type_error: "Sentinel sensitivityBps must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Sentinel sensitivityBps must be a number" })
     .int("Sentinel sensitivityBps must be an integer")
     .nonnegative("Sentinel sensitivityBps cannot be negative").max(10000, "Sentinel sensitivityBps cannot exceed 10000"),
   domains: z.array(z.string()).default([]),
@@ -451,16 +452,16 @@ const SentinelSchema = z.object({
 });
 
 const StreamSchema = z.object({
-  slug: z.string({ required_error: "Capital stream slug is required" }).min(1, "Capital stream slug is required"),
-  name: z.string({ required_error: "Capital stream name is required" }).min(1, "Capital stream name is required"),
-  uri: z.string({ required_error: "Capital stream uri is required" }).min(1, "Capital stream uri is required"),
+  slug: z.string({ error: (issue) => issue.input === undefined ? "Capital stream slug is required" : undefined }).min(1, "Capital stream slug is required"),
+  name: z.string({ error: (issue) => issue.input === undefined ? "Capital stream name is required" : undefined }).min(1, "Capital stream name is required"),
+  uri: z.string({ error: (issue) => issue.input === undefined ? "Capital stream uri is required" : undefined }).min(1, "Capital stream uri is required"),
   vault: AddressSchema,
   annualBudget: z
-    .number({ invalid_type_error: "Capital stream annualBudget must be a number" }).int("Capital stream annualBudget must use whole USD").safe("Capital stream annualBudget must be a safe integer")
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Capital stream annualBudget must be a number" }).int("Capital stream annualBudget must use whole USD").safe("Capital stream annualBudget must be a safe integer")
     .nonnegative("Capital stream annualBudget cannot be negative")
     .default(0),
   expansionBps: z
-    .number({ invalid_type_error: "Capital stream expansionBps must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Capital stream expansionBps must be a number" })
     .int("Capital stream expansionBps must be an integer")
     .nonnegative("Capital stream expansionBps cannot be negative").max(10000, "Capital stream expansionBps cannot exceed 10000"),
   domains: z.array(z.string()).default([]),
@@ -468,56 +469,58 @@ const StreamSchema = z.object({
 });
 
 const GuardianProtocolSchema = z.object({
-  scenario: z.string({ required_error: "Guardian protocol scenario is required" }).min(1, "Guardian protocol scenario is required"),
+  scenario: z.string({ error: (issue) => issue.input === undefined ? "Guardian protocol scenario is required" : undefined }).min(1, "Guardian protocol scenario is required"),
   severity: z
     .enum(["critical", "high", "medium", "low"], {
-      required_error: "Guardian protocol severity must be provided",
-      invalid_type_error: "Guardian protocol severity must be critical, high, medium, or low",
+      error: (issue) => issue.input === undefined
+        ? "Guardian protocol severity must be provided"
+        : typeof issue.input === "string" ? undefined : "Guardian protocol severity must be critical, high, medium, or low",
     })
     .default("high"),
-  trigger: z.string({ required_error: "Guardian protocol trigger is required" }).min(1, "Guardian protocol trigger is required"),
+  trigger: z.string({ error: (issue) => issue.input === undefined ? "Guardian protocol trigger is required" : undefined }).min(1, "Guardian protocol trigger is required"),
   linkedSentinels: z.array(z.string()).default([]),
   linkedDomains: z.array(z.string()).default([]),
   immediateActions: z
-    .array(z.string({ required_error: "Guardian protocol immediate action is required" }).min(1, "Guardian protocol immediate action is required"))
+    .array(z.string({ error: (issue) => issue.input === undefined ? "Guardian protocol immediate action is required" : undefined }).min(1, "Guardian protocol immediate action is required"))
     .min(1, "Guardian protocol requires at least one immediate action"),
   stabilizationActions: z
-    .array(z.string({ required_error: "Guardian protocol stabilization action is required" }).min(1, "Guardian protocol stabilization action is required"))
+    .array(z.string({ error: (issue) => issue.input === undefined ? "Guardian protocol stabilization action is required" : undefined }).min(1, "Guardian protocol stabilization action is required"))
     .min(1, "Guardian protocol requires at least one stabilization action"),
   communications: z
-    .array(z.string({ required_error: "Guardian protocol communication step is required" }).min(1, "Guardian protocol communication step is required"))
+    .array(z.string({ error: (issue) => issue.input === undefined ? "Guardian protocol communication step is required" : undefined }).min(1, "Guardian protocol communication step is required"))
     .min(1, "Guardian protocol requires at least one communications step"),
   successCriteria: z
-    .array(z.string({ required_error: "Guardian protocol success criteria entry is required" }).min(1, "Guardian protocol success criteria entry is required"))
+    .array(z.string({ error: (issue) => issue.input === undefined ? "Guardian protocol success criteria entry is required" : undefined }).min(1, "Guardian protocol success criteria entry is required"))
     .min(1)
     .optional(),
 });
 
 const KernelChecksumSchema = z.object({
   algorithm: z
-    .string({ required_error: "Guardrail checksum algorithm is required" })
+    .string({ error: (issue) => issue.input === undefined ? "Guardrail checksum algorithm is required" : undefined })
     .min(1, "Guardrail checksum algorithm is required"),
   value: z
-    .string({ required_error: "Guardrail checksum value is required" })
+    .string({ error: (issue) => issue.input === undefined ? "Guardrail checksum value is required" : undefined })
     .regex(/^0x[a-fA-F0-9]{64}$/, "Guardrail checksum must be a 32-byte hex value"),
 });
 
 const KernelZkProofSchema = z.object({
   circuit: z
-    .string({ required_error: "Guardrail zk-proof circuit label is required" })
+    .string({ error: (issue) => issue.input === undefined ? "Guardrail zk-proof circuit label is required" : undefined })
     .min(1, "Guardrail zk-proof circuit label is required"),
   artifactURI: z
-    .string({ required_error: "Guardrail zk-proof artifact URI is required" })
+    .string({ error: (issue) => issue.input === undefined ? "Guardrail zk-proof artifact URI is required" : undefined })
     .min(1, "Guardrail zk-proof artifact URI is required"),
   status: z
     .enum(["pending", "verified", "disabled"], {
-      required_error: "Guardrail zk-proof status must be provided",
-      invalid_type_error: "Guardrail zk-proof status must be pending, verified, or disabled",
+      error: (issue) => issue.input === undefined
+        ? "Guardrail zk-proof status must be provided"
+        : typeof issue.input === "string" ? undefined : "Guardrail zk-proof status must be pending, verified, or disabled",
     })
     .default("pending"),
   notes: z.string().optional(),
   lastVerifiedAt: z
-    .number({ invalid_type_error: "Guardrail zk-proof lastVerifiedAt must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "Guardrail zk-proof lastVerifiedAt must be a number" })
     .int("Guardrail zk-proof lastVerifiedAt must be an integer")
     .nonnegative("Guardrail zk-proof lastVerifiedAt cannot be negative")
     .optional(),
@@ -531,16 +534,16 @@ const KernelGuardrailsSchema = z.object({
 const SelfImprovementSchema = z.object({
   plan: z
     .object({
-      planURI: z.string({ required_error: "Self-improvement planURI is required" }).min(1, "Self-improvement planURI is required"),
+      planURI: z.string({ error: (issue) => issue.input === undefined ? "Self-improvement planURI is required" : undefined }).min(1, "Self-improvement planURI is required"),
       planHash: z
-        .string({ required_error: "Self-improvement planHash is required" })
+        .string({ error: (issue) => issue.input === undefined ? "Self-improvement planHash is required" : undefined })
         .regex(/^0x[a-fA-F0-9]{64}$/, "Self-improvement planHash must be a 32-byte hex value"),
       cadenceSeconds: z
-        .number({ invalid_type_error: "Self-improvement cadenceSeconds must be a number" })
+        .number({ error: (issue) => issue.input === undefined ? "Required" : "Self-improvement cadenceSeconds must be a number" })
         .int("Self-improvement cadenceSeconds must be an integer")
         .positive("Self-improvement cadenceSeconds must be positive"),
       lastExecutedAt: z
-        .number({ invalid_type_error: "Self-improvement lastExecutedAt must be a number" })
+        .number({ error: (issue) => issue.input === undefined ? "Required" : "Self-improvement lastExecutedAt must be a number" })
         .int("Self-improvement lastExecutedAt must be an integer")
         .nonnegative("Self-improvement lastExecutedAt cannot be negative")
         .optional(),
@@ -550,10 +553,10 @@ const SelfImprovementSchema = z.object({
   playbooks: z
     .array(
       z.object({
-        name: z.string({ required_error: "Playbook name is required" }).min(1, "Playbook name is required"),
-        description: z.string({ required_error: "Playbook description is required" }).min(1, "Playbook description is required"),
+        name: z.string({ error: (issue) => issue.input === undefined ? "Playbook name is required" : undefined }).min(1, "Playbook name is required"),
+        description: z.string({ error: (issue) => issue.input === undefined ? "Playbook description is required" : undefined }).min(1, "Playbook description is required"),
         owner: AddressSchema,
-        automation: z.string({ required_error: "Playbook automation cadence is required" }).min(1, "Playbook automation cadence is required"),
+        automation: z.string({ error: (issue) => issue.input === undefined ? "Playbook automation cadence is required" : undefined }).min(1, "Playbook automation cadence is required"),
         guardrails: z.array(z.string()).default([]),
       })
     )
@@ -561,11 +564,11 @@ const SelfImprovementSchema = z.object({
   autonomyGuards: z
     .object({
       maxAutonomyBps: z
-        .number({ invalid_type_error: "Autonomy guard maxAutonomyBps must be a number" })
+        .number({ error: (issue) => issue.input === undefined ? "Required" : "Autonomy guard maxAutonomyBps must be a number" })
         .int("Autonomy guard maxAutonomyBps must be an integer")
         .nonnegative("Autonomy guard maxAutonomyBps cannot be negative"),
       humanOverrideMinutes: z
-        .number({ invalid_type_error: "Autonomy guard humanOverrideMinutes must be a number" })
+        .number({ error: (issue) => issue.input === undefined ? "Required" : "Autonomy guard humanOverrideMinutes must be a number" })
         .int("Autonomy guard humanOverrideMinutes must be an integer")
         .nonnegative("Autonomy guard humanOverrideMinutes cannot be negative"),
       pausable: z.boolean().default(false),
@@ -603,22 +606,22 @@ const ManifestSchema = z
       systemPause: AddressSchema,
       phase8Manager: AddressSchema.optional(),
       heartbeatSeconds: z
-        .number({ invalid_type_error: "Global heartbeatSeconds must be a number" })
+        .number({ error: (issue) => issue.input === undefined ? "Required" : "Global heartbeatSeconds must be a number" })
         .int("Global heartbeatSeconds must be an integer")
         .positive("Global heartbeatSeconds must be positive"),
       guardianReviewWindow: z
-        .number({ invalid_type_error: "Global guardianReviewWindow must be a number" })
+        .number({ error: (issue) => issue.input === undefined ? "Required" : "Global guardianReviewWindow must be a number" })
         .int("Global guardianReviewWindow must be an integer")
         .nonnegative("Global guardianReviewWindow cannot be negative"),
       maxDrawdownBps: z
-        .number({ invalid_type_error: "Global maxDrawdownBps must be a number" })
+        .number({ error: (issue) => issue.input === undefined ? "Required" : "Global maxDrawdownBps must be a number" })
         .int("Global maxDrawdownBps must be an integer")
         .nonnegative("Global maxDrawdownBps cannot be negative").max(10000, "Global maxDrawdownBps cannot exceed 10000"),
       manifestoURI: z
-        .string({ required_error: "Global manifestoURI is required" })
+        .string({ error: (issue) => issue.input === undefined ? "Global manifestoURI is required" : undefined })
         .min(1, "Global manifestoURI is required"),
       manifestoHash: z
-        .string({ required_error: "Global manifestoHash is required" })
+        .string({ error: (issue) => issue.input === undefined ? "Global manifestoHash is required" : undefined })
         .regex(/^0x[a-fA-F0-9]{64}$/, "Global manifestoHash must be a 32-byte hex value"),
       guardianCouncilLabel: z.string().optional(),
     }),
@@ -1281,13 +1284,35 @@ function shortAddress(label: string, address?: string) {
   return `${label}: ${address.slice(0, 8)}…${address.slice(-6)}`;
 }
 
-export function computeMetrics(config: Phase8Config) {
+type MetricsConfig = {
+  global: Pick<Phase8Config["global"], "guardianReviewWindow">;
+  domains: Pick<Phase8Config["domains"][number],
+    "slug" | "active" | "resilienceIndex" | "valueFlowMonthlyUSD" | "autonomyLevelBps">[];
+  sentinels: SentinelRecord[];
+  capitalStreams: CapitalStreamRecord[];
+  guardianProtocols: { severity?: string; linkedDomains?: string[] }[];
+  selfImprovement?: {
+    plan?: { cadenceSeconds?: number; lastExecutedAt?: number };
+    autonomyGuards?: { maxAutonomyBps?: number };
+  };
+  autonomy?: {
+    session?: { maxHours?: number; contextWindowTokens?: number; checkpointCadenceMinutes?: number };
+    progressCheckpoints?: unknown[];
+  };
+  aiTeams?: { domains?: string[] }[];
+  safety?: { tripwires?: unknown[]; validatorConsoles?: unknown[] };
+  economy?: { stakeTiers?: unknown[]; milestoneTemplates?: unknown[] };
+  models?: { adapters?: unknown[]; evaluationCadenceHours?: number; safetyTests?: unknown[] };
+  governance?: { proposalTemplates?: unknown[]; humanPolicyControls?: unknown[] };
+};
+
+export function computeMetrics(config: MetricsConfig) {
   const domains = (config.domains ?? []).filter((entry) => entry.active !== false);
   const sentinels = (config.sentinels ?? []).filter((entry) => entry.active !== false);
   const streams = (config.capitalStreams ?? []).filter((entry) => entry.active !== false);
   const annualBudget = safeAnnualBudgetTotal(streams);
   const protocols = config.guardianProtocols ?? [];
-  const plan = config.selfImprovement?.plan ?? {};
+  const plan = config.selfImprovement?.plan;
   const autonomy = config.autonomy;
   const aiTeams = config.aiTeams ?? [];
   const safety = config.safety;
@@ -1366,9 +1391,9 @@ export function computeMetrics(config: Phase8Config) {
       ? minDomainCoverageSeconds / guardianWindowSeconds
       : 0;
 
-  const cadenceSeconds = Number(plan.cadenceSeconds ?? 0);
+  const cadenceSeconds = Number(plan?.cadenceSeconds ?? 0);
   const cadenceHours = cadenceSeconds / 3600;
-  const lastExecutedAt = Number(plan.lastExecutedAt ?? 0);
+  const lastExecutedAt = Number(plan?.lastExecutedAt ?? 0);
   const autonomyGuardCap = Number(config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? 0);
 
   const sessionMaxHours = Number(autonomy?.session?.maxHours ?? 0);
@@ -1489,7 +1514,7 @@ type MetricToleranceOverrides = Partial<
   , number>
 >;
 
-export function crossVerifyMetrics(config: Phase8Config, overrides: MetricToleranceOverrides = {}) {
+export function crossVerifyMetrics(config: MetricsConfig, overrides: MetricToleranceOverrides = {}) {
   const metrics = computeMetrics(config);
   const domains = (config.domains ?? []).filter((entry) => entry.active !== false);
   const sentinels = (config.sentinels ?? []).filter((entry) => entry.active !== false);
@@ -1868,7 +1893,7 @@ export function calldata(config: Phase8Config) {
     "function removeCapitalStream(bytes32 id)"
   ]);
 
-  const global = config.global ?? {};
+  const global: Partial<Phase8Config["global"]> = config.global ?? {};
   const domainTuples = (config.domains ?? []).map((domain) => [
     domain.slug,
     domain.name,
@@ -2574,7 +2599,7 @@ function generateSelfImprovementPlanPayload(
   metrics: ReturnType<typeof computeMetrics>,
   generatedAt: string,
 ) {
-  const plan = config.selfImprovement?.plan ?? {};
+  const plan = config.selfImprovement?.plan;
   const guards = config.selfImprovement?.autonomyGuards ?? null;
   const kernelGuardrails = config.selfImprovement?.guardrails ?? null;
   const scheduled = schedulePlaybooks(config);
@@ -2584,11 +2609,11 @@ function generateSelfImprovementPlanPayload(
     sentinelCoverageMinutes: Number(metrics.guardianCoverageMinutes.toFixed(2)),
     fundedDomainRatio: Number(metrics.fundedDomainRatio.toFixed(1)),
     plan: {
-      uri: plan.planURI ?? "",
-      hash: plan.planHash ?? "",
-      cadenceSeconds: Number(plan.cadenceSeconds ?? 0),
-      lastExecutedAt: Number(plan.lastExecutedAt ?? 0),
-      lastReportURI: plan.lastReportURI ?? "",
+      uri: plan?.planURI ?? "",
+      hash: plan?.planHash ?? "",
+      cadenceSeconds: Number(plan?.cadenceSeconds ?? 0),
+      lastExecutedAt: Number(plan?.lastExecutedAt ?? 0),
+      lastReportURI: plan?.lastReportURI ?? "",
     },
     autonomyGuards: guards,
     guardrails: kernelGuardrails,

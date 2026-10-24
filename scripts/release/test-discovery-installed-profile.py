@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 """Ordinary finite source/preparation checks; no Alpha code or service is run."""
 import json
+import copy
 import pathlib
 import os
 import runpy
@@ -228,6 +229,214 @@ class InstalledPreparation(unittest.TestCase):
             self.assertEqual(record['authority'], 'none')
             self.assertIs(record['publicationApproved'], False)
             self.assertIs(record['settlementApproved'], False)
+
+
+class Alpha141Preparation(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.helper = runpy.run_path(str(ROOT/'scripts/release/freeze-discovery-installed-alpha.py'))
+        cls.scope = cls.helper['proposal'].__globals__
+        cls.profile = cls.scope['P']
+        cls.package = cls.scope['B']
+        cls.pin_raw = (ROOT/cls.profile['ALPHA_PIN']).read_bytes()
+        cls.transition_raw = (ROOT/cls.profile['ALPHA_TRANSITION']).read_bytes()
+        cls.catalog_raw = (ROOT/'integrations/alpha-agent/fixtures/alpha141-source-catalog.json').read_bytes()
+        cls.catalog = json.loads(cls.catalog_raw)
+
+    def review(self):
+        return {'schema':'agijobsv0/discovery-alpha-source-review/v1',
+                'repository':'MontrealAI/AGI-Alpha-Agent-v0', 'decision':'ACCEPTED_FOR_INSTALLED_SOURCE',
+                **self.helper['ALPHA_141_TARGET'], 'publicationApproved':False,
+                'installedCompatibilityAccepted':False, 'externalExecution':'unprovisioned',
+                'evidence':['https://github.com/MontrealAI/AGI-Alpha-Agent-v0/TEST_FIXTURE_ONLY'],
+                'metadataTestFixture':True}
+
+    def test_catalog_fixture_is_exact031b_metadata(self):
+        target = self.helper['ALPHA_141_TARGET']
+        self.assertEqual(self.profile['sha'](self.catalog_raw), target['catalogSha256'])
+        self.assertEqual(len(self.catalog['sources']), 53)
+        self.assertEqual(self.catalog['sourceHash'], target['sourceHash'])
+        self.package['validate_alpha_catalog'](self.catalog, target)
+
+    def test_original41_source_catalog_is_still_accepted(self):
+        pin = json.loads(self.pin_raw)
+        sources = {name:digest for name,digest in pin['files'].items()
+                   if name not in ('LICENSE', self.package['INSPECTOR'])}
+        self.assertEqual(len(sources), 41)
+        self.package['validate_alpha_catalog']({'schema':'successor-capability-source/v1',
+            'sourceHash':pin['sourceHash'], 'sources':sources}, pin)
+
+    def test_expanded_catalog_refuses_any_unrelated_or_missing_identity(self):
+        for key, value in self.helper['ALPHA_141_TARGET'].items():
+            for replacement in ('0'*len(value), None):
+                with self.subTest(key=key, replacement=replacement):
+                    pin = {**self.helper['ALPHA_141_TARGET'], key:replacement}
+                    with self.assertRaises((ValueError, KeyError)):
+                        self.package['validate_alpha_catalog'](self.catalog, pin)
+
+    def test_expanded_catalog_refuses_changed_or_truncated_source_map(self):
+        catalog = copy.deepcopy(self.catalog)
+        name = next(iter(catalog['sources']))
+        catalog['sources'][name] = '0'*64
+        with self.assertRaises(ValueError):
+            self.package['validate_alpha_catalog'](catalog, self.helper['ALPHA_141_TARGET'])
+        del catalog['sources'][name]
+        with self.assertRaises(ValueError):
+            self.package['validate_alpha_catalog'](catalog, self.helper['ALPHA_141_TARGET'])
+
+    def test_successor_basis_requires_both_exact_predecessor_files(self):
+        basis = self.helper['alpha141_successor_basis']
+        self.assertEqual(basis(self.pin_raw, self.transition_raw, self.review()),
+                         self.helper['ALPHA_615_PIN_SHA256'])
+        for pin, transition in ((self.pin_raw+b'\n', self.transition_raw),
+                                (self.pin_raw, self.transition_raw+b'\n')):
+            with self.assertRaisesRegex(ValueError, 'exact reviewed615'):
+                basis(pin, transition, self.review())
+
+    def test_successor_basis_refuses_other_targets_and_approval_flags(self):
+        changes = [{key:'0'*len(value)} for key,value in self.helper['ALPHA_141_TARGET'].items()]
+        changes += [{'publicationApproved':True}, {'publicationApproved':0},
+                    {'installedCompatibilityAccepted':True}, {'installedCompatibilityAccepted':None},
+                    {'externalExecution':'provisioned'}, {'decision':'UNREVIEWED'}]
+        for change in changes:
+            with self.subTest(change=change):
+                with self.assertRaisesRegex(ValueError, 'exact source review'):
+                    self.helper['alpha141_successor_basis'](self.pin_raw, self.transition_raw,
+                                                           {**self.review(), **change})
+
+    def proposal_fixture(self, change=None, successor=True, legacy=False):
+        with tempfile.TemporaryDirectory(prefix='jobs-alpha141-metadata-only-') as folder:
+            root, alpha, output = (pathlib.Path(folder)/name for name in ('jobs', 'alpha', 'output'))
+            root.mkdir(); alpha.mkdir()
+            review = self.review()
+            values = {self.profile['ALPHA_PIN']:self.pin_raw,
+                      self.profile['ALPHA_TRANSITION']:self.transition_raw,
+                      'integrations/alpha-agent/discovery-installed-module-graph.mjs':b'TEST_FIXTURE_ONLY'}
+            catalog_raw = self.catalog_raw
+            if legacy:
+                values[self.profile['ALPHA_PIN']] = (json.dumps({
+                    'schema':'agijobsv0/discovery-installed-alpha/v1',
+                    'status':'UNSET_PENDING_FINAL_REVIEWED_MAIN', 'repository':'MontrealAI/AGI-Alpha-Agent-v0',
+                    'commit':None, 'tree':None, 'sourceHash':None,
+                    'catalogPath':'docs/successor/capabilities/sources.json', 'catalogSha256':None,
+                    'files':{}, 'qualification':'NOT_RUN'}, indent=2)+'\n').encode()
+                self.assertEqual(self.profile['sha'](values[self.profile['ALPHA_PIN']]),
+                                 self.profile['UNSET_ALPHA_SHA256'])
+                values[self.profile['ALPHA_TRANSITION']] = json.dumps({
+                    'schema':'agijobsv0/discovery-alpha-pin-transition/v1', 'status':'UNSET_PENDING_REVIEW',
+                    'fromPinSha256':self.profile['UNSET_ALPHA_SHA256'], 'toPinSha256':None,
+                    'reviewSha256':None, 'reviewRaw':None, 'fromSource':None}).encode()
+                old_pin = json.loads(self.pin_raw)
+                sources = {name:digest for name,digest in old_pin['files'].items()
+                           if name not in ('LICENSE', self.package['INSPECTOR'])}
+                catalog_raw = json.dumps({'schema':'successor-capability-source/v1',
+                                          'sourceHash':old_pin['sourceHash'], 'sources':sources}).encode()
+                review = {**json.loads(json.loads(self.transition_raw)['reviewRaw']),
+                          'catalogSha256':self.profile['sha'](catalog_raw),
+                          'evidence':['https://github.com/MontrealAI/AGI-Alpha-Agent-v0/TEST_FIXTURE_ONLY'],
+                          'metadataTestFixture':True}
+            predecessor = dict(values)
+            review_path = pathlib.Path(folder)/'review.json'
+            options = {'review':review, 'values':values, 'wrongHash':False}
+            if change:
+                change(options)
+            for name, raw in values.items():
+                target = root/name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(raw)
+            review_raw = (json.dumps(options['review'])+'\n').encode()
+            review_path.write_bytes(review_raw)
+            digest = '0'*64 if options['wrongHash'] else self.profile['sha'](review_raw)
+            def read(source, name):
+                if pathlib.Path(source) == root:
+                    return '100644', values[name]
+                raw = catalog_raw if name == self.package['CATALOG'] else ('TEST_FIXTURE_ONLY:'+name).encode()
+                return '100644', raw
+            selected = {'manifestSha256':'1'*64, 'verifierSha256':'2'*64, 'scopeVerifierSha256':'3'*64}
+            from unittest.mock import Mock
+            capture = Mock(return_value={})
+            try:
+                with patch.dict(self.profile, {'read':read, 'readiness':lambda *_args, **_kwargs:{'sourceTree':'4'*40}}), \
+                     patch.dict(self.package, {'capture_alpha':capture}):
+                    result = self.helper['proposal'](root, selected, alpha, review_path, digest, output,
+                                                     successor_alpha141=successor)
+            except ValueError:
+                self.assertFalse(output.exists())
+                capture.assert_not_called()
+                raise
+            capture.assert_called_once()
+            self.assertEqual(values, predecessor)
+            pin_raw = (output/'discovery-installed-alpha-v1.json').read_bytes()
+            transition = json.loads((output/'discovery-installed-alpha-transition-v1.json').read_bytes())
+            self.assertEqual(transition['fromPinSha256'], self.profile['UNSET_ALPHA_SHA256']
+                             if legacy else self.helper['ALPHA_615_PIN_SHA256'])
+            self.assertEqual(transition['toPinSha256'], self.profile['sha'](pin_raw))
+            self.assertEqual(transition['reviewRaw'].encode(), review_raw)
+            self.assertEqual(len(json.loads(pin_raw)['files']), 43 if legacy else 55)
+            self.assertEqual(result['authority'], 'none')
+            self.assertIs(result['publicationApproved'], False)
+            self.assertEqual(result['state'], 'SOURCE_REVIEW_PROPOSAL_NOT_INSTALLED')
+
+    def test_explicit_successor_proposal_writes_only_uninstalled_metadata(self):
+        self.proposal_fixture()
+
+    def test_original_unset_proposal_path_still_builds_only_review_metadata(self):
+        self.proposal_fixture(successor=False, legacy=True)
+
+    def test_default_proposal_cannot_silently_replace_a_reviewed_predecessor(self):
+        with self.assertRaisesRegex(ValueError, 'explicit reviewed615'):
+            self.proposal_fixture(successor=False)
+
+    def test_changed_predecessors_refuse_before_capture_or_output(self):
+        for key in (self.profile['ALPHA_PIN'], self.profile['ALPHA_TRANSITION']):
+            with self.subTest(key=key):
+                with self.assertRaises(ValueError):
+                    self.proposal_fixture(lambda options:options['values'].update({key:options['values'][key]+b'\n'}))
+
+    def test_wrong_review_hash_refuses_before_capture_or_output(self):
+        with self.assertRaisesRegex(ValueError, 'independently selected'):
+            self.proposal_fixture(lambda options:options.update(wrongHash=True))
+
+    def test_wrong_review_target_or_flags_refuse_before_capture_or_output(self):
+        for change in ({'commit':'0'*40}, {'publicationApproved':True},
+                       {'installedCompatibilityAccepted':True}, {'externalExecution':'provisioned'}, {'evidence':[]}):
+            with self.subTest(change=change):
+                with self.assertRaises(ValueError):
+                    self.proposal_fixture(lambda options:options['review'].update(change))
+
+    def successor_state_fixture(self, change=None):
+        review = self.review()
+        if change:
+            change(review)
+        raw = json.dumps(review)
+        digest = self.profile['sha'](raw.encode())
+        pin = {**json.loads(self.pin_raw), **{key:review[key] for key in self.helper['ALPHA_141_TARGET']},
+               'reviewSha256':digest}
+        pin_raw = json.dumps(pin).encode()
+        transition = {**json.loads(self.transition_raw),
+                      'fromPinSha256':self.helper['ALPHA_615_PIN_SHA256'],
+                      'toPinSha256':self.profile['sha'](pin_raw), 'reviewRaw':raw, 'reviewSha256':digest}
+        with tempfile.TemporaryDirectory(prefix='jobs-alpha141-state-metadata-only-') as folder:
+            root = pathlib.Path(folder)
+            for name, value in ((self.profile['ALPHA_PIN'],pin_raw),
+                                (self.profile['ALPHA_TRANSITION'],json.dumps(transition).encode())):
+                target = root/name; target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(value)
+            return self.profile['alpha_state'](root)
+
+    def test_actual_profile_accepts_only_finite_successor_metadata(self):
+        pin = self.successor_state_fixture()
+        self.assertEqual(pin['commit'], self.helper['ALPHA_141_TARGET']['commit'])
+        for key, value in self.helper['ALPHA_141_TARGET'].items():
+            with self.subTest(key=key):
+                with self.assertRaisesRegex(ValueError, 'exact Alpha141'):
+                    self.successor_state_fixture(lambda review:review.update({key:'0'*len(value)}))
+
+    def test_actual_profile_cannot_promote_source_review_to_other_approvals(self):
+        for change in ({'publicationApproved':True}, {'publicationApproved':0},
+                       {'installedCompatibilityAccepted':True}, {'externalExecution':'provisioned'}):
+            with self.subTest(change=change):
+                with self.assertRaisesRegex(ValueError, 'cannot claim'):
+                    self.successor_state_fixture(lambda review:review.update(change))
 
 
 if __name__ == '__main__':
