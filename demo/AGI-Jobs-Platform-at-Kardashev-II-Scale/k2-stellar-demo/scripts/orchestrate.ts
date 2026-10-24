@@ -214,6 +214,7 @@ const ManifestSchema = z.object({
   logisticsCorridors: z.array(LogisticsCorridorSchema).min(1),
   federations: z.array(FederationSchema).min(1),
   interplanetaryBridges: z.record(
+    z.string(),
     z.object({
       latencySeconds: z.number().positive(),
       bandwidthGbps: z.number().positive(),

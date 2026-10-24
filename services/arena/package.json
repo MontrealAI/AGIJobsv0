@@ -28,7 +28,7 @@
     "promise-retry": "^2.0.1",
     "prisma": "^5.22.0",
     "prismock": "^2.3.0",
-    "zod": "^3.25.76",
+    "zod": "4.6.6",
     "@prisma/client": "^5.22.0"
   },
   "devDependencies": {

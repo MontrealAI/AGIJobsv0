@@ -106,6 +106,16 @@ def alpha_git(root, *args):
         '-c', 'core.attributesFile='+os.devnull, *args], env=git_environment(), stderr=subprocess.PIPE, timeout=30)
 
 
+def validate_alpha_catalog(catalog, pin):
+    expected = 53 if all(pin.get(key) == value for key, value in P['ALPHA_141_TARGET'].items()) else 41
+    P['require'](set(catalog) == {'schema', 'sourceHash', 'sources'}
+                 and catalog['schema'] == 'successor-capability-source/v1'
+                 and isinstance(catalog['sources'], dict) and len(catalog['sources']) == expected
+                 and catalog['sourceHash'] == pin['sourceHash']
+                 and P['sha'](json.dumps(catalog['sources'], sort_keys=True, separators=(',', ':')).encode()) == pin['sourceHash'],
+                 'Complete reviewed Alpha catalog identity differs')
+
+
 def capture_alpha(root, pin, *, helper_source):
     root = P['guard_git_metadata'](pathlib.Path(root).resolve())
     P['require'](pathlib.Path(alpha_git(root, 'rev-parse', '--show-toplevel').decode().strip()).resolve() == root,
@@ -128,11 +138,7 @@ def capture_alpha(root, pin, *, helper_source):
                      'Frozen Alpha raw blob differs from the actual Git tree: '+name)
         captured[name] = (raw, mode)
     catalog = P['strict_json'](captured[CATALOG][0])
-    P['require'](set(catalog) == {'schema', 'sourceHash', 'sources'}
-                 and catalog['schema'] == 'successor-capability-source/v1' and len(catalog['sources']) == 41
-                 and catalog['sourceHash'] == pin['sourceHash']
-                 and P['sha'](json.dumps(catalog['sources'], sort_keys=True, separators=(',', ':')).encode()) == pin['sourceHash'],
-                 'Complete Alpha41 catalog identity differs')
+    validate_alpha_catalog(catalog, pin)
     P['require'](set(pin['files']) == set(catalog['sources']) | {INSPECTOR, 'LICENSE'}, 'Frozen Alpha raw closure differs')
     for name, digest in catalog['sources'].items():
         P['require'](pin['files'][name] == digest, 'Frozen Alpha catalog input differs')

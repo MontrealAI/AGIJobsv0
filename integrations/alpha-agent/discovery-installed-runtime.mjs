@@ -16,6 +16,10 @@ const ADAPTER = 'integrations/alpha-agent/discovery-lab-work-request.mjs';
 const CONTRACT = 'integrations/alpha-agent/discovery-lab-contract.mjs';
 const INSPECTOR = 'examples/successor-capability/discovery-lab-inspector.mjs';
 const CATALOG = 'docs/successor/capabilities/sources.json';
+const ALPHA_141_TARGET = Object.freeze({commit:'031bdb5d055c8bad896daa076baea2b5e17b242c',
+  tree:'330e0e58268ed32990f04278fc543c71db45fd46',
+  sourceHash:'54769dbfde99ae13708a33292866f0ca7e6b8b7792a7a944f76bf2fbf1de1358',
+  catalogSha256:'d1c3cb9a5c3eb96e9e5eb111b83a713786ec18ed1213a407cd77bbaf018c5adb'});
 const sha = value => createHash('sha256').update(value).digest('hex');
 const hash = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const git = value => typeof value === 'string' && /^[a-f0-9]{40}$/.test(value);
@@ -95,6 +99,12 @@ export function installationCapsule(input,custody) {
   }
   return Object.freeze({sha256:archiveSha256,bytes:archiveBytes,manifestSha256});
 }
+export function validateInstalledAlphaCatalog(catalog,alpha) {
+  assert.equal(catalog.schema,'successor-capability-source/v1');assert.equal(catalog.sourceHash,alpha.sourceHash);
+  assert.equal(sha(canonical(catalog.sources)),catalog.sourceHash);
+  const expected=Object.entries(ALPHA_141_TARGET).every(([key,value])=>alpha[key]===value)?53:41;
+  assert.equal(Object.keys(catalog.sources).length,expected,'Expected complete reviewed Alpha source catalog');
+}
 export function captureInstalled(input) {
   const options=runtimeOptions(input),{installedRoot,manifestSha256}=options;
   assert.ok(path.isAbsolute(installedRoot||''),'An explicit installed root is required');
@@ -127,8 +137,7 @@ export function captureInstalled(input) {
   assert.equal(sha(boundedInstalledBytes(fileURLToPath(import.meta.url))),records[own]?.sha256,'Runtime bytes differ from installed source');
   assert.equal(sha(captured.get(ADAPTER)),manifest.jobs.adapterSha256);assert.equal(sha(captured.get(CONTRACT)),manifest.jobs.contractSha256);
   const catalog=parseBounded(captured.get('alpha/'+CATALOG).toString('utf8'));
-  assert.equal(catalog.schema,'successor-capability-source/v1');assert.equal(catalog.sourceHash,manifest.alpha.sourceHash);
-  assert.equal(sha(canonical(catalog.sources)),catalog.sourceHash);assert.equal(Object.keys(catalog.sources).length,41,'Expected complete reviewed Alpha41 source catalog');
+  validateInstalledAlphaCatalog(catalog,manifest.alpha);
   for(const [name,digest] of Object.entries(catalog.sources)) {
     assert.ok(hash(digest)&&captured.has('alpha/'+name));assert.equal(sha(captured.get('alpha/'+name)),digest,'Alpha source catalog differs');
   }

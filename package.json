@@ -38,7 +38,7 @@
     "web3": "^1.10.0",
     "ws": "^8.22.0",
     "yargs": "^17.7.2",
-    "zod": "^3.25.76",
+    "zod": "4.6.6",
     "@ucanto/principal": "9.0.3",
     "@storacha/client": "2.1.4"
   },
@@ -125,7 +125,7 @@
     "protobufjs": "^7.6.6",
     "fast-xml-parser": "^5.11.2",
     "@fastify/busboy": "^3.2.2",
-    "undici": "^6.29.0",
+    "undici": "^6.29.1",
     "postcss": "$postcss",
     "lodash": "^4.18.1",
     "tmp": "^0.2.7",
