@@ -326,17 +326,17 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "bbc2ccee5f5e5773561c27f34cb8836e2caafd2704af02443eab9cfc094193c0"
+        "sha256": "e67f3f0de239cdbdf674e5125025b7c57048b3271c5fe840c214ef7f3775796c"
       },
-      "reason": "Capture the complete bounded installed input set and imported module bytes; require inert independently selected archive hash, positive bounded safe-integer byte count and manifest hash; compare exact extraction custody schema/authority/state/tuple before returning frozen selected capsule provenance, with no manifest-only fallback or new execution authority; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Capture the complete bounded installed input set and imported module bytes; require inert independently selected archive hash, positive bounded safe-integer byte count and manifest hash; compare exact extraction custody schema/authority/state/tuple before returning frozen selected capsule provenance, with no manifest-only fallback or new execution authority; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Prepare exact-four-field031b53-source catalog admission while retaining the historical41-source path and unchanged archive/custody/authority requirements; no new installed compatibility is accepted"
     },
     "integrations/alpha-agent/discovery-installed-runtime.test.mjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "d6b01a9db97f852fdae58ed7e1f686efd96a015f1e26f843447177a12e0af4ce"
+        "sha256": "3af40bf82d5721912b6c06631e90391f7452095526cdfb7b8496380050a0e5ea"
       },
-      "reason": "Retain bounded inventory and ordinary trusted receiver controls; add inert exact extraction provenance cases rejecting hash/size/schema/authority/state/field drift, omitted or coerced external selection and accessors/proxies before installed capture; no native or release approval"
+      "reason": "Retain bounded inventory and ordinary trusted receiver controls; add inert exact extraction provenance cases rejecting hash/size/schema/authority/state/field drift, omitted or coerced external selection and accessors/proxies before installed capture; no native or release approval; Add3 ordinary catalog regressions for the exact031b identity, preserved41-source metadata and unrelated/missing/changed source refusal"
     },
     "integrations/alpha-agent/discovery-lab-contract.mjs": {
       "before": null,
@@ -428,9 +428,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "deb3a9631eddcbb8588c1f9532e17393c434c5f185c10e43604a4f76ac4a3d24"
+        "sha256": "27e387b2e86827e46330fde98c007ab83b528b6766f26f21beeea2a026c48136"
       },
-      "reason": "Retain the deterministic installed archive builder, complete source/Alpha capture, manifest and standalone installer provenance; update only generated README instructions to require the authenticated original archive hash and byte count alongside installed-manifest hash"
+      "reason": "Retain the deterministic installed archive builder, complete source/Alpha capture, manifest and standalone installer provenance; update only generated README instructions to require the authenticated original archive hash and byte count alongside installed-manifest hash; Retain the original41-source catalog path and admit53 only for the exact four-field031b source identity; preserve complete byte/Git/closure checks"
     },
     "scripts/release/discovery-installed-qualification.cjs": {
       "before": null,
@@ -468,9 +468,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "29eca508788d58a09afdfa1b4874676dbb688a4529b75e1a6d65fad15b909613"
+        "sha256": "8b018f00d3ba2e3f34b8a8c0980f104bddcbac4ef4ef4666f123243318ddb725"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification; Prepare only the explicit exact-reviewed615 to exact031b source proposal; preserve the original unset path, prior files and false publication/installed-compatibility flags"
     },
     "scripts/release/install-discovery-installed.py": {
       "before": null,
@@ -500,9 +500,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "00788d5c5ee27570ac6e95b7f2805493e9f8c642b402285380f01703203e8177"
+        "sha256": "6b337cb2353207dce5eb343a3ed26514493c2c9860c18e3c76bf923f075c8be6"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification; Add14 ordinary metadata/catalog/proposal regressions including original UNSET, exact predecessor and target, false flags and no capture/output on refusal; source capture is explicitly mocked"
     },
     "scripts/release/test-discovery-lab-profile.py": {
       "before": null,
@@ -704,6 +704,14 @@
         "sha256": "ebe8f04fbb4ee16b51dcc1f0dc38bdb963ec1207dc5b0c71fc1abfda4826f69a"
       },
       "reason": "Add25 inert owned recovery/diagnostic/dual-epoch regressions using the exact original creation ZIP; refuse identity/source/asset substitutions, duplicate tags, changed main,403publication, uncertain-outcome duplicate mutation, unqualified tooling, expanded runtime deltas and unauthorized caller context without real release operations; add the actual two-root service-module private-brand regression, preserving cross-root, forged, serialized and wrong-epoch refusals plus ordinary same-root behavior; Preserve25 preceding cases; add6 inert phase-transition/raw-Git/ownership/chronology/idempotency regressions with exact post-PATCH commit-date behavior, immutable source-metadata tamper refusal and already-public zeroPATCH reconciliation; preserve all original draft, asset, source, tag and private proof refusals; include last-tool-gate author movement with zero PATCH intent and zero mutation"
+    },
+    "integrations/alpha-agent/fixtures/alpha141-source-catalog.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "d1c3cb9a5c3eb96e9e5eb111b83a713786ec18ed1213a407cd77bbaf018c5adb"
+      },
+      "reason": "Retain exact031b catalog metadata for ordinary finite source-count regressions; no Alpha module execution or source-review approval"
     }
   },
   "decisions": {

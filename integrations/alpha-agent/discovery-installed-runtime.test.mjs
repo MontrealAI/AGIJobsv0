@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {installedNames,installationCapsule,captureInstalled} from './discovery-installed-runtime.mjs';
+import {installedNames,installationCapsule,captureInstalled,validateInstalledAlphaCatalog} from './discovery-installed-runtime.mjs';
 import {installedStatus,inspectInstalledRequest} from './discovery-installed-operator.mjs';
 import {createModuleBoundary} from './discovery-installed-module-graph-runtime.mjs';
 
@@ -14,6 +14,33 @@ const selection={installedRoot:'/unused',manifestSha256:'a'.repeat(64),archiveSh
 const custody={schema:'agijobsv0/discovery-installed-extraction/v1',archiveSha256:selection.archiveSha256,
   archiveBytes:selection.archiveBytes,installedManifestSha256:selection.manifestSha256,
   authority:'none',state:'EXTRACTED_INACTIVE_LOCAL_REVIEW_ONLY'};
+
+const catalog141Raw=fs.readFileSync(new URL('./fixtures/alpha141-source-catalog.json',import.meta.url));
+const catalog141=JSON.parse(catalog141Raw);
+const alpha141={commit:'031bdb5d055c8bad896daa076baea2b5e17b242c',tree:'330e0e58268ed32990f04278fc543c71db45fd46',
+  sourceHash:catalog141.sourceHash,catalogSha256:createHash('sha256').update(catalog141Raw).digest('hex')};
+
+test('catalog admission retains the released41-source Alpha and admits exact031b metadata',()=>{
+  const old=JSON.parse(fs.readFileSync(new URL('../../config/discovery-installed-alpha-v1.json',import.meta.url)));
+  const sources=Object.fromEntries(Object.entries(old.files).filter(([name])=>
+    !['LICENSE','examples/successor-capability/discovery-lab-inspector.mjs'].includes(name)));
+  validateInstalledAlphaCatalog({schema:'successor-capability-source/v1',sourceHash:old.sourceHash,sources},old);
+  assert.equal(Object.keys(sources).length,41);assert.equal(Object.keys(catalog141.sources).length,53);
+  validateInstalledAlphaCatalog(catalog141,alpha141);
+});
+
+test('an expanded catalog needs every exact031b source identity',()=>{
+  for(const key of Object.keys(alpha141)) {
+    assert.throws(()=>validateInstalledAlphaCatalog(catalog141,{...alpha141,[key]:'0'.repeat(alpha141[key].length)}));
+    const omitted={...alpha141};delete omitted[key];assert.throws(()=>validateInstalledAlphaCatalog(catalog141,omitted));
+  }
+});
+
+test('exact031b labels do not admit a truncated or changed source map',()=>{
+  const changed=structuredClone(catalog141),first=Object.keys(changed.sources)[0];
+  changed.sources[first]='0'.repeat(64);assert.throws(()=>validateInstalledAlphaCatalog(changed,alpha141));
+  delete changed.sources[first];assert.throws(()=>validateInstalledAlphaCatalog(changed,alpha141));
+});
 
 test('extraction provenance requires an independent exact archive selection',()=>{
   const capsule=installationCapsule(selection,custody);
