@@ -92,6 +92,71 @@ test('source policy preflight refuses inert mismatched selected bytes before inv
     assert.throws(()=>Q.sourceProof({root:indirect,...pins}),/source root must be direct/);
   } finally{fs.rmSync(root,{recursive:true,force:true});}
 });
+// Genuine immutable history reproduces the publisher failure; negative mutations
+// use isolated temporary Git objects and do not change any source branch or ref.
+function protectedHistoryFixture() {
+  const root=path.resolve(__dirname,'../..'),target='a24258ddef16d108a988c0b94b191ad5f3803ab9';
+  const prerequisite={commit:'ba67d5d19ef7d9ac643f99f2b8f49c160714fdf6',
+    tree:'16c29d934e8bb4d36d286fae7fbf3f9b9d506a85',releaseTag:'source-v2.1.0-rc.17'};
+  const inherited=require('./qualify-source-release-rc16.cjs');
+  const git=(...args)=>execFileSync('git',['--no-replace-objects','-C',root,...args],{encoding:'utf8',stdio:['pipe','pipe','pipe']});
+  const source={sourceCommit:target,sourceTree:git('rev-parse',target+'^{tree}').trim()};
+  return {root,target,prerequisite,paths:inherited.preservedEvidencePaths,git,source};
+}
+test('actual protected ba67 to a242 history accepts only the two exact previously reviewed tooling changes',()=>{
+  const f=protectedHistoryFixture();
+  assert.throws(()=>f.git('diff','--exit-code',f.prerequisite.commit,f.target,'--','scripts/v2/'));
+  const proof=Q.verifyProtectedSourcePreservation(f.git,f.prerequisite,f.source,f.paths);
+  assert.equal(proof.corrections.length,2);assert.equal(proof.otherProtectedPathsUnchanged,true);
+  assert.ok(proof.corrections.every(item=>item.originalBytesReconstructed && item.mode==='100644'));
+});
+test('protected correction refuses a moved prerequisite, beforeimage, target tree or source bytes',()=>{
+  const f=protectedHistoryFixture();
+  for(const mutation of [{commit:f.target},{tree:f.source.sourceTree},{releaseTag:'source-v2.1.0-rc.20'}])
+    assert.throws(()=>Q.verifyProtectedSourcePreservation(f.git,{...f.prerequisite,...mutation},f.source,f.paths));
+  assert.throws(()=>Q.verifyProtectedSourcePreservation(f.git,f.prerequisite,{...f.source,sourceTree:'b'.repeat(40)},f.paths));
+  for(const role of ['before','after']) {
+    const git=(...args)=>args[0]==='show' && args[1].startsWith((role==='before'?f.prerequisite.commit:f.target)+':')
+      ? f.git(...args)+'// altered bytes\n' : f.git(...args);
+    assert.throws(()=>Q.verifyProtectedSourcePreservation(git,f.prerequisite,f.source,f.paths));
+  }
+});
+test('actual protected comparison rejects additional runtime, mode, deletion, addition, rename and evidence changes',()=>{
+  const f=protectedHistoryFixture(),temporary=fs.mkdtempSync(path.join(os.tmpdir(),'jobs-protected-history-'));
+  const repo=path.join(temporary,'repo');
+  try {
+    execFileSync('git',['clone','--quiet','--shared','--no-checkout',f.root,repo],{stdio:'pipe'});
+    const git=(...args)=>execFileSync('git',['--no-replace-objects','-C',repo,...args],
+      {encoding:'utf8',stdio:['pipe','pipe','pipe'],env:{...process.env,GIT_INDEX_FILE:path.join(temporary,'index'),
+        GIT_AUTHOR_NAME:'Inert regression',GIT_AUTHOR_EMAIL:'regression@example.invalid',
+        GIT_COMMITTER_NAME:'Inert regression',GIT_COMMITTER_EMAIL:'regression@example.invalid'}});
+    const changed=(mutate)=>{git('read-tree',f.target);mutate(git);const tree=git('write-tree').trim();
+      return {sourceCommit:git('commit-tree',tree,'-p',f.target,'-m','Inert protected-source rejection fixture').trim(),sourceTree:tree};};
+    const transcript='scripts/v2/lib/nationalSupplyChainTranscript.ts',schema='scripts/v2/lib/nationalSupplyChainTranscriptSchema.ts';
+    const original=git('rev-parse',f.target+':'+transcript).trim();
+    const blob=git('hash-object','-w','--stdin').trim(); // Empty inert body, never executed.
+    const add=(g,name,mode='100644',selected=blob)=>g('update-index','--add','--cacheinfo',mode,selected,name);
+    for(const mutate of [
+      g=>add(g,transcript),g=>add(g,schema),
+      g=>add(g,transcript,'100755',original),g=>add(g,transcript,'120000',original),
+      g=>g('update-index','--force-remove',schema),
+      g=>add(g,'scripts/v2/unreviewed-addition.ts'),
+      g=>{g('update-index','--force-remove',schema);add(g,'scripts/v2/renamed-schema.ts');},
+      g=>add(g,'contracts/unreviewed.sol'),g=>add(g,'scripts/deploy/unreviewed.ts'),
+      g=>add(g,'config/solidity-compiler.json'),g=>add(g,'config/implementation-modules.json'),
+      g=>add(g,'config/foundry-toolchain.json'),g=>add(g,'docs/deployments/unreviewed.json'),
+      g=>add(g,'scripts/verification/unreviewed.json'),
+    ]) assert.throws(()=>Q.verifyProtectedSourcePreservation(git,f.prerequisite,changed(mutate),f.paths));
+    const raw=git('show',f.target+':'+schema);
+    for(const value of [raw.replace('z.record(z.string(), z.unknown())','z.record(z.unknown())'),
+      raw+'\n// z.record(z.string(), z.unknown())\n',raw.replace('baseline controls missing','runtime edit')]) {
+      const object=execFileSync('git',['-C',repo,'hash-object','-w','--stdin'],{input:value,encoding:'utf8'}).trim();
+      assert.throws(()=>Q.verifyProtectedSourcePreservation(git,f.prerequisite,changed(g=>add(g,schema,'100644',object)),f.paths));
+    }
+    // The same immutable positive still passes after all isolated rejections.
+    assert.doesNotThrow(()=>Q.verifyProtectedSourcePreservation(git,f.prerequisite,f.source,f.paths));
+  } finally {fs.rmSync(temporary,{recursive:true,force:true});}
+});
 test('only the exact successful main push qualifies as an installed release producer',()=>{
   assert.doesNotThrow(()=>Q.validateRun(run,source));
   for(const change of [{head_sha:'f'.repeat(40)},{event:'pull_request'},{head_branch:'feature'},{conclusion:'skipped'},

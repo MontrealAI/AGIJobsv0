@@ -148,6 +148,101 @@ function validateInstaller(raw,custody,{source,finite,git,manifest}) {
     'Installed archive must include the same source-bound standalone installer');
   return {...expected,sourceGitBlob:blob};
 }
+// Only these two exact reviewed Zod4/tooling corrections differ in the protected tree.
+// Neither the selected profile nor a caller can nominate further exceptions.
+const PROTECTED_TOOLING_CORRECTIONS = [
+  {
+    "path": "scripts/v2/lib/nationalSupplyChainTranscript.ts",
+    "kind": "TypeScript generic constraint/default only; no runtime body edit",
+    "before": {
+      "bytes": 13838,
+      "sha256": "b15b4198360045d08a6754cae1d65fbe679bc1f05992c77c2e0365843bdb3bf1",
+      "blob": "99684f946e0d8437bda678863a86a90bd5d1d66d"
+    },
+    "after": {
+      "bytes": 13847,
+      "sha256": "89eaf2c0f7c4d37b88511a4533974390778432cab962246f6134738eb4426592",
+      "blob": "235852f8228feada3689a2222ff8fd0ec37d8ee4"
+    },
+    "inverse": [
+      {
+        "afterUtf8": "function ensureRecord<T extends object = Record<string, unknown>>",
+        "beforeUtf8": "function ensureRecord<T extends Record<string, unknown>>",
+        "exactOccurrences": 1
+      }
+    ]
+  },
+  {
+    "path": "scripts/v2/lib/nationalSupplyChainTranscriptSchema.ts",
+    "kind": "Actual Zod4 record key-schema API and required-error option adaptation; runtime schema code, not type-only",
+    "before": {
+      "bytes": 7498,
+      "sha256": "19b938379037cc320fe251b8cd11cc0ef1ef49b6a6cf28f1167bf6e49f654122",
+      "blob": "bb808ed298fbaf6de33e5fc83a1baa0d4cf3a635"
+    },
+    "after": {
+      "bytes": 7708,
+      "sha256": "dbc4042b8dad04b53c2bb7834f2bf2a0a390818da29423a9b7fc62c50969e411",
+      "blob": "5916cd22b78981e9b81e8465a58d0ffe0e024a09"
+    },
+    "inverse": [
+      {
+        "afterUtf8": "z.record(z.string(), z.unknown())",
+        "beforeUtf8": "z.record(z.unknown())",
+        "exactOccurrences": 4
+      },
+      {
+        "afterUtf8": "  baseline: z.record(z.string(), z.unknown(), {\n    error: (issue) => issue.input === undefined ? 'baseline controls missing' : undefined,\n  }),",
+        "beforeUtf8": "  baseline: z.record(z.unknown(), {\n    required_error: 'baseline controls missing',\n  }),",
+        "exactOccurrences": 1
+      },
+      {
+        "afterUtf8": "  upgraded: z.record(z.string(), z.unknown(), {\n    error: (issue) => issue.input === undefined ? 'upgraded controls missing' : undefined,\n  }),",
+        "beforeUtf8": "  upgraded: z.record(z.unknown(), {\n    required_error: 'upgraded controls missing',\n  }),",
+        "exactOccurrences": 1
+      },
+      {
+        "afterUtf8": "  restored: z.record(z.string(), z.unknown(), {\n    error: (issue) => issue.input === undefined ? 'restored controls missing' : undefined,\n  }),",
+        "beforeUtf8": "  restored: z.record(z.unknown(), {\n    required_error: 'restored controls missing',\n  }),",
+        "exactOccurrences": 1
+      }
+    ]
+  }
+];
+function verifyProtectedSourcePreservation(git, prerequisite, source, preservedEvidencePaths) {
+  assert.deepEqual(prerequisite,{commit:'ba67d5d19ef7d9ac643f99f2b8f49c160714fdf6',
+    tree:'16c29d934e8bb4d36d286fae7fbf3f9b9d506a85',releaseTag:'source-v2.1.0-rc.17'},
+    'Protected-source prerequisite must remain the original qualified publication');
+  assert.ok(identity(source.sourceCommit) && identity(source.sourceTree));
+  assert.equal(String(git('rev-parse',prerequisite.commit+'^{tree}')).trim(),prerequisite.tree);
+  assert.equal(String(git('rev-parse',source.sourceCommit+'^{tree}')).trim(),source.sourceTree);
+  const corrections=[];
+  for(const item of PROTECTED_TOOLING_CORRECTIONS) {
+    const originals=[];
+    for(const [commit,expected] of [[prerequisite.commit,item.before],[source.sourceCommit,item.after]]) {
+      assert.equal(String(git('ls-tree','-z',commit,'--',item.path)),
+        '100644 blob '+expected.blob+'\t'+item.path+'\0','Protected correction mode/Git identity differs: '+item.path);
+      const raw=Buffer.from(git('show',commit+':'+item.path));
+      assert.equal(raw.length,expected.bytes);assert.equal(hash(raw),expected.sha256,'Protected correction bytes differ: '+item.path);
+      const blob=crypto.createHash('sha1').update(Buffer.from('blob '+raw.length+'\0')).update(raw).digest('hex');
+      assert.equal(blob,expected.blob);originals.push(raw);
+    }
+    let restored=originals[1].toString('utf8');
+    assert.ok(Buffer.from(restored).equals(originals[1]),'Protected correction must be exact UTF8');
+    for(const edit of item.inverse) {
+      const parts=restored.split(edit.afterUtf8);
+      assert.equal(parts.length-1,edit.exactOccurrences,'Protected correction inverse anchor differs: '+item.path);
+      restored=parts.join(edit.beforeUtf8);
+    }
+    assert.ok(Buffer.from(restored).equals(originals[0]),'Only the fixed reviewed edits may reconstruct the entire prerequisite');
+    corrections.push({path:item.path,kind:item.kind,before:item.before,after:item.after,mode:'100644',originalBytesReconstructed:true});
+  }
+  // Preserve the original blanket comparison for every other protected path.
+  git('diff','--exit-code',prerequisite.commit,source.sourceCommit,'--','contracts/','scripts/deploy/','scripts/v2/',
+    'config/solidity-compiler.json','config/implementation-modules.json','config/foundry-toolchain.json',...preservedEvidencePaths,
+    ...PROTECTED_TOOLING_CORRECTIONS.map(item=>':(exclude)'+item.path));
+  return {schema:'agijobsv0/discovery-installed-protected-preservation/v1',prerequisite,corrections,otherProtectedPathsUnchanged:true};
+}
 function assertProducerInventory(members) {
   assert.deepEqual([...members.keys()].sort(),['jobs-discovery-installed.tar.gz','jobs-discovery-installed.tar.gz.custody.json',INSTALLER_ASSET,
     ...['workspace.json','request.txt'].map(name=>'browser-inputs/'+name),
@@ -1075,8 +1170,7 @@ async function qualify(options) {
   assert.equal(policy.evmVersion,'cancun');assert.equal(policy.optimizerRuns,200);assert.equal(policy.viaIR,true);
   for(const ancestor of [inherited.deployedSourceBaseline,inherited.evidenceBaseline,inherited.compilerSourceBaseline])
     git('merge-base','--is-ancestor',ancestor,source.sourceCommit);
-  git('diff','--exit-code',record.prerequisite.commit,source.sourceCommit,'--','contracts/','scripts/deploy/','scripts/v2/',
-    'config/solidity-compiler.json','config/implementation-modules.json','config/foundry-toolchain.json',...inherited.preservedEvidencePaths);
+  const protectedSourcePreservation=verifyProtectedSourcePreservation(git,record.prerequisite,source,inherited.preservedEvidencePaths);
   const deploymentSnapshots=[inherited.verifyDeploymentSnapshot(bounded(path.join(root,inherited.deploymentSnapshot.localPath))),
     inherited.verifyDeploymentSnapshot(bounded(path.join(root,inherited.deploymentSnapshot.recordPath)))];
   const historicalCodeql=inherited.verifyHistoricalReviewedCodeql(await api('check-runs/'+inherited.historicalReviewedCodeql.checkId));
@@ -1135,7 +1229,7 @@ async function qualify(options) {
   const proof={schema:'agijobsv0/discovery-installed-hosted-qualification/v1',repository:REPOSITORY,profile:selection.profile,
     releaseVersion:VERSION,tag:TAG,source,selection,alpha,producerRun:{id:run.id,attempt:run.run_attempt,path:run.path,event:run.event,headBranch:run.head_branch},
     capsule:producer.custody,installer:producer.installer,browserInput:producer.browserObservation,originalArchives:custody,alphaQualification,observedReviews,scanners,processedCodeql:services,requiredWorkflows:inherited.requiredPaths,
-    requiredChecks:inherited.requiredChecks,compilerPolicy:policy,deploymentSnapshots,historicalCodeql,publicationRecordSha256:hash(recordRaw),softwareReleaseQualified:true,
+    requiredChecks:inherited.requiredChecks,compilerPolicy:policy,protectedSourcePreservation,deploymentSnapshots,historicalCodeql,publicationRecordSha256:hash(recordRaw),softwareReleaseQualified:true,
     productionApproved:false,authority:'none',currencyCapBaseUnits:'0',...(recoveryEpoch?{recoveryEpoch}:{} )};
   fs.writeFileSync(path.join(output,'qualification.json'),JSON.stringify(proof,null,2)+'\n',{flag:'wx'});return proof;
 }
@@ -1143,7 +1237,7 @@ function assertQualificationMain(observation,source,recoveryEpoch=null,label='Ac
   assert.equal(observation.object?.sha,recoveryEpoch?recoveryEpoch.tooling.sourceCommit:source.sourceCommit,label);
 }
 module.exports={REPOSITORY,WORKFLOW,VERSION,TAG,NODES,PRODUCER,CONSUMER,INSTALLER_PATH,INSTALLER_ASSET,hash,json,canonical,fields,bounded,sourceProof,plan,assertQualificationMain,sourceServiceObserver,liveApi,
-  validateRun,validateJob,validateArtifact,validateRetainedHistory,verifyBrowserInput,verifyAlphaPublication,verifyAlphaPublicAssets,reviewedAlphaReleaseProfile,verifyAlphaProfileInventory,verifyAlphaProfilePacks,alphaReleaseAttemptJobs,alphaReleaseJobsLease,alphaPublicAssetIdentity,alphaPublicAssetInventory,readPublicAlphaAsset,ALPHA_ASSET_MAX_BYTES,reviewReferences,zipMembers,installedArchive,validateInstaller,assertProducerInventory,custodyFromProducer,validateBootstrap,validateNative,publicationRecord,scannerReview,download,downloadReleaseAsset,qualify};
+  validateRun,validateJob,validateArtifact,validateRetainedHistory,verifyBrowserInput,verifyAlphaPublication,verifyAlphaPublicAssets,reviewedAlphaReleaseProfile,verifyAlphaProfileInventory,verifyAlphaProfilePacks,alphaReleaseAttemptJobs,alphaReleaseJobsLease,alphaPublicAssetIdentity,alphaPublicAssetInventory,readPublicAlphaAsset,ALPHA_ASSET_MAX_BYTES,reviewReferences,zipMembers,installedArchive,validateInstaller,verifyProtectedSourcePreservation,assertProducerInventory,custodyFromProducer,validateBootstrap,validateNative,publicationRecord,scannerReview,download,downloadReleaseAsset,qualify};
 if(require.main===module) {
   const [command,root,manifestSha256,verifierSha256,scopeVerifierSha256,runId,recordFile,recordSha256,output]=process.argv.slice(2);
   (async()=>{
