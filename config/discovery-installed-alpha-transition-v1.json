@@ -1,14 +1,14 @@
 {
   "schema": "agijobsv0/discovery-alpha-pin-transition/v1",
   "status": "REVIEWED_PIN_PROPOSAL",
-  "fromPinSha256": "01e32d5283b6858c977659701ab32c24a846b502adf1d1363c9f066d633e9207",
-  "toPinSha256": "7b6ac047905dc27da219cb2608a92b590380bb2781d155afe15734af1173b0f3",
-  "reviewSha256": "cd3966b4c547e890b1e2a7a2b1d9201ee89265f66595f98ead959cc952fabeee",
-  "reviewRaw": "{\n  \"schema\": \"agijobsv0/discovery-alpha-source-review/v1\",\n  \"repository\": \"MontrealAI/AGI-Alpha-Agent-v0\",\n  \"decision\": \"ACCEPTED_FOR_INSTALLED_SOURCE\",\n  \"commit\": \"61532fb82621a065e668fd11e57289dcfb65c67b\",\n  \"tree\": \"7814d1bd9dcd3845b349590e0bcac57ba93b3167\",\n  \"sourceHash\": \"644258ac21cc938aff861d02ad728e8f3c9716f6ea78700acc35e4d7400eebf2\",\n  \"catalogSha256\": \"9cddd00ed38a3500efeaac8977bf3db46363face0cfe56e713ec91750662e09a\",\n  \"evidence\": [\n    \"https://github.com/MontrealAI/AGI-Alpha-Agent-v0/pull/4867#issuecomment-6349682216\",\n    \"https://github.com/MontrealAI/AGI-Alpha-Agent-v0/actions/runs/39841271826\"\n  ],\n  \"publicationApproved\": false,\n  \"installedCompatibilityAccepted\": false,\n  \"externalExecution\": \"unprovisioned\"\n}\n",
+  "fromPinSha256": "7b6ac047905dc27da219cb2608a92b590380bb2781d155afe15734af1173b0f3",
+  "toPinSha256": "1a2bdd11e4a41bb72d75f0bbe37f6110204bdf883ed1e6400e948ef0c750f141",
+  "reviewSha256": "eea9f27d182857de727e89cb3051657a3819677bdbea257dbabba158a2d5dc73",
+  "reviewRaw": "{\n  \"schema\": \"agijobsv0/discovery-alpha-source-review/v1\",\n  \"repository\": \"MontrealAI/AGI-Alpha-Agent-v0\",\n  \"decision\": \"ACCEPTED_FOR_INSTALLED_SOURCE\",\n  \"commit\": \"031bdb5d055c8bad896daa076baea2b5e17b242c\",\n  \"tree\": \"330e0e58268ed32990f04278fc543c71db45fd46\",\n  \"sourceHash\": \"54769dbfde99ae13708a33292866f0ca7e6b8b7792a7a944f76bf2fbf1de1358\",\n  \"catalogSha256\": \"d1c3cb9a5c3eb96e9e5eb111b83a713786ec18ed1213a407cd77bbaf018c5adb\",\n  \"evidence\": [\n    \"https://github.com/MontrealAI/AGI-Alpha-Agent-v0/issues/4850#issuecomment-6385568620\",\n    \"https://github.com/MontrealAI/AGI-Alpha-Agent-v0/pull/4869#pullrequestreview-5636108134\",\n    \"https://github.com/MontrealAI/AGI-Alpha-Agent-v0/pull/4886#issuecomment-6384560472\",\n    \"https://github.com/MontrealAI/AGI-Alpha-Agent-v0/commit/031bdb5d055c8bad896daa076baea2b5e17b242c\"\n  ],\n  \"publicationApproved\": false,\n  \"installedCompatibilityAccepted\": false,\n  \"externalExecution\": \"unprovisioned\",\n  \"authority\": \"none\",\n  \"scope\": \"BOUNDED INSTALLED DISCOVERY SOURCE ONLY: exact 53 catalog sources plus inspector and LICENSE (55 payload inputs, 974132 bytes), with the separately authenticated 6894-byte catalog (56 raw files, 981026 bytes). Static source identities, closed literal module imports, input ownership, bounded Discovery admission and authority controls only. Manager USDC6 and Jobs AGIALPHA18 remain distinct zero-cap DRAFT_NOT_SUBMITTED routes. This is not installed, release, publication, live website, operational or production acceptance.\",\n  \"qualification\": \"PENDING_FINAL_SOURCE_NATIVE_COMPATIBILITY\",\n  \"reviewerRole\": \"Separate AI technical static reviewer using the shared connected GitHub identity; no human, organizational or economic independence claimed; ordinary evidence COMMENT, not APPROVE.\",\n  \"sourceEvaluationPerformed\": false,\n  \"nativeOrBrowserAcceptancePerformed\": false,\n  \"originalFourBehaviorRestrictionsUnchanged\": true,\n  \"fiveGuardedFilesPayloadIntersection\": [],\n  \"fleetHarnessOrOtherHeldOperationsCleared\": false,\n  \"inventoryReceiptSha256\": \"ead2663120132d594ef67a2945c599ba4c267ab8f614e82719c256990d10b3e8\",\n  \"publicCommentBodySha256\": \"2ab794cc51f3f3be2c7d6c8dd28a42e4b72940479a9461ad1985848bd3aaef20\"\n}\n",
   "fromSource": {
-    "tree": "b0829a924c3a1cc9df299f78d72853594178c327",
-    "manifestSha256": "4e59bebfb3b2d09589e340f36341047e38d7d9c6861a7b5cd0b5875f8f4b5279",
-    "verifierSha256": "a218a60ec306b9e4176141c915de8e0c51c4736ca3a0b467e6c4d7f994232508",
-    "scopeVerifierSha256": "d7a657aedea6a5033a1b7e3777610c0f02b17b6f0b0274dc413a4aa3e0360efb"
+    "tree": "23d5476d830a4f93acb1dbad1b032266a6cc4df8",
+    "manifestSha256": "c548b4da7da464a01d0106585c411f17d7724d4781544d873a2d7dbc8eda5ba1",
+    "verifierSha256": "33c6d2a80d8e6b1180f91491282d15cc153659c46540d30a2e36420810537eb7",
+    "scopeVerifierSha256": "0d1893645dbda2f63245f4b2db881318472c7057ae1cebc515174f70a722bd20"
   }
 }

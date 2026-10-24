@@ -11,6 +11,26 @@ const METADATA=Object.freeze(['run','jobs','artifacts','checkout-commit','public
 const PACKET=Object.freeze([...MEMBERS,...METADATA,'CUSTODY.json'].sort());
 const STEPS=Object.freeze(['Bind retained evidence to exact source','Saved future-task protocol, docket and real-task boundary acceptance',
   'Retain exact-source screenshots and journey evidence']);
+// One retained original main-release invocation; never infer execution source from a moving ref.
+const ALPHA141_PRODUCER=Object.freeze({runId:40076340788,runAttempt:1,workflowId:366358276,event:'push',headBranch:'main',
+  headCommit:'031bdb5d055c8bad896daa076baea2b5e17b242c',checkoutCommit:'031bdb5d055c8bad896daa076baea2b5e17b242c',
+  checkoutTree:'330e0e58268ed32990f04278fc543c71db45fd46',checkoutParents:Object.freeze([
+    '1b693f4895a0da68f5647b55c8cb10e6d234f566','e5ecfe96066d687e2fa72cbf1032bda17a450f35'])});
+const ALPHA141_ARTIFACT=Object.freeze({id:12552939436,name:'successor-capability-031bdb5d055c8bad896daa076baea2b5e17b242c',
+  digest:'sha256:3f0f689fa10aafab8891ebce91a1d421ef0754b2a5ec4551a4d844879041c4b7',sizeInBytes:31457545});
+function producerProfile(binding) {
+  const p=binding.producer,a=binding.artifact;
+  const original=binding.workflowPath!==WORKFLOW||p.headCommit===ALPHA141_PRODUCER.headCommit
+    ||p.checkoutCommit===ALPHA141_PRODUCER.checkoutCommit||p.runId===ALPHA141_PRODUCER.runId
+    ||p.workflowId===ALPHA141_PRODUCER.workflowId||a.id===ALPHA141_ARTIFACT.id;
+  if(!original)return {workflowPath:WORKFLOW,jobName:'capability',jobId:null};
+  assert.equal(binding.workflowPath,'.github/workflows/agent-release.yml');
+  assert.deepEqual(p,ALPHA141_PRODUCER,'Only the retained exact Alpha141 producer tuple is admitted');
+  assert.deepEqual(a,ALPHA141_ARTIFACT,'Only the retained exact Alpha141 artifact is admitted');
+  assert.equal(binding.sourceHash,'54769dbfde99ae13708a33292866f0ca7e6b8b7792a7a944f76bf2fbf1de1358');
+  assert.equal(binding.catalogSha256,'d1c3cb9a5c3eb96e9e5eb111b83a713786ec18ed1213a407cd77bbaf018c5adb');
+  return {workflowPath:'.github/workflows/agent-release.yml',jobName:'successor-capability / capability',jobId:120821426397};
+}
 const CHECKS=Object.freeze(['saved-freeze','separate-bank','reload-before-execution','actual-frozen-invocations','all-seven-arms',
   'losses-and-ties','saved-reservation','real-task-NOT_RUN','malformed-receiver-rejected-without-history-change','docket-download',
   'reload-after-result','39-recorded-contracts','accessibility','320px']);
@@ -53,7 +73,7 @@ function select(config,pin) {
     'inventorySha256','members','campaignDigest','missionId','workspaceSha256','requestSha256','transport']);
   assert.equal(config.schema,SCHEMA);assert.equal(config.state,'REVIEWED_AUTHENTICATED_ALPHA_ARTIFACT',
     'Actual final-source browser packet is UNSET; no browser/native acceptance is inferred');
-  assert.equal(config.repository,REPOSITORY);assert.equal(config.workflowPath,WORKFLOW);
+  assert.equal(config.repository,REPOSITORY);producerProfile(config);
   const p=config.producer,a=config.artifact,t=config.transport;
   fields(p,['runId','runAttempt','workflowId','event','headBranch','headCommit','checkoutCommit','checkoutTree','checkoutParents']);
   for(const key of ['runId','runAttempt','workflowId'])assert.ok(positive(p[key]));
@@ -140,11 +160,13 @@ async function fullTree(api,tree) {
   const names=new Set();for(const item of result.tree){assert.ok(safe(item.path)&&!names.has(item.path));names.add(item.path);}return result.tree;
 }
 function validRun(run,binding) {
-  const p=binding.producer;
+  const p=binding.producer,profile=producerProfile(binding);
   for(const [key,value]of Object.entries({id:p.runId,run_attempt:p.runAttempt,workflow_id:p.workflowId,head_sha:p.headCommit,
-    head_branch:p.headBranch,event:'push',path:WORKFLOW,status:'completed',conclusion:'success'}))assert.equal(run[key],value);
+    head_branch:p.headBranch,event:'push',path:profile.workflowPath,status:'completed',conclusion:'success'}))assert.equal(run[key],value);
 }
 function validJob(job,binding) {
+  const profile=producerProfile(binding);assert.equal(job.name,profile.jobName);
+  if(profile.jobId!==null)assert.equal(job.id,profile.jobId);
   assert.ok(positive(job.id));assert.equal(job.run_id,binding.producer.runId);assert.equal(job.head_sha,binding.producer.headCommit);
   assert.equal(job.status,'completed');assert.equal(job.conclusion,'success');
   for(const name of STEPS){const steps=job.steps.filter(step=>step.name===name);assert.equal(steps.length,1);
@@ -163,9 +185,9 @@ function validCommit(commit,binding) {
   assert.deepEqual(commit.parents?.map(item=>item.sha),binding.producer.checkoutParents);
 }
 async function authenticate(binding,pin,api=publicApi,rawBody=publicRawBody) {
-  select(binding,pin);const p=binding.producer,t=binding.transport;
+  select(binding,pin);const p=binding.producer,t=binding.transport,profile=producerProfile(binding);
   const workflow=await api('actions/workflows/'+p.workflowId),run=await api('actions/runs/'+p.runId);
-  assert.equal(workflow.id,p.workflowId);assert.equal(workflow.path,WORKFLOW);validRun(run,binding);
+  assert.equal(workflow.id,p.workflowId);assert.equal(workflow.path,profile.workflowPath);validRun(run,binding);
   assert.equal(run.repository?.full_name,REPOSITORY);assert.equal(run.head_repository?.full_name,REPOSITORY);
   const jobs=[];let total;
   for(let page=1;page<=20;page++){const record=await api('actions/runs/'+p.runId+'/attempts/'+p.runAttempt+'/jobs?per_page=100&page='+page);
@@ -173,7 +195,7 @@ async function authenticate(binding,pin,api=publicApi,rawBody=publicRawBody) {
     if(total===undefined)total=record.total_count;assert.equal(record.total_count,total);jobs.push(...record.jobs);
     if(record.jobs.length<100){assert.equal(jobs.length,total);break;}assert.ok(page<20);}
   assert.ok(jobs.every(item=>positive(item.id))&&new Set(jobs.map(item=>item.id)).size===jobs.length);
-  const capability=jobs.filter(item=>item.name==='capability');assert.equal(capability.length,1);validJob(capability[0],binding);
+  const capability=jobs.filter(item=>item.name===profile.jobName);assert.equal(capability.length,1);validJob(capability[0],binding);
   const sourceCommit=await api('git/commits/'+p.checkoutCommit);validCommit(sourceCommit,binding);
   const artifact=await api('actions/artifacts/'+binding.artifact.id);validArtifact(artifact,binding);assert.equal(artifact.expired,false);
   const transportCommit=t.commit===p.checkoutCommit?sourceCommit:await api('git/commits/'+t.commit);assert.equal(transportCommit.sha,t.commit);assert.equal(transportCommit.tree?.sha,t.tree);
@@ -193,7 +215,7 @@ async function authenticate(binding,pin,api=publicApi,rawBody=publicRawBody) {
   for(const name of MEMBERS)assert.deepEqual(original[name],binding.members[name]);
   const metadata=Object.fromEntries(METADATA.map(name=>[name.slice('metadata/'.length,-5),json(packet.get(name))]));
   validRun(metadata.run,binding);validCommit(metadata['checkout-commit'],binding);validCommit(metadata['public-commit'],binding);
-  const capturedJobs=inventory(metadata.jobs,'jobs').filter(item=>item.name==='capability');assert.equal(capturedJobs.length,1);validJob(capturedJobs[0],binding);
+  const capturedJobs=inventory(metadata.jobs,'jobs').filter(item=>item.name===profile.jobName);assert.equal(capturedJobs.length,1);validJob(capturedJobs[0],binding);
   const capturedArtifacts=inventory(metadata.artifacts,'artifacts').filter(item=>item.id===binding.artifact.id);assert.equal(capturedArtifacts.length,1);validArtifact(capturedArtifacts[0],binding);
   const files=new Map(MEMBERS.map(name=>[name,packet.get(name)])),result=validateFiles(files,binding);
   const sourceEntries=p.checkoutTree===t.tree?entries:await fullTree(api,p.checkoutTree),sourceByPath=new Map(sourceEntries.map(item=>[item.path,item]));
@@ -216,7 +238,7 @@ async function capture({root,output,api=publicApi,rawBody=publicRawBody}) {
   for(const [name,raw]of outputs){const target=path.join(output,name);fs.mkdirSync(path.dirname(target),{recursive:true,mode:0o700});
     fs.writeFileSync(target,raw,{flag:'wx',mode:0o600});}return result.observation;
 }
-module.exports={REPOSITORY,WORKFLOW,SCHEMA,PREFIX,MEMBERS,METADATA,PACKET,STEPS,CHECKS,select,authenticate,validateFiles,capture,read,json,sha,blob,canonical,publicApi,publicRawBody};
+module.exports={REPOSITORY,WORKFLOW,SCHEMA,PREFIX,MEMBERS,METADATA,PACKET,STEPS,CHECKS,producerProfile,validRun,validJob,select,authenticate,validateFiles,capture,read,json,sha,blob,canonical,publicApi,publicRawBody};
 if(require.main===module) {
   const [root,output]=process.argv.slice(2);
   capture({root,output}).then(value=>console.log(JSON.stringify(value))).catch(error=>{console.error(error.stack||error.message);process.exitCode=1;});

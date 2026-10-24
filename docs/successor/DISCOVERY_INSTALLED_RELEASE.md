@@ -1,5 +1,48 @@
 # Jobs Discovery installed receiver
 
+## rc.21 and Alpha 1.41
+
+The rc.21 edition selects Alpha **1.41.0**, commit `031bdb5d055c8bad896daa076baea2b5e17b242c`, tree `330e0e58268ed32990f04278fc543c71db45fd46`. Its catalog has 53 members. The complete captured closure also contains the inspector, license and catalog bytes. [The exact-source static review](https://github.com/MontrealAI/AGI-Alpha-Agent-v0/issues/4850#issuecomment-6385568620) accepts bounded installed Discovery source admission; installed compatibility and publication are separate decisions. The original reviewed615 pin and rc.20 release remain historical evidence.
+
+Use the [rc.21 release](https://github.com/MontrealAI/AGIJobsv0/releases/tag/discovery-v2.1.0-rc.21) and its exact qualification receipt. Download `jobs-discovery-installed.tar.gz`, `install-discovery-installed.py`, `provenance.json` and `SHA256SUMS.txt`; authenticate their identities against that release. Python's standard library installs the archive; no npm installation is required. The designated runtime targets are Linux x64 with Node22.23.3 and Node24.21.0. Other architectures remain unqualified.
+
+Select `ARCHIVE_SHA256`, `ARCHIVE_BYTES` and `INSTALLED_MANIFEST_SHA256` from the authenticated `provenance.json` capsule record, not from the extracted directory. Use an absent absolute installation path:
+
+```sh
+python3 install-discovery-installed.py --archive jobs-discovery-installed.tar.gz \
+  --sha256 "$ARCHIVE_SHA256" --manifest-sha256 "$INSTALLED_MANIFEST_SHA256" \
+  --output "$INSTALL_ROOT"
+node "$INSTALL_ROOT/integrations/alpha-agent/discovery-installed-operator.mjs" \
+  status "$INSTALL_ROOT" "$INSTALLED_MANIFEST_SHA256" "$ARCHIVE_SHA256" "$ARCHIVE_BYTES"
+```
+
+A status inspection starts no service. For the original bounded mission, use the byte-checked [Jobs workspace](https://raw.githubusercontent.com/MontrealAI/AGI-Alpha-Agent-v0/f995b97ae9beef118b7705b31b73bfc9ce65c316/evidence/discovery-browser-inputs-v1/031bdb5d055c8bad896daa076baea2b5e17b242c/discovery-continuation/jobs-browser-workspace.json) and [Jobs request](https://raw.githubusercontent.com/MontrealAI/AGI-Alpha-Agent-v0/f995b97ae9beef118b7705b31b73bfc9ce65c316/evidence/discovery-browser-inputs-v1/031bdb5d055c8bad896daa076baea2b5e17b242c/discovery-continuation/jobs-browser-request.json). Their exact identities are in [the frozen packet custody](https://github.com/MontrealAI/AGI-Alpha-Agent-v0/blob/f995b97ae9beef118b7705b31b73bfc9ce65c316/evidence/discovery-browser-inputs-v1/031bdb5d055c8bad896daa076baea2b5e17b242c/CUSTODY.json). Save them as `workspace.json` and `request.json` and choose an absent absolute result path:
+
+```sh
+node "$INSTALL_ROOT/integrations/alpha-agent/discovery-installed-operator.mjs" \
+  inspect "$INSTALL_ROOT" "$INSTALLED_MANIFEST_SHA256" "$ARCHIVE_SHA256" "$ARCHIVE_BYTES" \
+  workspace.json request.json "$RESULT_JSON"
+```
+
+The installed receiver checks the exact mission/source context and returns a local receipt, preserved workspace and export/reopen docket. It exits after the operation; it starts no background service. Failed or inconclusive work and duplicate imports do not become accepted work. The separate installed native acceptance also exercises all six stages, failed attempts, budget limits and a stronger successor. Actual receipt costs and incomplete system/provider costs remain distinct.
+
+This route is zero-cap **AGIALPHA18** local synthetic review. Manager's **USDC6** route remains a separate alternative draft. External execution, funding and settlement are unprovisioned. The original packet's Fleet proof is an older un-attested component record; it does not qualify the new Fleet candidate, a four-product installed journey or an automatic successor authority transfer.
+
+## Exact transition and evidence reuse
+
+The pin helper retains the original unset transition and permits only the finite reviewed615-to-reviewed031b successor. It verifies the exact predecessor pin/transition, whole source proof, genuine source review and all 56 raw Alpha inputs against actual Git objects. Both current consumers must then qualify their actual saved archive; source review is not installed acceptance.
+
+The original packet is run40076340788, attempt1, workflow366358276 (`agent-release.yml`), namespaced job120821426397 and artifact12552939436. The finite admission case retains the original source, all three successful step labels, complete metadata snapshots and every transport/source guard. Only that fully bound tuple selects the new workflow/job case; unknown or mixed tuples fail. All eleven original raw members remain unchanged. The common17 transport preserves the complete original253-member inventory and actual attempt metadata; a later associated PR head is not a replacement for the original run source.
+
+For this exact Alpha1.41 release only, the publisher may reuse the [accepted original anonymous106-body verification](https://github.com/MontrealAI/AGI-Alpha-Agent-v0/tree/24b278e46a25049ec63f0ca059d5f555d487369a/docs/delivery/recovery-20261023/completion-qualification/alpha141-final-public). The original receipt bytes are fixed by SHA-256. Every live asset ID/name/size/digest/public URL must still match the entire106-entry set. Checksums, release manifest, pack manifests and the operator source ZIP receive fresh bodies and the complete source/pack checks. Live release/tag/main/run/asset leases remain mandatory. The report explicitly distinguishes retained body observations from fresh requests; no new installed or connected result is inherited. A missing/tampered receipt, changed asset or unknown Alpha source fails. The historical1.38 profile retains its complete-download behavior.
+
+Publication still requires exact reviewed source, current-source scanners and case-specific quality decisions, both installed runtime receipts, fresh actual-main qualification, the immutable publication-review record and anonymous verification of the new Jobs release. All original denials, historical scanner records, releases and source-only guards remain intact.
+
+## Historical rc.20 engineering and qualification record
+
+The following retained record describes the earlier615-source edition and its original gates. Its inputs and acceptance do not become rc.21 acceptance.
+
+
 The new `jobs-discovery-installed-v1` lane supplies a standalone, source-bound local review receiver and the captured Alpha runtime. The checked-in Alpha pin selects reviewed source `61532fb82621a065e668fd11e57289dcfb65c67b`, tree `7814d1bd9dcd3845b349590e0bcac57ba93b3167`, with qualification `PENDING_FINAL_SOURCE_NATIVE_COMPATIBILITY`. Source and browser input selection does not grant installed acceptance: the original final-main producer, both extracted native consumers, exact-source scanners, verified public Alpha release and publication review must satisfy the gates below. The finite source preparation metadata records `2.1.0-rc.20` as an unreserved proposal and grants no publication selection. The rc.16/rc.17 publishers, accepted scanner records, historical96 ledger and existing source-only guards retain their original bytes.
 
 ## Source and immutable pin transition

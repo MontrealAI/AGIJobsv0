@@ -80,3 +80,74 @@ test('same original mission, alternative route drafts and actual UI export journ
     assert.throws(()=>C.validateFiles(files,f.binding));
   }
 });
+
+// Exact original observations are inert metadata, with no new source review or installed acceptance.
+const originals=require('./fixtures/alpha141-original-browser-producer.json');
+test('retained615/e31 selection and legacy workflow/job profile remain unchanged',()=>{
+  const f=originals.legacy615;
+  assert.equal(f.binding.producer.checkoutCommit,'61532fb82621a065e668fd11e57289dcfb65c67b');
+  assert.equal(f.binding.transport.commit,'e31e74d1a5144973e6a22006dbe29ea628a80386');
+  assert.doesNotThrow(()=>C.select(f.binding,f.pin));
+  assert.deepEqual(C.producerProfile(f.binding),{workflowPath:C.WORKFLOW,jobName:'capability',jobId:null});
+});
+test('only original031b main-release metadata selects its namespaced job without claiming qualification',()=>{
+  const {binding,run,job}=originals.alpha141;
+  assert.deepEqual(C.producerProfile(binding),{workflowPath:'.github/workflows/agent-release.yml',
+    jobName:'successor-capability / capability',jobId:120821426397});
+  assert.doesNotThrow(()=>C.validRun(run,binding));assert.doesNotThrow(()=>C.validJob(job,binding));
+  assert.equal(originals.heldBehaviorQualified,false);assert.equal(originals.publicationApproved,false);
+  assert.equal(originals.installedCompatibilityAccepted,false);assert.equal(originals.externalExecution,'unprovisioned');
+  assert.throws(()=>C.select(binding,{}),'Raw observations are not a reviewed source/binding configuration');
+});
+test('finite031b binding refuses mixed paths and changed source/run/attempt/workflow/artifact identities',()=>{
+  const original=originals.alpha141.binding;
+  const changes=[['workflowPath',C.WORKFLOW],['workflowPath','.github/workflows/unknown.yml'],
+    ...['sourceHash','catalogSha256'].map(key=>[key,'0'.repeat(64)]),
+    ...['runId','runAttempt','workflowId'].map(key=>['producer.'+key,original.producer[key]+1]),
+    ['producer.runAttempt',true],['producer.event','pull_request'],['producer.headBranch','another-branch'],
+    ...['headCommit','checkoutCommit','checkoutTree'].map(key=>['producer.'+key,'0'.repeat(40)]),
+    ['producer.checkoutParents',[...original.producer.checkoutParents].reverse()],
+    ['artifact.id',original.artifact.id+1],['artifact.name','successor-capability-unknown'],
+    ['artifact.digest','sha256:'+'0'.repeat(64)],['artifact.sizeInBytes',original.artifact.sizeInBytes+1]];
+  for(const [key,value]of changes){const f=structuredClone(original),parts=key.split('.');
+    (parts.length===1?f:f[parts[0]])[parts.at(-1)]=value;
+    assert.throws(()=>C.producerProfile(f),key);}
+  const mixed=structuredClone(original);mixed.producer=structuredClone(originals.legacy615.binding.producer);
+  mixed.artifact=structuredClone(originals.legacy615.binding.artifact);
+  assert.throws(()=>C.producerProfile(mixed),'Legacy producer cannot borrow the main-release workflow');
+});
+test('original031b live/captured run and job validators preserve exact identity and every required step',()=>{
+  const f=originals.alpha141;
+  const changes=[['id',f.run.id+1],['run_attempt',2],['workflow_id',f.run.workflow_id+1],
+    ['head_sha','0'.repeat(40)],['head_branch','later-main'],['event','pull_request'],
+    ['path',C.WORKFLOW],['status','queued'],['conclusion','failure']];
+  for(const [key,value]of changes)assert.throws(()=>C.validRun({...f.run,[key]:value},f.binding),key);
+  for(const [key,value]of [['id',f.job.id+1],['name','capability'],['name','other / capability'],
+    ['run_id',f.job.run_id+1],['head_sha','0'.repeat(40)],['status','queued'],['conclusion','failure']]){
+    assert.throws(()=>C.validJob({...f.job,[key]:value},f.binding),key);}
+  for(const name of C.STEPS){const job=structuredClone(f.job);job.steps.find(s=>s.name===name).conclusion='skipped';
+    assert.throws(()=>C.validJob(job,f.binding),name);}
+});
+test('original031b workflow and namespaced job reach only source metadata with no packet or raw execution',async()=>{
+  const observed=originals.alpha141;
+  async function metadataStage(change=()=>{}) {
+    const binding=structuredClone(observed.binding),run=structuredClone(observed.run),job=structuredClone(observed.job);
+    // Only the outer selection framing is mocked. This is not a genuine source review or public transport.
+    binding.schema=C.SCHEMA;binding.state='REVIEWED_AUTHENTICATED_ALPHA_ARTIFACT';
+    binding.transport={...originals.legacy615.binding.transport,path:'evidence/discovery-browser-inputs-v1/'+binding.producer.headCommit};
+    const pin={status:'REVIEWED_FINAL_SOURCE',commit:binding.producer.checkoutCommit,tree:binding.producer.checkoutTree,
+      sourceHash:binding.sourceHash,catalogSha256:binding.catalogSha256};
+    const workflow={id:run.workflow_id,path:run.path};change({binding,run,job,workflow});
+    const p=binding.producer,calls=[],records=new Map([['actions/workflows/'+p.workflowId,workflow],['actions/runs/'+p.runId,run],
+      ['actions/runs/'+p.runId+'/attempts/'+p.runAttempt+'/jobs?per_page=100&page=1',{total_count:1,jobs:[job]}]]);
+    try {await C.authenticate(binding,pin,async route=>{calls.push(route);
+      if(route==='git/commits/'+p.checkoutCommit)throw Error('METADATA_STAGE_ONLY_SOURCE_NOT_READ');
+      assert.ok(records.has(route),'Unexpected metadata route');return structuredClone(records.get(route));},
+    async()=>assert.fail('No raw source/packet body may be read by a metadata control'));
+    }catch(error){error.metadataCalls=calls;throw error;}
+    assert.fail('Source/packet authentication is intentionally not performed');
+  }
+  await assert.rejects(metadataStage(),error=>error.message==='METADATA_STAGE_ONLY_SOURCE_NOT_READ'&&error.metadataCalls.length===4);
+  for(const change of [f=>f.workflow.path=C.WORKFLOW,f=>f.workflow.id++,f=>f.job.name='capability',f=>f.job.id++]){
+    await assert.rejects(metadataStage(change),error=>error.message!=='METADATA_STAGE_ONLY_SOURCE_NOT_READ');}
+});

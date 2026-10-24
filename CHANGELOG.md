@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.1.0-rc.21 — Alpha 1.41 bounded Discovery source
+
+- Select the reviewed Alpha031b source and original source-bound browser packet through an explicit finite transition, preserving rc.20 and older identities.
+- Admit its53-member catalog only for the exact reviewed tuple, including installed archive and public-release qualification.
+- Retain source/pack checks and fresh release leases while reusing the accepted immutable Alpha1.41 public-body observations with explicit provenance.
+- Include the reviewed application-dependency corrections and preserved schema behavior from #4032.
+
+This is bounded local review software. New-release installation, connected acceptance and publication require their own exact-source receipts. No production authority, funding, settlement or Fleet/Harness clearance is granted.
+
+
 ## v2.1.0-rc.17 — Resume owned source drafts safely
 
 Publication and telemetry source prerelease candidate (2026-10-21 UTC).

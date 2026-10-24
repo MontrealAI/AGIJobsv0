@@ -3,8 +3,24 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const CODE=__dirname+path.sep;
 const R=require(CODE+'recover-discovery-rc20.cjs'),D=require(CODE+'anonymous-alpha-metadata-diagnostic.cjs');
-const Q=require(CODE+'discovery-installed-qualification.cjs'),P=require(CODE+'publish-discovery-installed.cjs');
+const Q=require(CODE+'discovery-installed-qualification.cjs');
 const BASE=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'jobs-rc20-tests-')),ARTIFACT=path.join(BASE,'original-creation.zip');
+// Recovery consumes the original f7 payload modules, even when current tooling
+// prepares a later software edition. Authenticate those exact local Git objects.
+const originalRoot=path.join(BASE,'original-f7'),moduleDirectory=path.join(originalRoot,'scripts/release');
+fs.mkdirSync(moduleDirectory,{recursive:true});
+const {execFileSync}=require('node:child_process');
+const gitEnv={...Object.fromEntries(Object.entries(process.env).filter(([key])=>!key.startsWith('GIT_'))),
+  GIT_CONFIG_NOSYSTEM:'1',GIT_CONFIG_GLOBAL:'/dev/null',GIT_NO_REPLACE_OBJECTS:'1',GIT_NO_LAZY_FETCH:'1',
+  GIT_ALLOW_PROTOCOL:'',GIT_TERMINAL_PROMPT:'0',GIT_OPTIONAL_LOCKS:'0'};
+for(const [name,digest]of Object.entries(R.SOURCE_MODULES)) {
+  const raw=execFileSync('git',['--no-replace-objects','--no-pager','-C',path.resolve(CODE,'../..'),
+    '-c','protocol.allow=never','-c','core.fsmonitor=false','-c','core.hooksPath=/dev/null','-c','core.attributesFile=/dev/null',
+    'show',R.FIXED.sourceCommit+':scripts/release/'+name],{env:gitEnv,timeout:30000,maxBuffer:2000000});
+  assert.equal(Q.hash(raw),digest);fs.writeFileSync(path.join(moduleDirectory,name),raw,{flag:'wx'});
+}
+const originalModules=R.originalModules(originalRoot),P=originalModules.P;
+assert.equal(originalModules.Q.VERSION,'2.1.0-rc.20');
 fs.writeFileSync(ARTIFACT,Buffer.from('UEsDBBQACAAIAMWQV10AAAAAAAAAAAAAAAA5AAAAZGlzY292ZXJ5LWluc3RhbGxlZC1yZWxlYXNlLWFzc2V0cy5jcmVhdGlvbi1yZXNwb25zZS5qc29urZVdj9M6EIb/ijUSd2nz0Tab5gghUBEsaFn2HC6OQCia2JPUwrEj20npVv3vKGm7WnqxK1SuIk3GzzueL++gswpyWHvfujwMsZXTWvp1V065aUJLrXHhjdHeEqrX1+Hrd9cfTOn6KLSkCB25cJ4k8SJbZjMIAJ0j74q/xwwPRAiga5VBcYY+GN2l+N0rjQ0FCktSewhg7Rt1pvRI4Wm2xzrstMe6JjG5WlRVVsblfJZVZVRepcksgQCkgPwhhgCw82tjId+BMrXUkMNBbYLcS6Pdt9L476djcbbMkiwJQBtBxWCCm9VNetcso0+rt/PbL/X2dnX9cihGjx7teTFG4yljnSPLjfak/Xg1qcN4MUuzV/3LOQRQ2yNjlBmK8FRhB5gLfw/9xeJNafyLxerZrGLbnh+GACqjlNmQfaannpQOHyAPQKnry4FS17vQ+DXZYnAfGqeW7rn2f5o8Anbjp5BiQDqP1tJ54/8R9IjYhWajye5344yM7K503Mp29L9I4TEIAjC2Ri3v8WKwsfXAG4f6Es4IgACoJ31ZhQ6EXdha2SPf7sfoOMmeRHE5/QwFAfhtS5DDG+OH+XNki17Spjia265Ukg+llJ4KFM2wPipUjvaPN8S/b4sfm9Xt5/9VJdz860f8+H5AY10Miw9yENJx05PdTvpkGk+jieXTJBp9bE2+4KZppJduDTlUVzyKKE2zimYxp5hwGV1VURSlZcrjueBLUS4oiiGAI33YkWx1kmBSO49KkWC/awmLlYfc244CkE3TeSwVHe8TQGvpuGVPPtwSehIFesghiZJ0EkeTZPYlzvIozeP46/huiGd9xiy69dFLd0qdnjLIv30fk1CiOi6vw+972Z6bSiO2kMNdh0pWksSjeyrDUU0sDaVjzlR+g5b+YfdkDeOdtaT5lh2eAem3U/YfEXOms5wmpem0YK01PWnUnAJmrKylRsXWxnkSjHopSHNiqAWjn62SXHpmWrLj/KFiSjbSuynsfwFQSwcI9Of4evACAADvBwAAUEsBAi0DFAAIAAgAxZBXXfTn+HrwAgAA7wcAADkAAAAAAAAAAAAgAICBAAAAAGRpc2NvdmVyeS1pbnN0YWxsZWQtcmVsZWFzZS1hc3NldHMuY3JlYXRpb24tcmVzcG9uc2UuanNvblBLBQYAAAAAAQABAGcAAABXAwAAAAA=','base64'));
 process.on('exit',()=>fs.rmSync(BASE,{recursive:true,force:true}));
 const receipt=Q.json(Q.zipMembers(fs.readFileSync(ARTIFACT)).get(R.FIXED.creationMember));
@@ -27,7 +43,7 @@ function fixture() {
     if(route==='git/commits/'+record.prerequisite.commit)return {tree:{sha:record.prerequisite.tree}};
     throw Error('Unexpected fixture route '+route);
   };
-  const deps={Q:{...Q,sourceProof:()=>copy(source)},P:{...P,publicationRecordBytes:async()=>Buffer.from(JSON.stringify(record))},api,
+  const deps={Q:{...originalModules.Q,sourceProof:()=>copy(source)},P:{...P,publicationRecordBytes:async()=>Buffer.from(JSON.stringify(record))},api,
     download:async(directory,current,published)=>{state.downloads.push({directory,id:current.id,published});},verify:()=>{},
     timestamp:()=>R.FIXED.sourceCommitDate,
     validateEpoch:()=>({tooling:{sourceCommit:'3'.repeat(40),sourceTree:'4'.repeat(40)},payload:source}),
