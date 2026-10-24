@@ -7,6 +7,7 @@ const D=require('./anonymous-alpha-metadata-diagnostic.cjs');
 const sha=raw=>crypto.createHash('sha256').update(raw).digest('hex');
 const FIXED=Object.freeze({repository:'MontrealAI/AGIJobsv0',releaseId:422158983,tag:'discovery-v2.1.0-rc.20',
   sourceCommit:'f7c00e668fe31ce1ea907f0006b6c14dc9db5e01',sourceTree:'17c1cf5ccca47d427401e2832433e325d5e10563',
+  sourceCommitDate:'2026-10-23T17:20:46Z',
   runId:39994300685,creationArtifactId:12521657234,creationArtifactSha256:'9f921673405bcc46286bb2b00cf55ec75be74456f995b916567eacce3105502b',
   creationSha256:'e67e74be17f44a7299299f532cc45fe6d7ba0c5c17569a7ac341528db9190538',creationBytes:2031,
   creationMember:'discovery-installed-release-assets.creation-response.json',
@@ -51,12 +52,33 @@ function creationReceipt(artifact,Q,P) {
   const raw=members.get(FIXED.creationMember);assert.equal(raw.length,FIXED.creationBytes);assert.equal(sha(raw),FIXED.creationSha256);
   const receipt=Q.json(raw);assert.equal(receipt.id,FIXED.releaseId);P.createdIdentity(receipt,FIXED);return receipt;
 }
+function sourceCommitTimestamp(root,source) {
+  assert.equal(source.sourceCommit,FIXED.sourceCommit);assert.equal(source.sourceTree,FIXED.sourceTree);
+  const raw=execFileSync('git',['--no-replace-objects','--no-pager','-C',root,'-c','protocol.allow=never',
+    '-c','core.fsmonitor=false','-c','core.hooksPath=/dev/null','-c','core.attributesFile=/dev/null',
+    'cat-file','commit',FIXED.sourceCommit],{timeout:30_000,maxBuffer:1_000_000,
+    env:{...Object.fromEntries(Object.entries(process.env).filter(([name])=>!name.startsWith('GIT_'))),
+      GIT_CONFIG_NOSYSTEM:'1',GIT_CONFIG_GLOBAL:'/dev/null',GIT_NO_LAZY_FETCH:'1',GIT_ALLOW_PROTOCOL:'',GIT_TERMINAL_PROMPT:'0'}});
+  assert.equal(crypto.createHash('sha1').update(Buffer.from('commit '+raw.length+'\0')).update(raw).digest('hex'),FIXED.sourceCommit,
+    'Original commit metadata object differs');
+  const headers=raw.toString('utf8').split('\n\n',1)[0].split('\n');assert.equal(headers[0],'tree '+FIXED.sourceTree);
+  const committers=headers.filter(line=>line.startsWith('committer '));assert.equal(committers.length,1);
+  const match=/^committer .+ <[^>\n]+> ([0-9]+) [+-][0-9]{4}$/.exec(committers[0]);assert.ok(match,'Original commit timestamp is required');
+  const timestamp=new Date(Number(match[1])*1000).toISOString().replace('.000Z','Z');
+  assert.equal(timestamp,FIXED.sourceCommitDate,'Original source commit date differs');return timestamp;
+}
 function releaseIdentity(release,receipt,P,{published=false}={}) {
-  for(const key of ['id','url','tag_name','target_commitish','name','body','created_at'])assert.equal(release[key],receipt[key],'Original owned release identity differs: '+key);
+  for(const key of ['id','url','tag_name','target_commitish','name','body'])assert.equal(release[key],receipt[key],'Original owned release identity differs: '+key);
+  for(const key of ['id','node_id','login','type'])assert.equal(release.author?.[key],receipt.author?.[key],'Original owned release author differs: '+key);
   assert.equal(release.id,FIXED.releaseId);assert.equal(release.draft,!published);assert.equal(release.prerelease,true);
+  // GitHub uses draft creation time before publication and the tagged commit date after publication.
+  assert.equal(release.created_at,published?FIXED.sourceCommitDate:receipt.created_at,'Original owned release phase timestamp differs');
   assert.deepEqual(P.assetLease(release.assets,EXPECTED),ASSETS,'Original seven asset identities differ');
   for(const a of release.assets)assert.equal(a.state,'uploaded','Incomplete asset cannot be recovered');
-  if(published)assert.ok(typeof release.published_at==='string'&&release.published_at);return release;
+  if(published){assert.match(release.published_at||'',/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+    assert.equal(new Date(release.published_at).toISOString(),release.published_at.replace('Z','.000Z'));
+    assert.ok(Date.parse(release.published_at)>=Date.parse(receipt.created_at),'Publication cannot precede original draft creation');
+  }else assert.equal(release.published_at,receipt.published_at);return release;
 }
 async function ownedRelease(api,receipt,P) {
   const matches=(await P.releaseInventory(api)).filter(a=>a.tag_name===FIXED.tag);
@@ -75,9 +97,8 @@ function verifyManifest(directory,Q) {
   assert.equal(provenance.qualifiedProducer.id,FIXED.runId);assert.equal(qualification.producerRun.id,FIXED.runId);
   assert.equal(qualification.publicationRecordSha256,FIXED.recordSha256);assert.equal(sha(read(path.join(directory,'publication-review.json'))),FIXED.recordSha256);
 }
-async function downloadPublic(directory,release,Q,P) {
-  releaseIdentity(release,{id:FIXED.releaseId,url:'https://api.github.com/repos/'+FIXED.repository+'/releases/'+FIXED.releaseId,
-    tag_name:FIXED.tag,target_commitish:FIXED.sourceCommit,name:P.RELEASE_TITLE,body:P.RELEASE_NOTES,created_at:release.created_at},P,{published:true});
+async function downloadPublic(directory,release,Q,P,receipt) {
+  releaseIdentity(release,receipt,P,{published:true});
   for(const asset of release.assets) {
     const url='https://github.com/'+FIXED.repository+'/releases/download/'+encodeURIComponent(FIXED.tag)+'/'+encodeURIComponent(asset.name);
     assert.equal(asset.browser_download_url,url,'Public Jobs download URL differs');
@@ -175,12 +196,13 @@ async function verifyToolingGates(epoch,api,Q) {
   for(const name of [Q.PRODUCER,...Q.NODES.map(Q.CONSUMER)]){const found=jobs.filter(j=>j.name===name);assert.equal(found.length,1);Q.validateJob(found[0],selected,name,[]);}
   return {sourceCommit:tool.sourceCommit,sourceTree:tool.sourceTree,workflowRunId:selected.id,state:'QUALIFIED_TOOLING_NOT_PAYLOAD_PUBLICATION'};
 }
-async function verifyRecoveryLeases(api,{source,record,prerequisite,draft,expected,epoch,P}) {
+async function verifyRecoveryLeases(api,{source,record,prerequisite,draft,expected,epoch,P,receipt}) {
   assert.deepEqual(P.prerequisiteLease(await api('releases/tags/source-v2.1.0-rc.17')),prerequisite);
   assert.equal(await P.tagCommit(api,'source-v2.1.0-rc.17'),record.prerequisite.commit);
   assert.equal((await api('git/commits/'+record.prerequisite.commit)).tree?.sha,record.prerequisite.tree);
   const matches=(await P.releaseInventory(api)).filter(r=>r.tag_name===FIXED.tag);assert.equal(matches.length,1);assert.equal(matches[0].id,draft.id);
-  const current=await api('releases/'+draft.id);assert.deepEqual(P.draftLease(current,expected),draft);assert.equal(current.target_commitish,source.sourceCommit);
+  const current=await api('releases/'+draft.id);releaseIdentity(current,receipt,P);
+  assert.deepEqual(P.draftLease(current,expected),draft);assert.equal(current.target_commitish,source.sourceCommit);
   const tag=await P.tagCommit(api,FIXED.tag);assert.ok(tag===null||tag===FIXED.sourceCommit);
   assert.equal((await api('git/ref/heads/main')).object?.sha,epoch.tooling.sourceCommit,'Actual recovery-tool main moved before publication');return current.id;
 }
@@ -190,9 +212,9 @@ async function fetchCreationArtifact(file,Q) {
   fs.writeFileSync(file,raw,{flag:'wx',mode:0o600});return file;
 }
 async function recover({root,artifact,output,execute=false},{Q,P,api,download,qualify,patch,verify=verifyManifest,observe=()=>{},
-  validateEpoch=validateRecoveryEpoch,toolingGates=verifyToolingGates}={}) {
+  validateEpoch=validateRecoveryEpoch,toolingGates=verifyToolingGates,timestamp=sourceCommitTimestamp}={}) {
   if(!Q||!P)({Q,P}=originalModules(root));api=api||P.apiClient(process.env.GH_TOKEN);
-  download=download||((directory,release,published)=>published?downloadPublic(directory,release,Q,P):P.downloadAssets(directory,release,EXPECTED));
+  download=download||((directory,release,published)=>published?downloadPublic(directory,release,Q,P,receipt):P.downloadAssets(directory,release,EXPECTED));
   const ToolQ=require('./discovery-installed-qualification.cjs');
   qualify=qualify||(opts=>D.withAnonymousDiagnostics(()=>ToolQ.qualify(opts),{observe}));
   patch=patch||(()=>execFileSync('gh',['api','--method','PATCH','repos/'+FIXED.repository+'/releases/'+FIXED.releaseId,
@@ -200,6 +222,7 @@ async function recover({root,artifact,output,execute=false},{Q,P,api,download,qu
   assert.ok(path.isAbsolute(output)&&!fs.existsSync(output)&&!path.resolve(output).startsWith(path.resolve(root)+path.sep));
   assert.equal(fs.realpathSync(path.dirname(output)),path.resolve(path.dirname(output)),'Recovery output parent must be direct');
   const source=Q.sourceProof(options(root,output));assert.equal(source.sourceCommit,FIXED.sourceCommit);assert.equal(source.sourceTree,FIXED.sourceTree);
+  assert.equal(timestamp(root,source),FIXED.sourceCommitDate);
   const receipt=creationReceipt(artifact,Q,P),release=await ownedRelease(api,receipt,P),alreadyPublic=!release.draft;
   const tag=await P.tagCommit(api,FIXED.tag);assert.ok(tag===null||tag===FIXED.sourceCommit,'Original tag source differs');
   if(alreadyPublic)assert.equal(tag,FIXED.sourceCommit);
@@ -207,8 +230,10 @@ async function recover({root,artifact,output,execute=false},{Q,P,api,download,qu
   const save=(name,value)=>fs.writeFileSync(path.join(output,name),JSON.stringify(value,null,2)+'\n',{flag:'wx',mode:0o600});
   save('plan.json',{schema:'agijobsv0/discovery-rc20-recovery-plan/v1',releaseId:FIXED.releaseId,source,
     toolingEpoch:'Separate reviewed recovery helper; original payload/source remain unchanged',assets:ASSETS,
+    timestamps:{originalDraftCreatedAt:receipt.created_at,sourceCommitDate:FIXED.sourceCommitDate,observedCreatedAt:release.created_at,publishedAt:release.published_at},
     state:alreadyPublic?'ALREADY_PUBLIC_VERIFY_ONLY':execute?'QUALIFICATION_PENDING':'INSPECTED_NO_MUTATION',
     original403:{requestUrl:'UNAVAILABLE_IN_ORIGINAL_LOG',cause:'UNESTABLISHED'},authority:'none'});
+  save('initial-release-observation.json',release);
   const first=path.join(output,alreadyPublic?'public-readback':'draft-readback');fs.mkdirSync(first,{mode:0o700});
   await download(first,release,alreadyPublic);verify(first,Q);
   if(alreadyPublic){save('completed.json',{state:'ALREADY_PUBLIC_VERIFIED',releaseId:FIXED.releaseId,assets:ASSETS});return {state:'ALREADY_PUBLIC_VERIFIED',releaseId:FIXED.releaseId};}
@@ -221,18 +246,20 @@ async function recover({root,artifact,output,execute=false},{Q,P,api,download,qu
   const prerequisite=P.prerequisiteLease(await api('releases/tags/source-v2.1.0-rc.17'));
   await qualify({...options(root,path.join(output,'fresh-original-qualification')),recordFile,api,recoveryEpoch:epoch});
   const final=await ownedRelease(api,receipt,P);assert.deepEqual(P.draftLease(final,EXPECTED),P.draftLease(release,EXPECTED),'Draft changed during recovery');
+  save('final-draft-release-observation.json',final);
   const second=path.join(output,'final-draft-readback');fs.mkdirSync(second,{mode:0o700});await download(second,final,false);verify(second,Q);
   const finalEpoch=validateEpoch(epoch,source,options(root,output));assert.deepEqual(finalEpoch,validated,'Recovery tooling source changed');
   const finalToolEvidence=await toolingGates(finalEpoch,api,ToolQ);save('final-tooling-qualification.json',finalToolEvidence);
-  const id=await verifyRecoveryLeases(api,{source,record,prerequisite,draft:P.draftLease(final,EXPECTED),expected:EXPECTED,epoch:validated,P});assert.equal(id,FIXED.releaseId);
+  const id=await verifyRecoveryLeases(api,{source,record,prerequisite,draft:P.draftLease(final,EXPECTED),expected:EXPECTED,epoch:validated,P,receipt});assert.equal(id,FIXED.releaseId);
   save('mutation-intent.json',{operation:'PATCH',releaseId:id,fields:{draft:false,prerelease:true},outcome:'UNOBSERVED'});
   try{await patch();}catch {throw Error('Original release PATCH outcome is uncertain; retain intent and inspect release ID before another mutation');}
-  const published=releaseIdentity(await api('releases/'+id),receipt,P,{published:true});assert.equal(await P.tagCommit(api,FIXED.tag),FIXED.sourceCommit);
+  const observedPublished=await api('releases/'+id);save('post-publication-release-observation.json',observedPublished);
+  const published=releaseIdentity(observedPublished,receipt,P,{published:true});assert.equal(await P.tagCommit(api,FIXED.tag),FIXED.sourceCommit);
   const publicDir=path.join(output,'public-readback');fs.mkdirSync(publicDir,{mode:0o700});await download(publicDir,published,true);verify(publicDir,Q);
   save('completed.json',{state:'ORIGINAL_RELEASE_RECOVERED_PUBLIC_BYTES_VERIFIED',releaseId:id,assets:ASSETS,authority:'none'});
   return {state:'ORIGINAL_RELEASE_RECOVERED_PUBLIC_BYTES_VERIFIED',releaseId:id};
 }
-module.exports={FIXED,SOURCE_MODULES,TOOLING_BEFORE,TOOLING_PATHS,ASSETS,EXPECTED,read,originalModules,creationReceipt,releaseIdentity,ownedRelease,
+module.exports={FIXED,SOURCE_MODULES,TOOLING_BEFORE,TOOLING_PATHS,ASSETS,EXPECTED,read,originalModules,creationReceipt,sourceCommitTimestamp,releaseIdentity,ownedRelease,
   verifyManifest,downloadPublic,executionGuard,options,toolingEpoch,validateToolingDelta,validateRecoveryEpoch,verifyToolingGates,verifyRecoveryLeases,fetchCreationArtifact,recover};
 if(require.main===module){const [mode,root,artifact,output]=process.argv.slice(2);
   assert.ok(['inspect','recover'].includes(mode),'Use inspect|recover ORIGINAL_ROOT CREATION_ARTIFACT ABSENT_OUTPUT');
