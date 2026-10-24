@@ -519,9 +519,9 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "2ddef380e9b4a75f4dda71cc3358225a560536f4eb76e2af1605b94e7b2c58d0"
+        "sha256": "f55e21614c3a1cc98af0464125c0d0cf33301569b34d516214e5cf66a1e21dfd"
       },
-      "reason": "Preserve hardened immutable committed-package selection, original dependency identities and complete authenticated generated-source comparison; recognize only explicitly enumerated installed rc18 and rc19 versions so rc19 cannot fall through to legacy handling; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Preserve hardened immutable committed-package selection, original dependency identities and complete authenticated generated-source comparison; recognize only explicitly enumerated installed rc18 and rc19 versions so rc19 cannot fall through to legacy handling; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "scripts/security/test/dependency-preservation.test.cjs": {
       "before": {
@@ -617,9 +617,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "d7913557e86d0f092601dea91efc9c1118980b1a91b18c1b3477a5196faffc6b"
+        "sha256": "eaebdc994973a97e8d491450a302c50939a9e0dfd80fa7aa3daf28ebab366478"
       },
-      "reason": "Preserve all preceding owned Git/source/generated-output fixtures byte-for-byte; append one inert rc19 committed-edition case proving strict Git context and current package-byte authentication remain mandatory; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Preserve all preceding owned Git/source/generated-output fixtures byte-for-byte; append one inert rc19 committed-edition case proving strict Git context and current package-byte authentication remain mandatory; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "tools/security/discovery-installed-ledger-prefix.mjs": {
       "before": null,
