@@ -1,0 +1,2120 @@
+{
+  "schema": "delivery/owner-refreshed-public-data-archive-build/v1",
+  "file": "FOUR_REPOSITORY_PUBLIC_PROJECT_CHECKPOINT.zip",
+  "bytes": 1150829,
+  "sha256": "bb6298b64f390240674929d390f1c90c0e5de9beab934d04977af0ec148465d8",
+  "members": 84,
+  "allMemberBytesAndCrcVerified": true,
+  "receiptState": "ACCURATE_CHECKPOINT_PREPARED_FOR_PUBLICATION",
+  "publicationOrInstallationAuthorityInferredByRebuild": false,
+  "githubOrLibraryWritePerformed": false,
+  "verification": {
+    "schema": "delivery/final-public-checkpoint-bounded-verification/v1",
+    "state": "PASS_FROZEN_BEFORE_PUBLIC_TRANSPORT",
+    "zipBytes": 1150829,
+    "zipSha256": "bb6298b64f390240674929d390f1c90c0e5de9beab934d04977af0ec148465d8",
+    "checksPassed": 519,
+    "checks": [
+      {
+        "check": "all_crc",
+        "passed": true
+      },
+      {
+        "check": "84_closed_unique_members",
+        "passed": true
+      },
+      {
+        "check": "safe_regular_data_only_members",
+        "passed": true
+      },
+      {
+        "check": "exact_inventory_other83",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:ADDITIONAL_CURRENT_PUBLIC_RECORD_INDEX.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:DELIVERY_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:DELIVERY_RECEIPT.txt",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:FIRST_RUN.md",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:ORIGINAL_PUBLIC_PROJECT_MEMBER_HASH_INDEX.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:PUBLIC_EVIDENCE_URLS.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:PUBLIC_EXPORT_PROJECTION.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:README.md",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:SOURCE_FAILURE_RECOVERY_LEDGER.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:TRANSPORT_PLAN.md",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/CURRENT_SOURCE_OWNERSHIP_MAP.md",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/DELIVERY_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/FINAL_PUBLIC_COORDINATION_RECEIPTS.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/alpha031b-installed-source-review-record.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/alpha141-common-packet-public-tree.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/alpha141-final-preserved-public-lease.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/final-four-repository-pr-heads.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/final-four-repository-public-source-refresh.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/final-original-held-pr-thread-dispositions.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/fleet-original-source-ownership-provenance.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/harness-caa3-passive-paper-reconciliation.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-bc4-publication-record-public.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-codeql-main-bc4abbd/FINAL_CHECKPOINT.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-codeql-main-bc4abbd/FINAL_DATA_VALIDATION_BINDING.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-live-ux/LIVE_DESKTOP_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-public-acceptance/ANONYMOUS_PUBLIC_ASSET_VERIFICATION.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-public-acceptance/FINAL_PUBLIC_DELIVERY.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-public-acceptance/PUBLIC_ASSET_LEASE.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-public-acceptance/PUBLIC_INSTALLED_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-public-acceptance/PUBLIC_JOBS_PEER_HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-public-acceptance/PUBLIC_JOBS_RC21_COUNTERPART.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-public-acceptance/PUBLIC_RELEASE_METADATA.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-public-acceptance/installed-node22/PUBLIC_INSTALLED_ACCEPTANCE_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-public-acceptance/installed-node22/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-public-acceptance/installed-node24/PUBLIC_INSTALLED_ACCEPTANCE_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-public-acceptance/installed-node24/docket.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-public-acceptance/installed-node24/docket.reopened.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-public-acceptance/installed-node24/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/jobs-rc21-public-acceptance/installed-node24/workspace.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-414-independent-review/INDEPENDENT_EXACT_SOURCE_REVIEW.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-414-independent-review/PUBLIC_REVIEW_RECORD.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-414-qualified-merge-decision.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-5d-publication-readiness.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-5d-publisher-dispatch.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-ac4-independent-review/INDEPENDENT_EXACT_SOURCE_REVIEW.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-ac4-independent-review/PUBLIC_REVIEW_RECORD.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-ac4-independent-review/RELEASE_VM_GATE_FAILURE_HOLD.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-ac4-release-vm-fixture/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-b3e8-independent-diagnosis/DIAGNOSIS.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-d6-network-invalidation/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-d6dd-independent-review/HOSTED_NETWORK_FAILURE_HOLD.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-finalpeer-public-source.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-live-website-qa/ACTUAL_SMALL_DOWNLOAD.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-live-website-qa/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager-live-website-qa/live-builder-capsule.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/ANONYMOUS_PUBLIC_ASSET_VERIFICATION.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/FINAL_PUBLIC_DELIVERY.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/PUBLICATION_AND_PAGES_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/PUBLIC_ASSET_LEASE.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/PUBLIC_INSTALLED_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/PUBLIC_RELEASE_METADATA.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/PUBLIC_SOURCE_EXPECTATION.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/assets/RELEASE_MANIFEST.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/assets/SOURCE_MANIFEST.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/node22/PUBLIC_INSTALLED_RUNTIME_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/node22/native/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/node22/native/regression/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/node24/PUBLIC_INSTALLED_RUNTIME_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/node24/native/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-acceptance/node24/native/regression/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-connected/ACTUAL_INSTALLED_PROPOSAL_ATTEMPT.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-connected/INSTALLED_CONNECTED_OPERATOR_ATTEMPT.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-connected/actual-installed-proposal/connected-docket-reopened-again.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-connected/actual-installed-proposal/proposal-acceptance.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-connected/actual-installed-proposal/proposed-docket-reopened.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-connected/actual-installed-proposal/proposed-docket.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-connected/actual-installed-proposal/proposed-workspace.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-connected/installed-operator-output/docket-reopened.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-connected/installed-operator-output/docket.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-connected/installed-operator-output/original-request.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-connected/installed-operator-output/raw-receipt.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-connected/installed-operator-output/receipt-wrapper.json",
+        "passed": true
+      },
+      {
+        "check": "inventory_size_and_sha:evidence/manager1202-public-connected/installed-operator-output/workspace-after.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:ADDITIONAL_CURRENT_PUBLIC_RECORD_INDEX.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:ADDITIONAL_CURRENT_PUBLIC_RECORD_INDEX.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:DELIVERY_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:DELIVERY_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:DELIVERY_RECEIPT.txt",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:DELIVERY_RECEIPT.txt",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:FIRST_RUN.md",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:FIRST_RUN.md",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:ORIGINAL_PUBLIC_PROJECT_MEMBER_HASH_INDEX.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:ORIGINAL_PUBLIC_PROJECT_MEMBER_HASH_INDEX.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:PUBLIC_EVIDENCE_URLS.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:PUBLIC_EVIDENCE_URLS.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:PUBLIC_EXPORT_PROJECTION.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:PUBLIC_EXPORT_PROJECTION.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:PUBLIC_PACKET_MEMBER_INVENTORY.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:PUBLIC_PACKET_MEMBER_INVENTORY.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:README.md",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:README.md",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:SOURCE_FAILURE_RECOVERY_LEDGER.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:SOURCE_FAILURE_RECOVERY_LEDGER.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:TRANSPORT_PLAN.md",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:TRANSPORT_PLAN.md",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/CURRENT_SOURCE_OWNERSHIP_MAP.md",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/CURRENT_SOURCE_OWNERSHIP_MAP.md",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/DELIVERY_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/DELIVERY_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/FINAL_PUBLIC_COORDINATION_RECEIPTS.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/FINAL_PUBLIC_COORDINATION_RECEIPTS.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/alpha031b-installed-source-review-record.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/alpha031b-installed-source-review-record.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/alpha141-common-packet-public-tree.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/alpha141-common-packet-public-tree.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/alpha141-final-preserved-public-lease.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/alpha141-final-preserved-public-lease.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/final-four-repository-pr-heads.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/final-four-repository-pr-heads.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/final-four-repository-public-source-refresh.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/final-four-repository-public-source-refresh.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/final-original-held-pr-thread-dispositions.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/final-original-held-pr-thread-dispositions.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/fleet-original-source-ownership-provenance.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/fleet-original-source-ownership-provenance.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/harness-caa3-passive-paper-reconciliation.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/harness-caa3-passive-paper-reconciliation.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-bc4-publication-record-public.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-bc4-publication-record-public.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-codeql-main-bc4abbd/FINAL_CHECKPOINT.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-codeql-main-bc4abbd/FINAL_CHECKPOINT.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-codeql-main-bc4abbd/FINAL_DATA_VALIDATION_BINDING.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-codeql-main-bc4abbd/FINAL_DATA_VALIDATION_BINDING.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-live-ux/LIVE_DESKTOP_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-live-ux/LIVE_DESKTOP_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-public-acceptance/ANONYMOUS_PUBLIC_ASSET_VERIFICATION.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-public-acceptance/ANONYMOUS_PUBLIC_ASSET_VERIFICATION.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-public-acceptance/FINAL_PUBLIC_DELIVERY.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-public-acceptance/FINAL_PUBLIC_DELIVERY.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-public-acceptance/PUBLIC_ASSET_LEASE.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-public-acceptance/PUBLIC_ASSET_LEASE.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-public-acceptance/PUBLIC_INSTALLED_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-public-acceptance/PUBLIC_INSTALLED_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-public-acceptance/PUBLIC_JOBS_PEER_HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-public-acceptance/PUBLIC_JOBS_PEER_HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-public-acceptance/PUBLIC_JOBS_RC21_COUNTERPART.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-public-acceptance/PUBLIC_JOBS_RC21_COUNTERPART.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-public-acceptance/PUBLIC_RELEASE_METADATA.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-public-acceptance/PUBLIC_RELEASE_METADATA.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-public-acceptance/installed-node22/PUBLIC_INSTALLED_ACCEPTANCE_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-public-acceptance/installed-node22/PUBLIC_INSTALLED_ACCEPTANCE_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-public-acceptance/installed-node22/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-public-acceptance/installed-node22/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-public-acceptance/installed-node24/PUBLIC_INSTALLED_ACCEPTANCE_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-public-acceptance/installed-node24/PUBLIC_INSTALLED_ACCEPTANCE_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-public-acceptance/installed-node24/docket.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-public-acceptance/installed-node24/docket.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-public-acceptance/installed-node24/docket.reopened.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-public-acceptance/installed-node24/docket.reopened.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-public-acceptance/installed-node24/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-public-acceptance/installed-node24/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/jobs-rc21-public-acceptance/installed-node24/workspace.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/jobs-rc21-public-acceptance/installed-node24/workspace.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-414-independent-review/INDEPENDENT_EXACT_SOURCE_REVIEW.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-414-independent-review/INDEPENDENT_EXACT_SOURCE_REVIEW.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-414-independent-review/PUBLIC_REVIEW_RECORD.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-414-independent-review/PUBLIC_REVIEW_RECORD.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-414-qualified-merge-decision.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-414-qualified-merge-decision.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-5d-publication-readiness.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-5d-publication-readiness.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-5d-publisher-dispatch.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-5d-publisher-dispatch.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-ac4-independent-review/INDEPENDENT_EXACT_SOURCE_REVIEW.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-ac4-independent-review/INDEPENDENT_EXACT_SOURCE_REVIEW.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-ac4-independent-review/PUBLIC_REVIEW_RECORD.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-ac4-independent-review/PUBLIC_REVIEW_RECORD.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-ac4-independent-review/RELEASE_VM_GATE_FAILURE_HOLD.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-ac4-independent-review/RELEASE_VM_GATE_FAILURE_HOLD.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-ac4-release-vm-fixture/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-ac4-release-vm-fixture/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-b3e8-independent-diagnosis/DIAGNOSIS.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-b3e8-independent-diagnosis/DIAGNOSIS.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-d6-network-invalidation/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-d6-network-invalidation/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-d6dd-independent-review/HOSTED_NETWORK_FAILURE_HOLD.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-d6dd-independent-review/HOSTED_NETWORK_FAILURE_HOLD.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-finalpeer-public-source.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-finalpeer-public-source.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-live-website-qa/ACTUAL_SMALL_DOWNLOAD.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-live-website-qa/ACTUAL_SMALL_DOWNLOAD.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-live-website-qa/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-live-website-qa/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager-live-website-qa/live-builder-capsule.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager-live-website-qa/live-builder-capsule.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/ANONYMOUS_PUBLIC_ASSET_VERIFICATION.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/ANONYMOUS_PUBLIC_ASSET_VERIFICATION.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/FINAL_PUBLIC_DELIVERY.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/FINAL_PUBLIC_DELIVERY.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/PUBLICATION_AND_PAGES_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/PUBLICATION_AND_PAGES_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/PUBLIC_ASSET_LEASE.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/PUBLIC_ASSET_LEASE.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/PUBLIC_INSTALLED_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/PUBLIC_INSTALLED_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/PUBLIC_RELEASE_METADATA.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/PUBLIC_RELEASE_METADATA.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/PUBLIC_SOURCE_EXPECTATION.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/PUBLIC_SOURCE_EXPECTATION.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/assets/RELEASE_MANIFEST.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/assets/RELEASE_MANIFEST.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/assets/SOURCE_MANIFEST.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/assets/SOURCE_MANIFEST.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/node22/PUBLIC_INSTALLED_RUNTIME_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/node22/PUBLIC_INSTALLED_RUNTIME_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/node22/native/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/node22/native/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/node22/native/regression/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/node22/native/regression/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/node24/PUBLIC_INSTALLED_RUNTIME_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/node24/PUBLIC_INSTALLED_RUNTIME_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/node24/native/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/node24/native/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-acceptance/node24/native/regression/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-acceptance/node24/native/regression/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-connected/ACTUAL_INSTALLED_PROPOSAL_ATTEMPT.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-connected/ACTUAL_INSTALLED_PROPOSAL_ATTEMPT.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-connected/INSTALLED_CONNECTED_OPERATOR_ATTEMPT.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-connected/INSTALLED_CONNECTED_OPERATOR_ATTEMPT.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-connected/actual-installed-proposal/connected-docket-reopened-again.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-connected/actual-installed-proposal/connected-docket-reopened-again.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-connected/actual-installed-proposal/proposal-acceptance.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-connected/actual-installed-proposal/proposal-acceptance.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-connected/actual-installed-proposal/proposed-docket-reopened.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-connected/actual-installed-proposal/proposed-docket-reopened.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-connected/actual-installed-proposal/proposed-docket.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-connected/actual-installed-proposal/proposed-docket.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-connected/actual-installed-proposal/proposed-workspace.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-connected/actual-installed-proposal/proposed-workspace.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-connected/installed-operator-output/docket-reopened.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-connected/installed-operator-output/docket-reopened.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-connected/installed-operator-output/docket.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-connected/installed-operator-output/docket.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-connected/installed-operator-output/original-request.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-connected/installed-operator-output/original-request.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-connected/installed-operator-output/raw-receipt.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-connected/installed-operator-output/raw-receipt.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-connected/installed-operator-output/receipt-wrapper.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-connected/installed-operator-output/receipt-wrapper.json",
+        "passed": true
+      },
+      {
+        "check": "archive_equals_frozen_public_bytes:evidence/manager1202-public-connected/installed-operator-output/workspace-after.json",
+        "passed": true
+      },
+      {
+        "check": "known_private_identifiers_locations_and_image_bytes_absent:evidence/manager1202-public-connected/installed-operator-output/workspace-after.json",
+        "passed": true
+      },
+      {
+        "check": "all_json_parses",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:delivery-checkpoint/DELIVERY_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:delivery-checkpoint/DELIVERY_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:delivery-checkpoint/DELIVERY_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:delivery-checkpoint/DELIVERY_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/alpha031b-installed-source-review-record.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/alpha031b-installed-source-review-record.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/alpha031b-installed-source-review-record.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/alpha141-common-packet-public-tree.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/alpha141-common-packet-public-tree.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/alpha141-common-packet-public-tree.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-bc4-publication-record-public.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-bc4-publication-record-public.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/jobs-bc4-publication-record-public.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-codeql-main-bc4abbd/FINAL_CHECKPOINT.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-codeql-main-bc4abbd/FINAL_CHECKPOINT.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/jobs-codeql-main-bc4abbd/FINAL_CHECKPOINT.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/jobs-codeql-main-bc4abbd/FINAL_CHECKPOINT.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-codeql-main-bc4abbd/FINAL_DATA_VALIDATION_BINDING.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-codeql-main-bc4abbd/FINAL_DATA_VALIDATION_BINDING.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/jobs-codeql-main-bc4abbd/FINAL_DATA_VALIDATION_BINDING.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/jobs-codeql-main-bc4abbd/FINAL_DATA_VALIDATION_BINDING.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-public-acceptance/ANONYMOUS_PUBLIC_ASSET_VERIFICATION.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-public-acceptance/ANONYMOUS_PUBLIC_ASSET_VERIFICATION.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/jobs-rc21-public-acceptance/ANONYMOUS_PUBLIC_ASSET_VERIFICATION.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-public-acceptance/FINAL_PUBLIC_DELIVERY.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-public-acceptance/FINAL_PUBLIC_DELIVERY.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/jobs-rc21-public-acceptance/FINAL_PUBLIC_DELIVERY.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-public-acceptance/PUBLIC_ASSET_LEASE.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-public-acceptance/PUBLIC_ASSET_LEASE.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/jobs-rc21-public-acceptance/PUBLIC_ASSET_LEASE.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-public-acceptance/PUBLIC_INSTALLED_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-public-acceptance/PUBLIC_INSTALLED_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/jobs-rc21-public-acceptance/PUBLIC_INSTALLED_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/jobs-rc21-public-acceptance/PUBLIC_INSTALLED_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-public-acceptance/PUBLIC_JOBS_PEER_HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-public-acceptance/PUBLIC_JOBS_PEER_HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/jobs-rc21-public-acceptance/PUBLIC_JOBS_PEER_HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/jobs-rc21-public-acceptance/PUBLIC_JOBS_PEER_HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-public-acceptance/PUBLIC_JOBS_RC21_COUNTERPART.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-public-acceptance/PUBLIC_JOBS_RC21_COUNTERPART.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/jobs-rc21-public-acceptance/PUBLIC_JOBS_RC21_COUNTERPART.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-public-acceptance/PUBLIC_RELEASE_METADATA.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-public-acceptance/PUBLIC_RELEASE_METADATA.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/jobs-rc21-public-acceptance/PUBLIC_RELEASE_METADATA.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-public-acceptance/installed-node22/PUBLIC_INSTALLED_ACCEPTANCE_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-public-acceptance/installed-node22/PUBLIC_INSTALLED_ACCEPTANCE_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/jobs-rc21-public-acceptance/installed-node22/PUBLIC_INSTALLED_ACCEPTANCE_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/jobs-rc21-public-acceptance/installed-node22/PUBLIC_INSTALLED_ACCEPTANCE_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-public-acceptance/installed-node24/PUBLIC_INSTALLED_ACCEPTANCE_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-public-acceptance/installed-node24/PUBLIC_INSTALLED_ACCEPTANCE_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/jobs-rc21-public-acceptance/installed-node24/PUBLIC_INSTALLED_ACCEPTANCE_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/jobs-rc21-public-acceptance/installed-node24/PUBLIC_INSTALLED_ACCEPTANCE_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-public-acceptance/installed-node22/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-public-acceptance/installed-node22/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/jobs-rc21-public-acceptance/installed-node22/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-public-acceptance/installed-node24/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-public-acceptance/installed-node24/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/jobs-rc21-public-acceptance/installed-node24/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-finalpeer-public-source.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-finalpeer-public-source.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager-finalpeer-public-source.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-b3e8-independent-diagnosis/DIAGNOSIS.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-b3e8-independent-diagnosis/DIAGNOSIS.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/manager-b3e8-independent-diagnosis/DIAGNOSIS.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/manager-b3e8-independent-diagnosis/DIAGNOSIS.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-d6dd-independent-review/HOSTED_NETWORK_FAILURE_HOLD.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-d6dd-independent-review/HOSTED_NETWORK_FAILURE_HOLD.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/manager-d6dd-independent-review/HOSTED_NETWORK_FAILURE_HOLD.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/manager-d6dd-independent-review/HOSTED_NETWORK_FAILURE_HOLD.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-ac4-independent-review/INDEPENDENT_EXACT_SOURCE_REVIEW.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-ac4-independent-review/INDEPENDENT_EXACT_SOURCE_REVIEW.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/manager-ac4-independent-review/INDEPENDENT_EXACT_SOURCE_REVIEW.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/manager-ac4-independent-review/INDEPENDENT_EXACT_SOURCE_REVIEW.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-ac4-independent-review/PUBLIC_REVIEW_RECORD.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-ac4-independent-review/PUBLIC_REVIEW_RECORD.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager-ac4-independent-review/PUBLIC_REVIEW_RECORD.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-ac4-independent-review/RELEASE_VM_GATE_FAILURE_HOLD.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-ac4-independent-review/RELEASE_VM_GATE_FAILURE_HOLD.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/manager-ac4-independent-review/RELEASE_VM_GATE_FAILURE_HOLD.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/manager-ac4-independent-review/RELEASE_VM_GATE_FAILURE_HOLD.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-414-independent-review/INDEPENDENT_EXACT_SOURCE_REVIEW.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-414-independent-review/INDEPENDENT_EXACT_SOURCE_REVIEW.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/manager-414-independent-review/INDEPENDENT_EXACT_SOURCE_REVIEW.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/manager-414-independent-review/INDEPENDENT_EXACT_SOURCE_REVIEW.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-414-independent-review/PUBLIC_REVIEW_RECORD.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-414-independent-review/PUBLIC_REVIEW_RECORD.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager-414-independent-review/PUBLIC_REVIEW_RECORD.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-d6-network-invalidation/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-d6-network-invalidation/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/manager-d6-network-invalidation/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/manager-d6-network-invalidation/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-ac4-release-vm-fixture/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-ac4-release-vm-fixture/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/manager-ac4-release-vm-fixture/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/manager-ac4-release-vm-fixture/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-414-qualified-merge-decision.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-414-qualified-merge-decision.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager-414-qualified-merge-decision.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-5d-publication-readiness.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-5d-publication-readiness.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager-5d-publication-readiness.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-5d-publisher-dispatch.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-5d-publisher-dispatch.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager-5d-publisher-dispatch.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/ANONYMOUS_PUBLIC_ASSET_VERIFICATION.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/ANONYMOUS_PUBLIC_ASSET_VERIFICATION.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-acceptance/ANONYMOUS_PUBLIC_ASSET_VERIFICATION.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/PUBLIC_ASSET_LEASE.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/PUBLIC_ASSET_LEASE.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-acceptance/PUBLIC_ASSET_LEASE.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/PUBLIC_INSTALLED_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/PUBLIC_INSTALLED_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/manager1202-public-acceptance/PUBLIC_INSTALLED_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/manager1202-public-acceptance/PUBLIC_INSTALLED_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/PUBLIC_RELEASE_METADATA.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/PUBLIC_RELEASE_METADATA.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-acceptance/PUBLIC_RELEASE_METADATA.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/PUBLICATION_AND_PAGES_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/PUBLICATION_AND_PAGES_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-acceptance/PUBLICATION_AND_PAGES_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/PUBLIC_SOURCE_EXPECTATION.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/PUBLIC_SOURCE_EXPECTATION.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-acceptance/PUBLIC_SOURCE_EXPECTATION.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/node22/PUBLIC_INSTALLED_RUNTIME_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/node22/PUBLIC_INSTALLED_RUNTIME_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/manager1202-public-acceptance/node22/PUBLIC_INSTALLED_RUNTIME_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/manager1202-public-acceptance/node22/PUBLIC_INSTALLED_RUNTIME_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/node24/PUBLIC_INSTALLED_RUNTIME_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/node24/PUBLIC_INSTALLED_RUNTIME_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/manager1202-public-acceptance/node24/PUBLIC_INSTALLED_RUNTIME_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/manager1202-public-acceptance/node24/PUBLIC_INSTALLED_RUNTIME_RECEIPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/node22/native/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/node22/native/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-acceptance/node22/native/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/node22/native/regression/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/node22/native/regression/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-acceptance/node22/native/regression/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/node24/native/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/node24/native/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-acceptance/node24/native/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/node24/native/regression/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/node24/native/regression/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-acceptance/node24/native/regression/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/assets/RELEASE_MANIFEST.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/assets/RELEASE_MANIFEST.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-acceptance/assets/RELEASE_MANIFEST.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/assets/SOURCE_MANIFEST.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/assets/SOURCE_MANIFEST.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-acceptance/assets/SOURCE_MANIFEST.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-connected/actual-installed-proposal/connected-docket-reopened-again.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-connected/actual-installed-proposal/connected-docket-reopened-again.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-connected/actual-installed-proposal/connected-docket-reopened-again.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-connected/actual-installed-proposal/proposal-acceptance.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-connected/actual-installed-proposal/proposal-acceptance.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-connected/actual-installed-proposal/proposal-acceptance.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-connected/actual-installed-proposal/proposed-docket-reopened.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-connected/actual-installed-proposal/proposed-docket-reopened.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-connected/actual-installed-proposal/proposed-docket-reopened.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-connected/actual-installed-proposal/proposed-docket.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-connected/actual-installed-proposal/proposed-docket.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-connected/actual-installed-proposal/proposed-docket.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-connected/actual-installed-proposal/proposed-workspace.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-connected/actual-installed-proposal/proposed-workspace.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-connected/actual-installed-proposal/proposed-workspace.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-connected/installed-operator-output/docket-reopened.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-connected/installed-operator-output/docket-reopened.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-connected/installed-operator-output/docket-reopened.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-connected/installed-operator-output/docket.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-connected/installed-operator-output/docket.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-connected/installed-operator-output/docket.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-connected/installed-operator-output/original-request.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-connected/installed-operator-output/original-request.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-connected/installed-operator-output/original-request.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-connected/installed-operator-output/raw-receipt.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-connected/installed-operator-output/raw-receipt.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-connected/installed-operator-output/raw-receipt.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-connected/installed-operator-output/receipt-wrapper.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-connected/installed-operator-output/receipt-wrapper.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-connected/installed-operator-output/receipt-wrapper.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-connected/installed-operator-output/workspace-after.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-connected/installed-operator-output/workspace-after.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-connected/installed-operator-output/workspace-after.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-connected/INSTALLED_CONNECTED_OPERATOR_ATTEMPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-connected/INSTALLED_CONNECTED_OPERATOR_ATTEMPT.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/manager1202-public-connected/INSTALLED_CONNECTED_OPERATOR_ATTEMPT.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/manager1202-public-connected/INSTALLED_CONNECTED_OPERATOR_ATTEMPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-connected/ACTUAL_INSTALLED_PROPOSAL_ATTEMPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-connected/ACTUAL_INSTALLED_PROPOSAL_ATTEMPT.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/manager1202-public-connected/ACTUAL_INSTALLED_PROPOSAL_ATTEMPT.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/manager1202-public-connected/ACTUAL_INSTALLED_PROPOSAL_ATTEMPT.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/final-four-repository-pr-heads.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/final-four-repository-pr-heads.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/final-four-repository-pr-heads.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/final-four-repository-public-source-refresh.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/final-four-repository-public-source-refresh.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/final-four-repository-public-source-refresh.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/final-original-held-pr-thread-dispositions.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/final-original-held-pr-thread-dispositions.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/final-original-held-pr-thread-dispositions.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/harness-caa3-passive-paper-reconciliation.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/harness-caa3-passive-paper-reconciliation.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/harness-caa3-passive-paper-reconciliation.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/fleet-original-source-ownership-provenance.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/fleet-original-source-ownership-provenance.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/fleet-original-source-ownership-provenance.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-live-ux/LIVE_DESKTOP_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-live-ux/LIVE_DESKTOP_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/jobs-rc21-live-ux/LIVE_DESKTOP_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/jobs-rc21-live-ux/LIVE_DESKTOP_ACCEPTANCE.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/CURRENT_SOURCE_OWNERSHIP_MAP.md",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/CURRENT_SOURCE_OWNERSHIP_MAP.md",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/CURRENT_SOURCE_OWNERSHIP_MAP.md",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/alpha141-final-preserved-public-lease.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/alpha141-final-preserved-public-lease.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/alpha141-final-preserved-public-lease.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-public-acceptance/installed-node24/workspace.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-public-acceptance/installed-node24/workspace.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/jobs-rc21-public-acceptance/installed-node24/workspace.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-public-acceptance/installed-node24/docket.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-public-acceptance/installed-node24/docket.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/jobs-rc21-public-acceptance/installed-node24/docket.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/jobs-rc21-public-acceptance/installed-node24/docket.reopened.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/jobs-rc21-public-acceptance/installed-node24/docket.reopened.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/jobs-rc21-public-acceptance/installed-node24/docket.reopened.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-live-website-qa/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-live-website-qa/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/manager-live-website-qa/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/manager-live-website-qa/HANDOFF.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-live-website-qa/live-builder-capsule.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-live-website-qa/live-builder-capsule.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager-live-website-qa/live-builder-capsule.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager-live-website-qa/ACTUAL_SMALL_DOWNLOAD.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager-live-website-qa/ACTUAL_SMALL_DOWNLOAD.json",
+        "passed": true
+      },
+      {
+        "check": "explicit_projection_original_binding:evidence/manager-live-website-qa/ACTUAL_SMALL_DOWNLOAD.json",
+        "passed": true
+      },
+      {
+        "check": "exact_structured_source_and_artifact_identities:evidence/manager-live-website-qa/ACTUAL_SMALL_DOWNLOAD.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/manager1202-public-acceptance/FINAL_PUBLIC_DELIVERY.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/manager1202-public-acceptance/FINAL_PUBLIC_DELIVERY.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/manager1202-public-acceptance/FINAL_PUBLIC_DELIVERY.json",
+        "passed": true
+      },
+      {
+        "check": "record_export_binding:evidence/FINAL_PUBLIC_COORDINATION_RECEIPTS.json",
+        "passed": true
+      },
+      {
+        "check": "record_original_binding:evidence/FINAL_PUBLIC_COORDINATION_RECEIPTS.json",
+        "passed": true
+      },
+      {
+        "check": "exact_original_bytes:evidence/FINAL_PUBLIC_COORDINATION_RECEIPTS.json",
+        "passed": true
+      },
+      {
+        "check": "accurate_freeze_before_transport",
+        "passed": true
+      },
+      {
+        "check": "actual_public_version_source:alpha",
+        "passed": true
+      },
+      {
+        "check": "actual_public_version_source:jobs",
+        "passed": true
+      },
+      {
+        "check": "actual_public_version_source:manager",
+        "passed": true
+      },
+      {
+        "check": "fleet_still_proposed_unadopted",
+        "passed": true
+      },
+      {
+        "check": "harness_owner_and_root_preparation_distinct",
+        "passed": true
+      },
+      {
+        "check": "institution_not_invoked_and_no_authority_transfer",
+        "passed": true
+      },
+      {
+        "check": "live_scope_limits_explicit",
+        "passed": true
+      },
+      {
+        "check": "verification_ended_no_unattended_campaign",
+        "passed": true
+      },
+      {
+        "check": "retained_exact_docket_export_reopen:evidence/jobs-rc21-public-acceptance/installed-node24/docket.json",
+        "passed": true
+      },
+      {
+        "check": "retained_exact_docket_export_reopen:evidence/manager1202-public-connected/installed-operator-output/docket.json",
+        "passed": true
+      },
+      {
+        "check": "retained_exact_docket_export_reopen:evidence/manager1202-public-connected/actual-installed-proposal/proposed-docket.json",
+        "passed": true
+      },
+      {
+        "check": "saved_mission_event_count:9",
+        "passed": true
+      },
+      {
+        "check": "saved_mission_event_count:10",
+        "passed": true
+      },
+      {
+        "check": "saved_mission_event_count:11",
+        "passed": true
+      },
+      {
+        "check": "actual_generic_download23KB",
+        "passed": true
+      },
+      {
+        "check": "native_report_public_source_binding:node22/native/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "native_report_public_source_binding:node22/native/regression/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "native_report_public_source_binding:node24/native/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "native_report_public_source_binding:node24/native/regression/native-evidence.json",
+        "passed": true
+      },
+      {
+        "check": "original80a6_archive_unchanged",
+        "passed": true
+      },
+      {
+        "check": "original_receipt_JSON_and_TXT_unchanged",
+        "passed": true
+      }
+    ],
+    "softwareOrNativeOrBrowserCampaignRepeated": false,
+    "githubOrLibraryWritePerformed": false,
+    "limits": [
+      "Known marker and declared public-data projection verification; no universal privacy certification.",
+      "No Fleet/Harness/production authority clearance.",
+      "Public transport and anonymous verification belong to the coordinator after this freeze."
+    ]
+  },
+  "sourceIdentities": {
+    "alpha": {
+      "commit": "031bdb5d055c8bad896daa076baea2b5e17b242c",
+      "tree": "330e0e58268ed32990f04278fc543c71db45fd46"
+    },
+    "jobs": {
+      "commit": "bc4abbd5c28f3672275b13300e40ea26c820b8ee",
+      "tree": "009f11b81c554d80eeddda882c8f91f2e89c8b2e"
+    },
+    "manager": {
+      "commit": "5d5670df9dbbc79da115e0a44b71989f34df58c1",
+      "tree": "c880b32db076bd7a1d41bf344a1cd7cf8ecef5bc"
+    }
+  },
+  "frozenBeforePublicTransport": true,
+  "libraryTimeoutOutcomeResolved": false,
+  "publicTransportReceiptRecordedSeparately": true
+}

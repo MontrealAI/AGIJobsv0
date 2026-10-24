@@ -1,0 +1,60 @@
+FOUR-REPOSITORY PUBLIC PROJECT RECEIPT — FROZEN BEFORE PUBLIC TRANSPORT
+
+The permitted software and bounded installed local connected scope is complete.
+Fleet and Harness remain held; the four-product installed mission is not accepted.
+This separate project packet is frozen before public transport. Software/native/
+browser verification has ended. Only finite checkpoint publication and anonymous
+verification remain; no unattended development campaign continues.
+
+Alpha v1.41.0: source 031bdb5d055c8bad896daa076baea2b5e17b242c,
+106 public assets and accepted standalone 18-command/site proof retained.
+Jobs rc.21: source bc4abbd5c28f3672275b13300e40ea26c820b8ee,
+7 anonymous public bodies, both public installed Linux x64 Node 22.23.3/24.21.0.
+Manager v1.20.2: source 5d5670df9dbbc79da115e0a44b71989f34df58c1,
+tree c880b32db076bd7a1d41bf344a1cd7cf8ecef5bc, public release 423021187.
+All 9 fresh main groups, actual publisher 40139094096 and automatic Pages 40139501848
+succeeded. All 9 anonymous bodies, 49,387,405 bytes/eight checksum rows/stable leases,
+verified. COMPLETE is 34,915,525 bytes SHA256
+922e5e3cb1a6d6242fcfd81f00dde8b7704ec2537137c4c4feaed4e74a7ae814.
+Both 1939-member clean public installs and substantive native primary/regression
+routes passed on Linux x64 Node 22.23.2/24.21.0. ARM64 remains unqualified.
+
+Supported connected tuple: exact Alpha 1.41.0/031b Discovery source, public Jobs
+rc.21/bc4 and public Manager 1.20.2/5d. The actual installed eight-argument common
+Node 24 route retains public Jobs 9→Manager 10 events; SDK successor proposal 11,
+cost/evidence/export/reopen and forged-authority/missing-context/evaluator
+refusals passed. This is bounded local synthetic checking/replay, unsigned,
+unfunded, zero-cap and disconnected. Costs are retained by route; total cost is
+not claimed complete. USDC (6 decimals) and AGIALPHA (18 decimals) are distinct alternatives.
+Institutional assessment was NOT INVOKED: no Discovery mission-bound signed
+policy or institution context is available. No authority was transferred.
+No Fleet installed execution or production/institutional activation is claimed.
+
+Fleet combined candidate d0d4459b48a6cb45b0b6393be5099484ad8c6313 remains
+proposed and unadopted. Original P1 threads 4322083594/4323870690 are unresolved.
+Only the responsible original restriction authority and eligible source reviewer
+can provide the documented disposition. Prior implementation comments are not it.
+Harness original 051 preparation has passive-paper-only reconciliation 01d7587e
+over current caa3, tree 0556276119d11a6b0959cb8d3134564a30d594ec. It remains
+unreferenced/unadopted; original review and separate merge decisions are held.
+Original 44 development results are reused; no new test or held action was run.
+
+Other-owner Alpha 1.42.0/c352 and current caa3 passive papers are recorded separately;
+they are not admitted to the 031b compatibility tuple. All historical URLs/releases
+remain preserved. Jobs desktop EN/FR export/restore/recovery proof is retained;
+live-mobile is not verified and the denied viewport action was not retried.
+Manager live desktop EN/FR/source/download/planner and retained generic Builder
+recovery passed within the recorded scope. Live mobile remains unverified. The
+generic Builder is version1.19.4, not the Discovery docket schema; re-export
+preserves parsed state/history/payload digests but differs in last-event key order.
+One follow-up download did not materialize and is not claimed delivered. No
+dedicated Discovery-docket browser importer was exposed; installed8argCLI/docket
+proof remains separate.
+
+Read DELIVERY_RECEIPT.json, SOURCE_FAILURE_RECOVERY_LEDGER.json, the exact public
+source/ownership/thread snapshots and PUBLIC_EXPORT_PROJECTION.json. Exact
+connected outputs and four native reports are included unchanged. Wrapped local
+path projections are not original machine qualification inputs. Original raw
+archive 80a6bfbcc2d0dd1e23c0d141b71678fa569540c5060313beab0763c8709b94da
+and its TXT remain unchanged; this curated packet has a different identity.
+Coordinator: https://github.com/MontrealAI/AGI-Alpha-Agent-v0/issues/4850

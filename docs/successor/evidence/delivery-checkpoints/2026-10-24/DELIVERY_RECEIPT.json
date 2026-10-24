@@ -1,0 +1,834 @@
+{
+  "schema": "delivery/curated-public-project-checkpoint/v2",
+  "state": "ACCURATE_CHECKPOINT_PREPARED_FOR_PUBLICATION",
+  "coordinator": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/issues/4850",
+  "sourceOwnershipMap": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/issues/4850#issuecomment-6384166924",
+  "retainedSnapshotObservedAt": "2026-10-24T22:17:23.485Z",
+  "acceptedReleaseSet": {
+    "alpha": {
+      "version": "1.41.0",
+      "commit": "031bdb5d055c8bad896daa076baea2b5e17b242c",
+      "tree": "330e0e58268ed32990f04278fc543c71db45fd46",
+      "url": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/releases/tag/v1.41.0",
+      "releaseId": 422636845,
+      "assets": 106,
+      "states": [
+        "merged",
+        "published",
+        "installed",
+        "connected",
+        "verified"
+      ],
+      "scope": "Retained accepted106-asset/18-command standalone software and website proof, plus exact031b Discovery modules in the public Jobs rc.21/Manager1.20.2 bounded installed local route. No Fleet or institutional activation.",
+      "wheel": {
+        "bytes": 5497882,
+        "sha256": "dc668d144f50b6daeff9e0c1de60b4ed0b7ba7fdc7296f4c8b34148fbe7cdd7d"
+      },
+      "publicProof": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/tree/24b278e46a25049ec63f0ca059d5f555d487369a/docs/delivery/recovery-20261023/completion-qualification/alpha141-final-public",
+      "currentMain": "caa3bb3683e15172adf231014358675e5ed1099f",
+      "currentMainNote": "Current caa3 only adds the original owner passive seven-paper-file edition over c352; all historical paper/runtime/release bytes retained. The supported connected tuple remains pinned031b/1.41.0.",
+      "connectedScope": "Alpha1.41.0/031b Discovery source → exact public Jobs rc.21 → exact public Manager1.20.2 bounded local checking/replay; no Fleet or institutional authority.",
+      "otherOwnerPublic142": {
+        "releaseId": 422988776,
+        "tag": "v1.42.0",
+        "publishedAt": "2026-10-24T21:25:01Z",
+        "assetCount": 106,
+        "url": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/releases/tag/v1.42.0",
+        "source": "c352bad0a0941fdccd490a7224e3efd1b8de45d5",
+        "ownerReceipt": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/issues/4850#issuecomment-6390217195",
+        "reusedNotRerun": true,
+        "notAdmittedTo031bTuple": true
+      },
+      "historicalOtherOwnerReleases": [
+        {
+          "version": "1.41.1",
+          "commit": "787bc547f8c44854931b316d7286b8bc9f9c8bba",
+          "tree": "fddf8462e4508462e2bb0a591a1e940aa9da97ee",
+          "releaseId": 422882471,
+          "assets": 106,
+          "url": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/releases/tag/v1.41.1",
+          "ownerReceipt": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/issues/4850#issuecomment-6387662856",
+          "durableEvidence": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/tree/714e7f95c65c8e5ffc3bc8423cc0698ba0f7b317/docs/delivery/workbench-1411-20261024",
+          "scope": "Original owner public-install16-command subset and core recovery/HOLD accepted; finite load20/21 failure and invalid original RSS bound retained. Not silently admitted to031b connected tuple."
+        }
+      ]
+    },
+    "jobs": {
+      "version": "2.1.0-rc.21",
+      "commit": "bc4abbd5c28f3672275b13300e40ea26c820b8ee",
+      "tree": "009f11b81c554d80eeddda882c8f91f2e89c8b2e",
+      "url": "https://github.com/MontrealAI/AGIJobsv0/releases/tag/discovery-v2.1.0-rc.21",
+      "releaseId": 422958907,
+      "assets": 7,
+      "archive": {
+        "bytes": 512539,
+        "sha256": "f9578d4aaae99f651feb34b82d07079b60748b03e6556d9321888167f7c6b602"
+      },
+      "installedManifestSha256": "53b2e9bd4c545ff54f05daed810edfb052899039927d28bf567bd0221bee6125",
+      "states": [
+        "reviewed",
+        "merged",
+        "published",
+        "installed",
+        "connected",
+        "verified"
+      ],
+      "platform": "Linux x64",
+      "publicInstalledRuntimes": [
+        "22.23.3",
+        "24.21.0"
+      ],
+      "unqualifiedArchitectures": [
+        "Linux ARM64"
+      ],
+      "anonymousBodyVerification": {
+        "assets": 7,
+        "bytes": 15308358,
+        "checksumRows": 6,
+        "beforeAfterLeaseUnchanged": true
+      },
+      "publicReceipt": "https://github.com/MontrealAI/AGIJobsv0/pull/4035#issuecomment-6389220535",
+      "scope": "Exact public rc.21/bc4 package on Linux x64, connected with captured Alpha1.41.0/031b modules and public Manager1.20.2/5d on commonNode24.21.0 for bounded local synthetic checking/replay, export/reopen, costs and proposal/refusal controls; no Fleet or institutional authority.",
+      "retainedRc20": {
+        "version": "2.1.0-rc.20",
+        "payloadCommit": "f7c00e668fe31ce1ea907f0006b6c14dc9db5e01",
+        "url": "https://github.com/MontrealAI/AGIJobsv0/releases/tag/discovery-v2.1.0-rc.20",
+        "releaseId": 422158983,
+        "assets": 7,
+        "archive": {
+          "bytes": 457348,
+          "sha256": "5ae312997ce3e2685760e621954828a82ded714cc245339fcfcdd5245373ccfa"
+        },
+        "installedManifestSha256": "3ce7fe629f1f39800711dcd3be32f2c5c0b00aec67dbfd45b906a1f32c9d4606",
+        "states": [
+          "merged",
+          "published",
+          "installed",
+          "verified"
+        ],
+        "scope": "Accepted historical615 Alpha source Linuxx64 Node22.23.3/24.21.0; API tuple1.39 separately accepted",
+        "toolingMain": "90f0ed0150a03a89a870d5d55ac3cfa16c9be08c",
+        "toolingTree": "23d5476d830a4f93acb1dbad1b032266a6cc4df8",
+        "freshMergedSourceWorkflows": "47/47 SUCCESS"
+      },
+      "connectedScope": "Alpha1.41.0/031b Discovery source → exact public Jobs rc.21 → exact public Manager1.20.2 bounded local checking/replay; no Fleet or institutional authority.",
+      "websiteAcceptance": {
+        "desktopENFR": "PASS_SCOPED_LIVE_GUIDED_EXPORT_RELOAD_RESTORE_AND_SCHEMA_REFUSAL",
+        "receipt": "evidence/jobs-rc21-live-ux/LIVE_DESKTOP_ACCEPTANCE.json",
+        "liveMobileVerified": false,
+        "responsiveCiIsSeparate": true,
+        "deniedViewportActionRetried": false
+      }
+    },
+    "manager": {
+      "version": "1.20.2",
+      "commit": "5d5670df9dbbc79da115e0a44b71989f34df58c1",
+      "tree": "c880b32db076bd7a1d41bf344a1cd7cf8ecef5bc",
+      "url": "https://github.com/MontrealAI/AGIJobManager/releases/tag/v1.20.2",
+      "releaseId": 423021187,
+      "assets": 9,
+      "complete": {
+        "bytes": 34915525,
+        "sha256": "922e5e3cb1a6d6242fcfd81f00dde8b7704ec2537137c4c4feaed4e74a7ae814",
+        "members": 1939
+      },
+      "states": [
+        "proposed",
+        "reviewed",
+        "merged",
+        "published",
+        "installed",
+        "connected",
+        "verified"
+      ],
+      "connectedAndVerifiedScope": "Exact public installed bounded local synthetic checking/replay, source-bound 9→10 events and separate SDK proposal11/refusal/export-reopen controls.",
+      "supportedArchitectures": [
+        "Linux x64"
+      ],
+      "unqualifiedArchitectures": [
+        "Linux ARM64"
+      ],
+      "publicInstalledRuntimes": [
+        "22.23.2",
+        "24.21.0"
+      ],
+      "anonymousVerification": {
+        "assets": 9,
+        "bytes": 49387405,
+        "checksumRows": 8,
+        "stableLeases": true,
+        "receiptSha256": "9d9773cebf25398b80aa70fcf86959eabbe2dfd59f50615cefbd7345015274e8"
+      },
+      "publisher": {
+        "run": 40139094096,
+        "conclusion": "success",
+        "attestations": {
+          "verification": "All nine public assets verified by actual authenticated publisher before publication against expected repository/workflow/ref/digest; locally anonymous body hashes agree.",
+          "tagSignature": "unsigned",
+          "separateLocalGhVerification": false
+        }
+      },
+      "automaticPagesDeployment": {
+        "run": 40139501848,
+        "conclusion": "success",
+        "livePublicUiAcceptanceSeparate": true
+      },
+      "liveWebsiteAcceptance": {
+        "url": "https://montrealai.github.io/AGIJobManager/",
+        "sourceCommit": "5d5670df9dbbc79da115e0a44b71989f34df58c1",
+        "automaticPagesRun": 40139501848,
+        "automaticPagesSuccess": true,
+        "liveDesktopENFR": true,
+        "liveMobileVerified": false,
+        "responsiveSourceCISeparate": true,
+        "genericRetainedBuilderVersion": "1.19.4",
+        "actualDiscoveryBrowserImporterExercised": false,
+        "supportedDiscoveryRoute": "Actual public installed eight-argument CLI; byte-identical installed docket export/reopen is separate.",
+        "genericReexportRawByteIdentical": false,
+        "genericReexportParsedStateAndHistoryDigestsEqual": true,
+        "exportAttachmentLimitationPreserved": true,
+        "state": "SCOPED_LIVE_DESKTOP_PASS_MOBILE_UNVERIFIED",
+        "receiptOriginalSha256": "e03e38352af23069b2924c2a53dba8fe9db1449921b7b38a3e369648cadf88e3",
+        "genericBuilderSchema": "agijobmanager/successor-capsule/v1",
+        "genericBuilderFormat": "successor-portable/1",
+        "genericBuilderIsDiscoveryDocket": false,
+        "originalDownloadedCapsuleBytes": 23207,
+        "originalDownloadedCapsuleSha256": "9104163d9e3a02777cd2725dcc33d2b7385b6bb4900ed9ab91f25e1a921ec157",
+        "followupExportFileDelivered": false,
+        "followupExportLimitation": "Path returned; file not materialized in browser/main at inspection. Not treated as accepted file.",
+        "rawReexportByteIdentical": false,
+        "parsedStateHistoryAndPayloadDigestsPreserved": true,
+        "dedicatedDiscoveryBrowserImporterExposedInCheckedRoutes": false,
+        "screenshotBytesIncluded": false
+      },
+      "authority": "none",
+      "productionApproved": false,
+      "publicReceipt": "https://github.com/MontrealAI/AGIJobManager/pull/1626#issuecomment-6390715926",
+      "finalPublicDeliveryReceiptOriginalSha256": "30bc799b8db06da884b0a0469b76c7537a8ea35ac68fc17ffb99b774d1918f01"
+    },
+    "fleet": {
+      "main": "45759fb096faf8988f58ae5ea71248d0f35a97c7",
+      "historicalRelease": "https://github.com/MontrealAI/AGI-Fleet-Linux/releases/tag/v1.1.4-qualification",
+      "historicalReleaseSource": "7b5dda3d7dbcb9700a1408cf19bd7cf18404e068",
+      "historicalArchive": {
+        "bytes": 431170046,
+        "sha256": "5adefd1ddfac143246964fd1dca029adaa78bd7ac0d077b0e692976ce21a3de4"
+      },
+      "combinedCandidate": "d0d4459b48a6cb45b0b6393be5099484ad8c6313",
+      "candidateTree": "1595bfbb8339fa0c20599de833ac6c1c4eda6192",
+      "intendedOperator": "1.1.5 / v1.1.5-qualification",
+      "separateDiscoveryPreview": "0.1.0-discovery-preview.1",
+      "states": [
+        "proposed"
+      ],
+      "adopted": false,
+      "published": false,
+      "currentInstalledAccepted": false,
+      "currentConnectedAccepted": false,
+      "operatorArchitecturesRequired": [
+        "Linuxx64",
+        "LinuxARM64"
+      ],
+      "previewRetainedScope": "Linuxx64 only; no ARM64 receipt",
+      "canonicalHeads": {
+        "61": "2ceefbf14a8f384c9803f67115609bf2632384b7",
+        "64": "15a599d066556a3ea5de7ce7c45c6338e18a1193",
+        "65": "904fce44eac8bc5c51215e02102e13245b3f20fa",
+        "66": "4b2e57ddbbbbddb2e20dd85f1077cb3bfd51ab51"
+      },
+      "preservedManagerFixture": "5545ce0f7c9b92ec9a6743812fdfbca0954eab4d",
+      "currentMainTree": "71a0ab1f0d2784ba552d0126903bd31d60262313",
+      "applicableOriginalP1ThreadsResolved": false
+    }
+  },
+  "acceptedReleaseSetNote": "Accepted standalone releases and exact public installed bounded local connected scope, with scoped live-desktop acceptance. Fleet/Harness held operations, institutional assessment and live-mobile coverage remain explicitly outside that completion.",
+  "latestManagerSourceObservedByCoordinatorRecord": {
+    "commit": "5d5670df9dbbc79da115e0a44b71989f34df58c1",
+    "tree": "c880b32db076bd7a1d41bf344a1cd7cf8ecef5bc",
+    "version": "1.20.2",
+    "pr": "https://github.com/MontrealAI/AGIJobManager/pull/1626",
+    "reviewedHead": "414740dee7bb20747f52962c1d0bb53ddef88987",
+    "review": "https://github.com/MontrealAI/AGIJobManager/pull/1626#pullrequestreview-5640255215",
+    "states": [
+      "proposed",
+      "reviewed",
+      "merged",
+      "published",
+      "installed",
+      "connected",
+      "verified"
+    ],
+    "freshMainQualificationObservedAt": "2026-10-24T22:32:43.699Z",
+    "freshMainWorkflowConclusions": [
+      {
+        "url": "https://github.com/MontrealAI/AGIJobManager/actions/runs/40138053705",
+        "path": ".github/workflows/docs.yml",
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      {
+        "url": "https://github.com/MontrealAI/AGIJobManager/actions/runs/40138053696",
+        "path": ".github/workflows/alpha-project-handoff.yml",
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      {
+        "url": "https://github.com/MontrealAI/AGIJobManager/actions/runs/40138053612",
+        "path": ".github/workflows/mainnet-fork.yml",
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      {
+        "url": "https://github.com/MontrealAI/AGIJobManager/actions/runs/40138053594",
+        "path": ".github/workflows/ci.yml",
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      {
+        "url": "https://github.com/MontrealAI/AGIJobManager/actions/runs/40138053637",
+        "path": ".github/workflows/security-verification.yml",
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      {
+        "url": "https://github.com/MontrealAI/AGIJobManager/actions/runs/40138053684",
+        "path": ".github/workflows/ui.yml",
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      {
+        "url": "https://github.com/MontrealAI/AGIJobManager/actions/runs/40138053700",
+        "path": ".github/workflows/current-state-release.yml",
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      {
+        "url": "https://github.com/MontrealAI/AGIJobManager/actions/runs/40138053670",
+        "path": ".github/workflows/pages.yml",
+        "attempt": 1,
+        "conclusion": "success"
+      },
+      {
+        "url": "https://github.com/MontrealAI/AGIJobManager/actions/runs/40138053709",
+        "path": ".github/workflows/discovery-lab-receiver.yml",
+        "attempt": 1,
+        "conclusion": "success"
+      }
+    ],
+    "currentPublisherObservedByCoordinatorRecord": {
+      "url": "https://github.com/MontrealAI/AGIJobManager/actions/runs/40139094096",
+      "run": 40139094096,
+      "observedDispatch": true,
+      "outcome": "SUCCESS",
+      "actualPublicationVerifiedSeparatelyFromDispatch": true
+    },
+    "publication": {
+      "releaseId": 423021187,
+      "url": "https://github.com/MontrealAI/AGIJobManager/releases/tag/v1.20.2",
+      "source": "5d5670df9dbbc79da115e0a44b71989f34df58c1",
+      "tree": "c880b32db076bd7a1d41bf344a1cd7cf8ecef5bc",
+      "publisherRun": 40139094096,
+      "publisherConclusion": "success"
+    },
+    "anonymousArtifacts": {
+      "assets": 9,
+      "bytes": 49387405,
+      "checksumRows": 8,
+      "stableLeases": true,
+      "receiptSha256": "9d9773cebf25398b80aa70fcf86959eabbe2dfd59f50615cefbd7345015274e8"
+    },
+    "publicInstalledAcceptance": {
+      "state": "PASS",
+      "members": 1939,
+      "platform": "Linux x64",
+      "runtimes": [
+        "22.23.2",
+        "24.21.0"
+      ],
+      "archive": {
+        "bytes": 34915525,
+        "sha256": "922e5e3cb1a6d6242fcfd81f00dde8b7704ec2537137c4c4feaed4e74a7ae814",
+        "members": 1939
+      },
+      "nativeReportsIncludedAsExactBytes": true
+    },
+    "installedCrossRepositoryAcceptance": {
+      "state": "PASS_BOUNDED_LOCAL_SYNTHETIC_SCOPE",
+      "events": {
+        "publicJobs": 9,
+        "actualManager": 10,
+        "proposal": 11
+      },
+      "manifestSha256": "5c307cef110499d56f66c5a2db5fcd1b6af7fc1c25934d4d436cedfb571f5527",
+      "proposalAcceptanceSha256": "b9b878c338f3a72aee14b7599260f3c9f784a0f57cf2665a65e54683783ed841",
+      "institutionalAssessmentInvoked": false,
+      "institutionalDecision": "UNAVAILABLE_NO_DISCOVERY_BOUND_SIGNED_POLICY_OR_INSTITUTION_CONTEXT",
+      "authorityTransferred": false
+    },
+    "liveWebsiteAcceptance": {
+      "url": "https://montrealai.github.io/AGIJobManager/",
+      "sourceCommit": "5d5670df9dbbc79da115e0a44b71989f34df58c1",
+      "automaticPagesRun": 40139501848,
+      "automaticPagesSuccess": true,
+      "liveDesktopENFR": true,
+      "liveMobileVerified": false,
+      "responsiveSourceCISeparate": true,
+      "genericRetainedBuilderVersion": "1.19.4",
+      "actualDiscoveryBrowserImporterExercised": false,
+      "supportedDiscoveryRoute": "Actual public installed eight-argument CLI; byte-identical installed docket export/reopen is separate.",
+      "genericReexportRawByteIdentical": false,
+      "genericReexportParsedStateAndHistoryDigestsEqual": true,
+      "exportAttachmentLimitationPreserved": true,
+      "state": "SCOPED_LIVE_DESKTOP_PASS_MOBILE_UNVERIFIED",
+      "receiptOriginalSha256": "e03e38352af23069b2924c2a53dba8fe9db1449921b7b38a3e369648cadf88e3",
+      "genericBuilderSchema": "agijobmanager/successor-capsule/v1",
+      "genericBuilderFormat": "successor-portable/1",
+      "genericBuilderIsDiscoveryDocket": false,
+      "originalDownloadedCapsuleBytes": 23207,
+      "originalDownloadedCapsuleSha256": "9104163d9e3a02777cd2725dcc33d2b7385b6bb4900ed9ab91f25e1a921ec157",
+      "followupExportFileDelivered": false,
+      "followupExportLimitation": "Path returned; file not materialized in browser/main at inspection. Not treated as accepted file.",
+      "rawReexportByteIdentical": false,
+      "parsedStateHistoryAndPayloadDigestsPreserved": true,
+      "dedicatedDiscoveryBrowserImporterExposedInCheckedRoutes": false,
+      "screenshotBytesIncluded": false
+    }
+  },
+  "exactPublicJobsPeer": {
+    "schema": "manager/discovery-qualified-counterpart/v1",
+    "id": "jobs-rc21-bc4",
+    "archiveSha256": "f9578d4aaae99f651feb34b82d07079b60748b03e6556d9321888167f7c6b602",
+    "archiveBytes": 512539,
+    "manifestSha256": "53b2e9bd4c545ff54f05daed810edfb052899039927d28bf567bd0221bee6125",
+    "source": {
+      "repository": "MontrealAI/AGIJobsv0",
+      "commit": "bc4abbd5c28f3672275b13300e40ea26c820b8ee",
+      "tree": "009f11b81c554d80eeddda882c8f91f2e89c8b2e",
+      "adapterSha256": "337fabca02ece2a25b8cc50e56fea5bf5338f2b6f18343eb4a3353a634aefec4",
+      "contractSha256": "98c8de8ce2774b7650bf4ee11eeedfb0a69b75fa6d1b080ef823637d77d0ab47"
+    }
+  },
+  "preciseCurrentSupportedScope": {
+    "acceptedHistoricalConnectedTuple": [
+      "Alpha1.39",
+      "Jobs2.1.0-rc.20",
+      "Manager1.20.1"
+    ],
+    "newPublicInstalledPrefix": [
+      "Alpha1.41.0/031b Discovery source",
+      "Jobs2.1.0-rc.21/bc4"
+    ],
+    "jobsPlatforms": [
+      "Linuxx64 Node22.23.3",
+      "Linuxx64 Node24.21.0"
+    ],
+    "jobsUnqualifiedArchitecture": "LinuxARM64",
+    "manager1202FinalPublicTupleAccepted": true,
+    "fleetInstalledOrConnectedAccepted": false,
+    "fourProductInstalledAccepted": false,
+    "externalExecution": "unprovisioned",
+    "settlement": "unfunded/disconnected",
+    "currencies": "Manager USDC6 and applicable Jobs AGIALPHA18 routes remain distinct zero-cap drafts.",
+    "authority": "none; no automatic successor authority transfer",
+    "supportedInstalledLocalTuple": [
+      "Alpha1.41.0/031b Discovery source",
+      "Jobs2.1.0-rc.21/bc4 public package",
+      "Manager1.20.2/5d public package"
+    ],
+    "tupleAcceptanceScope": "Actual installed bounded local synthetic checking/replay; unsigned and unfunded zero-cap Jobs AGIALPHA18 and Manager USDC6 drafts. No installed Fleet execution or institutional authority is inferred.",
+    "managerPlatforms": [
+      "Linux x64 Node22.23.2",
+      "Linux x64 Node24.21.0"
+    ],
+    "managerUnqualifiedArchitecture": "Linux ARM64",
+    "connectedOperatorRuntime": "Linux x64 Node24.21.0",
+    "actualInstalledConnectedOperatorArgs": 8,
+    "eventCounts": {
+      "publicJobs": 9,
+      "actualManager": 10,
+      "proposal": 11
+    },
+    "sourceAndInputIdentityPreserved": true,
+    "exportReopenContinuity": true,
+    "receiverInspectionCostsPreservedSeparatelyByRoute": {
+      "jobs-agialpha": {
+        "acquisitions": 906,
+        "checking": 117015,
+        "elapsedMs": 147,
+        "installations": 4,
+        "memoryBytes": 667589,
+        "search": 6601,
+        "storageBytes": 133628,
+        "workerCapacity": 3
+      },
+      "manager-usdc": {
+        "acquisitions": 906,
+        "checking": 117015,
+        "elapsedMs": 148,
+        "installations": 4,
+        "memoryBytes": 667483,
+        "search": 6601,
+        "storageBytes": 133612,
+        "workerCapacity": 3
+      }
+    },
+    "commissions": [
+      {
+        "alternatives": [
+          {
+            "currency": "AGIALPHA18",
+            "inspectionReceiptIds": [
+              "cfd68b760b81f1f392a0625af727090001c155bfd5ecef1f7709860fe1611453"
+            ],
+            "reservedBaseUnits": "0",
+            "route": "jobs-agialpha",
+            "status": "DRAFT_NOT_SUBMITTED"
+          },
+          {
+            "currency": "USDC6",
+            "inspectionReceiptIds": [
+              "50f315bdf00e7827bbebfcb33fb5c31e24073b1118494b5c59e9a6880dd9c9c7"
+            ],
+            "reservedBaseUnits": "0",
+            "route": "manager-usdc",
+            "status": "DRAFT_NOT_SUBMITTED"
+          }
+        ],
+        "id": "lab-011db554-e0b7-4868-8720-3cd49cc608fc",
+        "interpretation": "alternative routes; no currency conversion or duplicate payment obligation"
+      }
+    ],
+    "currenciesCombined": false,
+    "totalCostComplete": false,
+    "qualificationRefusal": "This proposal has no implemented evaluator. No capability has been executed.",
+    "witnessAcceptance": "not-evaluated",
+    "briefAcceptance": "not-evaluated",
+    "economicOutcome": "not-evaluated",
+    "institutionalAssessmentInvoked": false,
+    "institutionalDecision": "UNAVAILABLE_NO_DISCOVERY_BOUND_SIGNED_POLICY_OR_INSTITUTION_CONTEXT",
+    "authorityTransferred": false
+  },
+  "publicationBoundary": {
+    "publicPacketPublished": false,
+    "productSourceOrRefMutationByPreparer": false,
+    "workflowOrReleaseMutationByPreparer": false,
+    "nativeOrBrowserExecutionByPreparer": false,
+    "heldOperationsCleared": false,
+    "productionApproved": false,
+    "reviewRole": "Separate AI technical-review context using the shared account; no formal APPROVE or human/organization/economic independence claim.",
+    "frozenBeforeTransport": true,
+    "noProductSourceOrRefChangedByCheckpointPreparation": true
+  },
+  "ownerFinalizationRequired": [
+    "Publish the separate data-only evidence child/ref; no accepted product ref, source, release asset or paper URL changes.",
+    "Anonymously verify the actual immutable public checkpoint ZIP once and record actual transport commit/URLs/hash receipt separately outside the frozen ZIP.",
+    "Finish the finite coordinator response; no unattended software campaign continues."
+  ],
+  "originalRawArchive": {
+    "bytes": 15975670,
+    "sha256": "80a6bfbcc2d0dd1e23c0d141b71678fa569540c5060313beab0763c8709b94da",
+    "members": 941,
+    "retainedUnchanged": true,
+    "notPublishedByThisPreparation": true
+  },
+  "projectedPacketIsNotRawArchive": true,
+  "observedSourceRefreshAt": "2026-10-24T22:55:14.457Z",
+  "rootSolePublisher": true,
+  "historicalAcceptedReleases": {
+    "manager1201": {
+      "version": "1.20.1",
+      "commit": "c5958eae872458c2f3cac48fea0b4bbfadc6ac6c",
+      "tree": "0c7022fd0d70ab12803869493917c130497aa6d4",
+      "url": "https://github.com/MontrealAI/AGIJobManager/releases/tag/v1.20.1",
+      "releaseId": 422445651,
+      "assets": 9,
+      "complete": {
+        "bytes": 34710334,
+        "sha256": "0701606bb2eb8649c9c77afd625051121194997dffc7a94caec962fe8ec8185e"
+      },
+      "states": [
+        "merged",
+        "published",
+        "installed",
+        "verified"
+      ],
+      "scope": "Retained public-package1916members/API/local scope; no new1.41/four-product or ARM64 acceptance",
+      "installationReceipt": "https://github.com/MontrealAI/AGIJobManager/pull/1624#issuecomment-6378372966"
+    }
+  },
+  "currentHarnessPreparation": {
+    "commit": "01d7587e08b6b5730f9e770c5d329790648b043a",
+    "tree": "0556276119d11a6b0959cb8d3134564a30d594ec",
+    "orderedParents": [
+      "05122217c71ec4317e822445f16e2ce9e0177460",
+      "caa3bb3683e15172adf231014358675e5ed1099f"
+    ],
+    "originalEightPathsExact": true,
+    "everyOtherCurrentMainLeafExact": true,
+    "states": [
+      "proposed",
+      "static-preparation-only"
+    ],
+    "adopted": false,
+    "merged": false,
+    "published": false,
+    "installed": false,
+    "canonicalSourceRefsChanged": false,
+    "newTestsOrHeldActionsRun": false,
+    "retainedRegression": "Reuse original-owner44/44 development results on051/tree d34e for unchanged Harness/runtime. This passive-paper source reconciliation supplies no new qualification, eligible review or installed acceptance.",
+    "ownerHandoff": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/pull/4863#issuecomment-6390562957"
+  },
+  "originalAuthorityNextActions": [
+    {
+      "lane": "Fleet",
+      "action": "Original execution/restriction operator exposes exact original action/scope and supported permitted review mechanism; eligible responsible reviewer then assesses the actual adopted combined source and records originalP1 dispositions4322083594/4323870690.",
+      "source": [
+        "https://github.com/MontrealAI/AGI-Fleet-Linux/pull/61#issuecomment-6352778053",
+        "https://github.com/MontrealAI/AGI-Fleet-Linux/pull/61#issuecomment-6383797941"
+      ],
+      "originalThreadsStillUnresolved": true,
+      "engineeringOrGenericReviewClearsRestriction": false
+    },
+    {
+      "lane": "Harness",
+      "action": "Original configured-task operator provides actual c455 terminal result or concrete failure; responsible action-restriction operator separately provides legitimate merge disposition before an eligible review/merge. No duplicate trigger/alternate actor/ref.",
+      "source": [
+        "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/pull/4863#issuecomment-6345107482",
+        "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/pull/4863#issuecomment-6347342683"
+      ],
+      "staticReconciliationClearsRestriction": false
+    }
+  ],
+  "executionSession": {
+    "state": "SOFTWARE_NATIVE_BROWSER_VERIFICATION_ENDED_FINITE_CHECKPOINT_PUBLICATION_ONLY",
+    "softwareVerificationEnded": true,
+    "nativeVerificationEnded": true,
+    "browserVerificationEnded": true,
+    "originalOwnerQaTabsClosed": true,
+    "unattendedDevelopmentCampaignRunning": false,
+    "futureUnattendedWorkPromised": false,
+    "coordinatorActivityRemaining": "Finite public checkpoint publication/anonymous verification and final response only."
+  },
+  "fourRepositoryDeliveryComplete": false,
+  "permittedSoftwareAndBoundedInstalledLocalScopeComplete": true,
+  "liveQaFinalized": true,
+  "overall": "PERMITTED_SOFTWARE_AND_BOUNDED_LOCAL_CONNECTION_COMPLETE_FLEET_AND_HARNESS_ORIGINAL_OPERATIONS_HELD",
+  "frozenBeforePublicTransport": true,
+  "checkpointTransportPerformedAtFreeze": false,
+  "transportReceiptRecordedSeparatelyAfterPublication": true,
+  "observedAt": "2026-10-24T23:09:48.607777+00:00",
+  "liveQaFinalizedMeaning": "Scoped live-desktop outcomes and limitations are recorded; no live-mobile or dedicated Discovery browser importer acceptance is implied.",
+  "explicitlyHistoricalSnapshotFacts": {
+    "observedAt": "2026-10-24T22:17:23.485Z",
+    "notCurrentDeliveryStatus": true,
+    "data": {
+      "sourceEvidence": {
+        "alphaSourceReview": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/issues/4850#issuecomment-6385568620",
+        "alphaReviewSha256": "eea9f27d182857de727e89cb3051657a3819677bdbea257dbabba158a2d5dc73",
+        "originalAlphaRun": 40076340788,
+        "attempt": 1,
+        "artifact": 12552939436,
+        "artifactBytes": 31457545,
+        "artifactSha256": "3f0f689fa10aafab8891ebce91a1d421ef0754b2a5ec4551a4d844879041c4b7",
+        "publicPacketCommit": "f995b97ae9beef118b7705b31b73bfc9ce65c316",
+        "publicPacketTree": "533dcbb9a3321fd0c4627689c8f8f99f9b4c0c25",
+        "packetFiles": 17,
+        "metadataCapture": "79GET success/0retry; original input/source fixed",
+        "alphaPublicPrerequisite": "PASS:100 retained accepted bodies+6 fresh structural/source bodies, complete106 inventory and live release/run/source leases",
+        "alphaExtraSkip": "CLOSED: test_workbox_hash_mismatch PASS→SKIP from CSP refusing Page.wait_for_function string evaluation;4814same testcase identities,80→81ordinaryskips,4xfails unchanged, assertionnotreached; no newpublicationbarrier",
+        "originalActionRecord": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/issues/4850#issuecomment-6386746278",
+        "fleetOriginalOwnershipGraph": "evidence/fleet-original-source-ownership-provenance.json",
+        "fleetHistoricalRelease": {
+          "id": 414236459,
+          "tag": "v1.1.4-qualification",
+          "url": "https://github.com/MontrealAI/AGI-Fleet-Linux/releases/tag/v1.1.4-qualification",
+          "source": "7b5dda3d7dbcb9700a1408cf19bd7cf18404e068",
+          "assets": [
+            {
+              "id": 645056369,
+              "name": "AGI_Fleet_Linux_v1.1.4.zip",
+              "bytes": 431170046,
+              "digest": "sha256:5adefd1ddfac143246964fd1dca029adaa78bd7ac0d077b0e692976ce21a3de4"
+            },
+            {
+              "id": 645057099,
+              "name": "Linux-Qualification-Evidence-v1.1.4.zip",
+              "bytes": 15240660,
+              "digest": "sha256:b89d59294d51123c94c8eaa0627aec8bf72988ed3c0295fb7695820d42ec8479"
+            },
+            {
+              "id": 645057167,
+              "name": "Release-Manifest-v1.1.4.json",
+              "bytes": 112748,
+              "digest": "sha256:d690e25162e1146a0cfe638327ea285255cca36d4672607ecb95b6bfee76476a"
+            },
+            {
+              "id": 645057195,
+              "name": "SHA256SUMS-v1.1.4.txt",
+              "bytes": 294,
+              "digest": "sha256:5c143b9df7863d08825a8988a35f54d9804e733976d75fadf18e8f3d647775e2"
+            }
+          ],
+          "freshAnonymousBodyVerification": false
+        }
+      },
+      "connectedScope": {
+        "acceptedTuple": [
+          "Alpha1.39",
+          "Jobs2.1.0-rc.20",
+          "Manager1.20.1"
+        ],
+        "acceptedRoute": "Source-bound Discovery API and14-event successor history; not installed four-product or1.41 tuple",
+        "proposedTuple": [
+          "Alpha1.41.0",
+          "Jobs2.1.0-rc.21",
+          "Manager1.20.2",
+          "Fleet1.1.5 pending original decisions"
+        ],
+        "localRoute": "Original1.41 exported mission→actual extracted Jobs0c91 receiver→raw receipt/source/cost retention→export/reopen; separate stronger-successor regression",
+        "currencies": "ManagerUSDC6 and JobsAGIALPHA18 separate zero-cap drafts",
+        "externalExecution": "unprovisioned",
+        "settlement": "disconnected/unfunded; no live transaction",
+        "authority": "none; no automatic successor transfer",
+        "fourProductInstalled": false,
+        "newJobsPublicScope": "Alpha1.41.0/031b source-bound publicJobsrc21 installed1primary/8separateconstructedregressions, Linuxx64 both22.23.3/24.21.0. ActualcurrentManagerpublictuple and Fleet execution pending."
+      },
+      "harness": {
+        "original4863": "c455ad4ce109c86df2fef09d19674810290b5185",
+        "dependent4865": "6bb361d522d80dc900cc2a480014531c6a44b66e",
+        "originalPrepared": "f8772377887c722f9440a61d587eac88b0a3a61d",
+        "latestPrepared": "05122217c71ec4317e822445f16e2ce9e0177460",
+        "tree": "d34e2b55ca9d52107fb32fa0089f7ad20328a89b",
+        "currentMainBasis": "c352bad0a0941fdccd490a7224e3efd1b8de45d5",
+        "states": [
+          "proposed",
+          "focused-development-regressions-passed"
+        ],
+        "eightOriginalPreparedIdentitiesPreserved": true,
+        "otherCurrentMainLeavesPreserved": 4535,
+        "retainedTests": "44/44 original-owner development cases on exact051/tree d34e; reuse existing e313 receipt, no rerun or installed/review-clearance inference",
+        "productRefsChanged": false,
+        "reviewRetried": false,
+        "mergeRetried": false,
+        "publication": false,
+        "canonicalOwnerPreparation": "f2869e602e65b3fd61593b57d3d2484481a499b1",
+        "currentPreparedParents": [
+          "f2869e602e65b3fd61593b57d3d2484481a499b1",
+          "c352bad0a0941fdccd490a7224e3efd1b8de45d5"
+        ],
+        "currentPreparedState": "UNREFERENCED_ORIGINAL_OWNER_PREPARATION_NOT_ADOPTED",
+        "currentHandoff": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/pull/4863#issuecomment-6388885060",
+        "previousSameTreeCoordinatorComposition": "d85b53efb86dd393f08eab04cfa7ff744d6501fb",
+        "previousCoordinatorPreparation": "b8ef48e30a3a083aed8a4f3b6d94129a67e1975e"
+      },
+      "heldOperations": [
+        {
+          "lane": "Fleet",
+          "action": "Original restricted eligible peer/source-custody review; subsequent adoption/release qualification depends on legitimate review disposition",
+          "source": [
+            "https://github.com/MontrealAI/AGI-Fleet-Linux/pull/61#issuecomment-6352778053",
+            "https://github.com/MontrealAI/AGI-Fleet-Linux/pull/61#issuecomment-6383797941"
+          ],
+          "target": "0b13d3ffb25381dc2ebf9c39abda24824660fd3b / tree5ee88ac7ac86ce08503a83ebc288d42e33b1608f",
+          "reason": "Publicly reported possible-cybersecurity rejection; original payload/decisionID/later complete scope unavailable",
+          "authority": "Original execution/restriction operator; eligible named reviewer not exposed",
+          "smallestNextStep": "Expose the supported original decision and genuinely permitted exact-source review mechanism; eligible reviewer then records d0d actual-source P1 dispositions4322083594/4323870690",
+          "engineeringCannotClear": true,
+          "lastPublicRefresh": "2026-10-24T19:08:42.874Z"
+        },
+        {
+          "lane": "Harness",
+          "action": "Original c455ad4 review terminal decision and separate merge disposition",
+          "source": [
+            "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/pull/4863#issuecomment-6345107482",
+            "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/pull/4863#issuecomment-6347342683"
+          ],
+          "reason": "Public review RUNNING/null findings with backend terminal unavailable; distinct original merge denial remains",
+          "authority": "Original configured-task and action-restriction operator",
+          "smallestNextStep": "Expose actual terminal review result/concretefailure and separate supported merge disposition; no duplicate trigger/alternate merge",
+          "lastPublicRefresh": "2026-10-24T19:08:42.874Z"
+        },
+        {
+          "lane": "Alpha",
+          "action": "Four original excluded native outcomes and five critical inputs",
+          "source": [
+            "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/pull/4869#pullrequestreview-5636108134"
+          ],
+          "reason": "Explicit bounded experimental coverage disposition preserves four action restrictions; not a blanket ban on unrelated static review or packet reads",
+          "smallestNextStep": "Keep outcomes unqualified; applicable eligible source-specific disposition before guarded-input changes/held behaviors"
+        }
+      ],
+      "continuationRules": [
+        "No paid infrastructure/new credentials/security-setting changes/live financial actions/deployed-contract changes",
+        "Preserve all accepted releases/assets/site/paper URLs",
+        "Do not reassign original denied actions to a new actor/ref/tool/rewrite",
+        "Final public peer identities must come from actual qualified release, not local/PR artifacts",
+        "Only exact-source case-specific reviews count; same-account AI COMMENT is not org/economic independence or formal APPROVE"
+      ]
+    }
+  },
+  "connectedScope": {
+    "alpha": "1.41.0/031bdb5d055c8bad896daa076baea2b5e17b242c Discovery modules captured in public packages",
+    "jobs": "2.1.0-rc.21/bc4abbd5c28f3672275b13300e40ea26c820b8ee actual public installed package",
+    "manager": "1.20.2/5d5670df9dbbc79da115e0a44b71989f34df58c1 actual public installed package",
+    "runtime": "Linux x64 Node24.21.0",
+    "events": {
+      "publicJobs": 9,
+      "actualManager": 10,
+      "proposal": 11
+    },
+    "missionId": "capability-fc911b7d-e209-4bed-b8c2-2682f3f879bd",
+    "connectedDocketSha256": "71e8efca5bac1303c4703ec71446d91b9ec1a91bf1e55a34ca7db9227fcc012d",
+    "proposedDocketSha256": "b50a66e52d839005cb81d931b9d47f229513df754aa2a594d70dbcc969a9df65",
+    "qualificationRefusal": "This proposal has no implemented evaluator. No capability has been executed.",
+    "institutionalAssessmentInvoked": false,
+    "institutionalDecision": "UNAVAILABLE_NO_DISCOVERY_BOUND_SIGNED_POLICY_OR_INSTITUTION_CONTEXT",
+    "authorityTransferred": false,
+    "fleetInstalledExecution": false,
+    "productionApproved": false,
+    "currenciesCombined": false,
+    "totalCostComplete": false,
+    "state": "VERIFIED_BOUNDED_INSTALLED_LOCAL_SYNTHETIC_ROUTE",
+    "demonstratedRoute": "Captured031b Discovery original mission → actual public Jobs rc.21/bc4 nine-event workspace → actual public Manager1.20.2/5d ten-event workspace → installed SDK proposal11; preserve source/evidence/cost records and export/reopen; apply actual no-evaluator refusal with no authority transfer.",
+    "unsignedUnfundedZeroCapAlternatives": [
+      "Jobs AGIALPHA18",
+      "Manager USDC6"
+    ],
+    "externalExecution": "unprovisioned",
+    "settlement": "disconnected",
+    "fourProductInstalled": false,
+    "genericBuilderBrowserRecoveryIsDifferentSchema": true
+  },
+  "harness": {
+    "state": "ORIGINAL_OWNER_LINEAGE_RETAINED_ROOT_PASSIVE_PAPER_RECONCILIATION_UNREFERENCED_NOT_ADOPTED",
+    "canonicalOriginalOwnerPreparedCommit": "05122217c71ec4317e822445f16e2ce9e0177460",
+    "canonicalOriginalOwnerPreparedTree": "d34e2b55ca9d52107fb32fa0089f7ad20328a89b",
+    "latestRootPassivePaperReconciliation": {
+      "commit": "01d7587e08b6b5730f9e770c5d329790648b043a",
+      "tree": "0556276119d11a6b0959cb8d3134564a30d594ec",
+      "orderedParents": [
+        "05122217c71ec4317e822445f16e2ce9e0177460",
+        "caa3bb3683e15172adf231014358675e5ed1099f"
+      ],
+      "originalEightPathsExact": true,
+      "everyOtherCurrentMainLeafExact": true,
+      "states": [
+        "proposed",
+        "static-preparation-only"
+      ],
+      "adopted": false,
+      "merged": false,
+      "published": false,
+      "installed": false,
+      "canonicalSourceRefsChanged": false,
+      "newTestsOrHeldActionsRun": false,
+      "retainedRegression": "Reuse original-owner44/44 development results on051/tree d34e for unchanged Harness/runtime. This passive-paper source reconciliation supplies no new qualification, eligible review or installed acceptance.",
+      "ownerHandoff": "https://github.com/MontrealAI/AGI-Alpha-Agent-v0/pull/4863#issuecomment-6390562957"
+    },
+    "currentMainBasis": "caa3bb3683e15172adf231014358675e5ed1099f",
+    "currentMainBasisTree": "3797eb2bd03f2d3935cedfcffd59c021b9a69eec",
+    "retainedOriginalOwnerDevelopmentResults": "44/44 on unchanged051/tree d34e; no new campaign.",
+    "originalReviewTerminalAndSeparateMergeDispositionOutstanding": true,
+    "reviewedOrMergedByThisReconciliation": false
+  }
+}
