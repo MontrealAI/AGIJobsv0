@@ -187,17 +187,105 @@ function projectJob(job, sha, policy, id, attempt, final) {
     key: policy.jobKey, name: policy.jobName, source: sha,
   };
 }
-async function readJob(api, sha, policy, id, attempt, final) {
+async function readJob(api, sha, policy, id, attempt, final, project = projectJob) {
   const jobs = await pages(
     api, 'actions/runs/' + id + '/attempts/' + attempt + '/jobs?', 'jobs'
   );
   const matches = jobs.filter((job) => job.name === policy.jobName);
   assert.equal(matches.length, 1, 'CodeQL service job is absent or ambiguous');
-  const selected = projectJob(matches[0], sha, policy, id, attempt, final);
+  const selected = project(matches[0], sha, policy, id, attempt, final);
   const detail = await api('GET', 'actions/jobs/' + selected.id);
-  assert.equal(canonical(projectJob(detail, sha, policy, id, attempt, final)),
+  assert.equal(canonical(project(detail, sha, policy, id, attempt, final)),
     canonical(selected), 'CodeQL service job API observations differ');
   return selected;
+}
+async function readCaptureJob(api, sha, language, id, attempt, {
+  wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
+  now = Date.now,
+  report = (value) => console.error(JSON.stringify(value)),
+} = {}) {
+  const policy = policies[language];
+  assert(policy && identity(sha) && positive(id) && positive(attempt),
+    'Invalid CodeQL capture projection identity');
+  // Only incomplete step projections are retried. Every positive observation
+  // still passes the original exact-job and completed-analyze predicates in
+  // BOTH list and detail. Terminal, identity and transport errors fail at once.
+  const delays = [1000, 2000, 4000, 8000, 15000, 15000, 15000];
+  const started = now(), deadline = started + 120000;
+  let selectedId, resource;
+  const pending = {};
+  const read = async (method, route) => {
+    assert(now() <= deadline,
+      'CodeQL analyze step projection remained incomplete within capture budget');
+    resource = route;
+    const response = await api(method, route);
+    assert(now() <= deadline,
+      'CodeQL analyze step projection remained incomplete within capture budget');
+    return response;
+  };
+  const project = (job, ...args) => {
+    let result;
+    try {
+      result = projectJob(job, ...args);
+    } catch (error) {
+      if (error?.code !== 'ERR_ASSERTION' ||
+        error.message !== 'Pinned CodeQL analyze step did not succeed in the receipt producer')
+        throw error;
+      // projectJob's exact source/attempt/name/in-progress identity assertion
+      // has already passed. A malformed or terminal step is never pending.
+      const validSteps = job.steps.every((step) => step &&
+        typeof step === 'object' && !Array.isArray(step) &&
+        typeof step.name === 'string' && step.name.length > 0 &&
+        (['pending', 'queued', 'in_progress'].includes(step.status)
+          ? step.conclusion === null
+          : step.status === 'completed' &&
+            ['success', 'failure', 'cancelled', 'skipped', 'neutral',
+              'timed_out', 'action_required'].includes(step.conclusion)));
+      const analyze = job.steps.filter((step) => step?.name === policy.analyzeName);
+      const incomplete = analyze.length === 0 ||
+        (analyze.length === 1 &&
+          ['pending', 'queued', 'in_progress'].includes(analyze[0].status) &&
+          analyze[0].conclusion === null);
+      const failedStep = job.steps.some((step) => step?.status === 'completed' &&
+        ['failure', 'cancelled', 'timed_out', 'action_required'].includes(step.conclusion));
+      if (!validSteps || failedStep || !incomplete ||
+        new Set(job.steps.map((step) => step.name)).size !== job.steps.length)
+        throw error;
+      if (selectedId === undefined) selectedId = job.id;
+      assert.equal(job.id, selectedId,
+        'CodeQL capture producer job identity changed during observation');
+      pending.step = analyze.length === 0 ? 'absent' : analyze[0].status;
+      pending.stepCount = job.steps.length;
+      throw pending;
+    }
+    if (selectedId === undefined) selectedId = job.id;
+    assert.equal(job.id, selectedId,
+      'CodeQL capture producer job identity changed during observation');
+    return result;
+  };
+  for (let observation = 1; observation <= delays.length + 1; observation++) {
+    assert(now() <= deadline,
+      'CodeQL analyze step projection remained incomplete within capture budget');
+    try {
+      const result = await readJob(read, sha, policy, id, attempt, false, project);
+      assert(now() <= deadline,
+        'CodeQL analyze step projection remained incomplete within capture budget');
+      return result;
+    } catch (error) {
+      if (error !== pending) throw error;
+      const elapsed = now() - started;
+      report({ code: 'ANALYZE_PROJECTION_PENDING', method: 'GET',
+        url: apiRoot + resource, runId: id, runAttempt: attempt,
+        jobId: selectedId, observation, maximumObservations: delays.length + 1,
+        step: pending.step, stepCount: pending.stepCount,
+        elapsedMilliseconds: elapsed, acceptanceDeadlineMilliseconds: 120000 });
+      assert(observation <= delays.length &&
+        now() + delays[observation - 1] <= deadline,
+        'CodeQL analyze step projection remained incomplete within capture budget');
+      await wait(delays[observation - 1]);
+    }
+  }
+  throw Error('CodeQL analyze step projection remained incomplete within capture budget');
 }
 function projectAnalysis(value, sha, uploadId, policy) {
   assert(
@@ -677,7 +765,7 @@ async function capture(language, output) {
     validRun(run, sha, policy, id, attempt, false);
   assert.equal(current.run_number, currentAttempt.run_number,
     'CodeQL service capture run observations differ');
-  const job = await readJob(api, sha, policy, id, attempt, false);
+  const job = await readCaptureJob(api, sha, language, id, attempt);
   const service = await readProcessedUpload(api, sha, env.SARIF_UPLOAD_ID, policy);
   const raw = fs.readFileSync(policy.rawPath);
   assert(raw.length > 0 && raw.length <= maxRawBytes,
@@ -712,7 +800,7 @@ async function main() {
 }
 module.exports = {
   observeFinalServices, assertFinalServices, verifyRawBinding,
-  isServiceApiResource,
+  isServiceApiResource, readCaptureJob,
 };
 if (require.main === module)
   main().catch((error) => {
@@ -740,6 +828,9 @@ if (require.main === module)
       ['CodeQL service job does not match its exact producer attempt', 'JOB_IDENTITY'],
       ['Pinned CodeQL analyze step did not succeed in the receipt producer', 'ANALYZE_STATUS'],
       ['CodeQL service job API observations differ', 'JOB_OBSERVATIONS'],
+      ['Invalid CodeQL capture projection identity', 'CAPTURE_PROJECTION_IDENTITY'],
+      ['CodeQL capture producer job identity changed during observation', 'CAPTURE_JOB_DRIFT'],
+      ['CodeQL analyze step projection remained incomplete within capture budget', 'ANALYZE_PENDING_EXHAUSTED'],
       ['Pinned analyze SARIF upload ID is absent or invalid', 'UPLOAD_ID'],
       ['CodeQL SARIF upload processing has not completed successfully', 'UPLOAD_PROCESSING'],
       ['Malformed CodeQL upload analysis inventory', 'ANALYSIS_INVENTORY'],
