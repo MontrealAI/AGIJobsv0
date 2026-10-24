@@ -15,7 +15,7 @@ const timelineEntrySchema = z.object({
   label: z.string().min(1, 'timeline entry label required'),
   at: z.string().min(1, 'timeline entry timestamp required'),
   scenario: z.string().min(1).optional(),
-  meta: z.record(z.unknown()).optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
 });
 
 const ownerActionSchema = z.object({
@@ -23,7 +23,7 @@ const ownerActionSchema = z.object({
   contract: z.string().min(1, 'owner action contract required'),
   method: z.string().min(1, 'owner action method required'),
   at: z.string().min(1, 'owner action timestamp required'),
-  parameters: z.record(z.unknown()).optional(),
+  parameters: z.record(z.string(), z.unknown()).optional(),
 });
 
 const scenarioEntrySchema = z.object({
@@ -93,14 +93,14 @@ const controlMatrixSchema = z
 const ownerControlSchema = z.object({
   ownerAddress: z.string().min(1, 'owner address missing'),
   moderatorAddress: z.string().min(1, 'moderator address missing'),
-  baseline: z.record(z.unknown(), {
-    required_error: 'baseline controls missing',
+  baseline: z.record(z.string(), z.unknown(), {
+    error: (issue) => issue.input === undefined ? 'baseline controls missing' : undefined,
   }),
-  upgraded: z.record(z.unknown(), {
-    required_error: 'upgraded controls missing',
+  upgraded: z.record(z.string(), z.unknown(), {
+    error: (issue) => issue.input === undefined ? 'upgraded controls missing' : undefined,
   }),
-  restored: z.record(z.unknown(), {
-    required_error: 'restored controls missing',
+  restored: z.record(z.string(), z.unknown(), {
+    error: (issue) => issue.input === undefined ? 'restored controls missing' : undefined,
   }),
   pauseDrill: z.object({
     owner: pauseMatrixSchema,
@@ -127,7 +127,7 @@ export const NationalSupplyChainTranscriptSchema = z
   .object({
     generatedAt: z.string().min(1, 'generatedAt timestamp missing'),
     network: z.string().min(1, 'network metadata missing'),
-    actors: z.array(z.record(z.unknown())).min(1, 'actors roster missing'),
+    actors: z.array(z.record(z.string(), z.unknown())).min(1, 'actors roster missing'),
     ownerActions: z
       .array(ownerActionSchema)
       .min(40, 'insufficient owner actions recorded'),
@@ -140,7 +140,7 @@ export const NationalSupplyChainTranscriptSchema = z
     market: marketSnapshotSchema,
     ownerControl: ownerControlSchema,
     insights: z
-      .array(z.record(z.unknown()))
+      .array(z.record(z.string(), z.unknown()))
       .min(5, 'insights array must include strategic findings'),
     automation: automationSchema,
   })

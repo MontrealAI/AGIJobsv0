@@ -20,7 +20,7 @@ const OWNER_DIRECTIVES_PATH = path.resolve(OWNER_CONSOLE_DIR, "../configs/owner-
 const WORKFLOW_DIR = path.resolve(OWNER_CONSOLE_DIR, "../../../.github/workflows");
 
 const AddressSchema = z
-  .string({ invalid_type_error: "Address must be provided as a string" })
+  .string({ error: (issue) => issue.input === undefined ? "Required" : "Address must be provided as a string" })
   .regex(/^0x[a-fA-F0-9]{40}$/u, "Must be a valid 20-byte hex address")
   .transform((value) => value.toLowerCase());
 

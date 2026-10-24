@@ -7,7 +7,7 @@ import type {
   IntentValidationResult,
 } from './types';
 
-const formatIssues = (issues: readonly { message: string; path: (string | number)[] }[]): string[] =>
+const formatIssues = (issues: readonly { message: string; path: PropertyKey[] }[]): string[] =>
   issues.map((issue) => {
     const path = issue.path.length ? ` at ${issue.path.join('.')}` : '';
     return `${issue.message}${path}`;

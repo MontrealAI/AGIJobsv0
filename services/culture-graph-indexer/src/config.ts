@@ -8,7 +8,7 @@ const configSchema = z.object({
     .string()
     .transform((value) => Number.parseInt(value, 10))
     .pipe(z.number().int().nonnegative())
-    .default('4100')
+    .prefault('4100')
     .catch(4100),
   rpcUrl: z.string().min(1, 'RPC_URL is required').optional(),
   cultureRegistryAddress: z.string().min(1, 'CULTURE_REGISTRY_ADDRESS is required').optional(),

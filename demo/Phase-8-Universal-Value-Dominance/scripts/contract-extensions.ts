@@ -17,12 +17,12 @@ const EXTENSION_ABI = [
 ];
 
 const AddressSchema = z
-  .string({ invalid_type_error: "Expected address as string" })
+  .string({ error: (issue) => issue.input === undefined ? "Required" : "Expected address as string" })
   .regex(HEX_ADDRESS, "Must be a valid 20-byte hex address")
   .transform((value) => value.toLowerCase());
 
 const HexBytesSchema = z
-  .string({ invalid_type_error: "Expected hex string" })
+  .string({ error: (issue) => issue.input === undefined ? "Required" : "Expected hex string" })
   .regex(HEX_BYTES, "Initializer must be a hex string")
   .transform((value) => (value.length === 0 ? "0x" : value.length === 2 ? value.toLowerCase() : value.toLowerCase()));
 
@@ -42,7 +42,7 @@ const ExtensionSchema = z.object({
   initializer: HexBytesSchema.default("0x"),
   pauseBeforeUpgrade: z.boolean().default(true),
   upgradeWindowHours: z
-    .number({ invalid_type_error: "upgradeWindowHours must be a number" })
+    .number({ error: (issue) => issue.input === undefined ? "Required" : "upgradeWindowHours must be a number" })
     .int("upgradeWindowHours must be an integer")
     .positive("upgradeWindowHours must be positive"),
   dependencies: z.array(DependencySchema).default([]),

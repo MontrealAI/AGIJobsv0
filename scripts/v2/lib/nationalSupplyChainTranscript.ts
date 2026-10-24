@@ -111,7 +111,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function ensureRecord<T extends Record<string, unknown>>(value: unknown, message: string): T {
+function ensureRecord<T extends object = Record<string, unknown>>(value: unknown, message: string): T {
   if (!isRecord(value)) {
     throw new Error(message);
   }
