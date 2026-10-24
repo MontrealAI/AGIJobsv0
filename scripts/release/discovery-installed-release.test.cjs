@@ -8,6 +8,8 @@ const path=require('node:path');
 const os=require('node:os');
 const {execFileSync}=require('node:child_process');
 const Q=require('./discovery-installed-qualification.cjs');
+// Keep the new retained-evidence adversaries inside the existing mandatory suite.
+require('./alpha141-retained-public-assets.test.cjs');
 const P=require('./publish-discovery-installed.cjs');
 const source={sourceCommit:'a'.repeat(40),sourceTree:'b'.repeat(40)};
 const alpha={commit:'c'.repeat(40),tree:'d'.repeat(40),sourceHash:'e'.repeat(64)};
@@ -838,7 +840,8 @@ test('rc17 and rc18 applicability retains the original suite and admits no unkno
   assert.deepEqual(dispatch.editionForVersion('2.1.0-rc.18'),{edition:'rc18',selected:'false'});
   assert.deepEqual(dispatch.editionForVersion('2.1.0-rc.19'),{edition:'rc18',selected:'false'});
   assert.deepEqual(dispatch.editionForVersion('2.1.0-rc.20'),{edition:'rc18',selected:'false'});
-  for(const version of [null,false,true,'false','2.1.0-rc.16','2.1.0-rc.21','2.1.0-rc.18 ','2.1.0-rc.19 ','2.1.0-rc.20 '])assert.throws(()=>dispatch.editionForVersion(version));
+  assert.deepEqual(dispatch.editionForVersion('2.1.0-rc.21'),{edition:'rc18',selected:'false'});
+  for(const version of [null,false,true,'false','2.1.0-rc.16','2.1.0-rc.22','2.1.0-rc.18 ','2.1.0-rc.19 ','2.1.0-rc.20 ','2.1.0-rc.21 '])assert.throws(()=>dispatch.editionForVersion(version));
   const workflow=fs.readFileSync(path.resolve(__dirname,'../../.github/workflows/source-release-rc16.yml'),'utf8');
   assert.equal(dispatch.assertRoutingSource(workflow),true);
   for(const changed of [

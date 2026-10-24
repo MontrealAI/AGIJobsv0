@@ -5,6 +5,8 @@
 
 # AGI Jobs v0 (v2)
 
+**[Install the bounded Discovery receiver](docs/successor/DISCOVERY_INSTALLED_RELEASE.md)** · rc.21 targets the exact Alpha1.41 source and preserves the historical rc.20 release. Local zero-cap review; external execution and settlement require separate qualification.
+
 ## AGI Alpha Agent + AGI Jobs: one shared ecosystem
 
 **Explore ideas. Define useful work. Check the result.** AGI Alpha Agent helps develop a promising plan; AGI Jobs supplies work orders, evidence, review and settlement rules. Their deployed Ethereum suites share **$AGIALPHA**, with 18 decimals on Ethereum mainnet:

@@ -6,8 +6,8 @@ const fs=require('node:fs');
 const path=require('node:path');
 const inheritedCommand="node --test test/scripts/source-codeql-service-rc16.test.cjs test/scripts/source-profile-rc16.test.cjs test/scripts/source-release-rc16.test.cjs test/scripts/source-release-security-rc16-gate.test.cjs test/scripts/source-release-security-rc16-publish.test.cjs test/scripts/source-release-integrated-rc16.test.cjs test/scripts/source-python-scanner-rc16.test.cjs test/scripts/source-python-evidence-rc16.test.cjs test/scripts/source-review-binding-rc16.test.cjs integrations/alpha-agent/tests/transformational-compatibility.test.mjs";
 function editionForVersion(version) {
-  assert.ok(['2.1.0-rc.17','2.1.0-rc.18','2.1.0-rc.19','2.1.0-rc.20'].includes(version),'Only explicit rc17 or Discovery rc18/rc19/rc20 source editions are supported');
-  // rc18 names the unchanged installed-suite route; rc19 and rc20 retain every gate.
+  assert.ok(['2.1.0-rc.17','2.1.0-rc.18','2.1.0-rc.19','2.1.0-rc.20','2.1.0-rc.21'].includes(version),'Only explicit rc17 or Discovery rc18/rc19/rc20/rc21 source editions are supported');
+  // rc18 names the installed-suite route; each explicitly listed successor retains every gate.
   return version==='2.1.0-rc.17'?{edition:'rc17',selected:'true'}:{edition:'rc18',selected:'false'};
 }
 function assertRoutingSource(source) {

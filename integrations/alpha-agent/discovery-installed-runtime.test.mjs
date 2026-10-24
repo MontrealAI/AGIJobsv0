@@ -21,7 +21,9 @@ const alpha141={commit:'031bdb5d055c8bad896daa076baea2b5e17b242c',tree:'330e0e58
   sourceHash:catalog141.sourceHash,catalogSha256:createHash('sha256').update(catalog141Raw).digest('hex')};
 
 test('catalog admission retains the released41-source Alpha and admits exact031b metadata',()=>{
-  const old=JSON.parse(fs.readFileSync(new URL('../../config/discovery-installed-alpha-v1.json',import.meta.url)));
+  const oldRaw=fs.readFileSync(new URL('../../scripts/release/fixtures/alpha615-reviewed-pin.json',import.meta.url));
+  assert.equal(createHash('sha256').update(oldRaw).digest('hex'),'7b6ac047905dc27da219cb2608a92b590380bb2781d155afe15734af1173b0f3');
+  const old=JSON.parse(oldRaw);
   const sources=Object.fromEntries(Object.entries(old.files).filter(([name])=>
     !['LICENSE','examples/successor-capability/discovery-lab-inspector.mjs'].includes(name)));
   validateInstalledAlphaCatalog({schema:'successor-capability-source/v1',sourceHash:old.sourceHash,sources},old);

@@ -2,7 +2,7 @@
   "schema": "agijobsv0/discovery-installed-profile/v1",
   "repository": "MontrealAI/AGIJobsv0",
   "profile": "jobs-discovery-installed-v1",
-  "proposedVersion": "2.1.0-rc.20",
+  "proposedVersion": "2.1.0-rc.21",
   "versionReservation": "UNRESERVED_PROPOSAL",
   "state": "LOCAL_PREPARATION_NOT_APPROVED",
   "prerequisite": "792687d133863783d02972f543f1eaca257b9e9c",
@@ -45,9 +45,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "884d9c9c2a6b00fb8768bef1cc6e3f1eb29203518733bf64230e60340a41e5ed"
+        "sha256": "2060dd76279ee64d6722a14d9f2d5bfd5a77ac39e4d401535c4fb52ea512628d"
       },
-      "reason": "Preserve full-history checkout, actual installed source applicability and both original suites in order; append only exact owner2425 dependency-coherence and historical-ledger-prefix suites as ordinary changed-source qualification, retaining failures and all existing gates; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Preserve full-history checkout, actual installed source applicability and both original suites in order; append only exact owner2425 dependency-coherence and historical-ledger-prefix suites as ordinary changed-source qualification, retaining failures and all existing gates; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     ".github/workflows/source-release-rc16.yml": {
       "before": {
@@ -130,25 +130,25 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "0deb6eb67ee8e10d54d17ba6e3146b581c13909eb44bc9f801328adae7e9e47a"
+        "sha256": "1376507f40d4e26cf6f26cae463c6a8d1d19db151eced87dc08cc83266bf3411"
       },
-      "reason": "Install the unchanged separately generated Alpha61532 transition from immutable UNSET pin01e32 and exact predecessor Jobs treeb082 with its original M/V/scope identities; retain raw case-specific source review and no publication or installed-compatibility approval"
+      "reason": "Install the unchanged separately generated Alpha61532 transition from immutable UNSET pin01e32 and exact predecessor Jobs treeb082 with its original M/V/scope identities; retain raw case-specific source review and no publication or installed-compatibility approval; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "config/discovery-installed-alpha-v1.json": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "7b6ac047905dc27da219cb2608a92b590380bb2781d155afe15734af1173b0f3"
+        "sha256": "1a2bdd11e4a41bb72d75f0bbe37f6110204bdf883ed1e6400e948ef0c750f141"
       },
-      "reason": "Install the separately reviewed exact Alpha61532 source pin and all43 captured source identities under review cd3966b4c547e890b1e2a7a2b1d9201ee89265f66595f98ead959cc952fabeee; retain pending original producer/native compatibility and false publication/execution authority"
+      "reason": "Install the separately reviewed exact Alpha61532 source pin and all43 captured source identities under review cd3966b4c547e890b1e2a7a2b1d9201ee89265f66595f98ead959cc952fabeee; retain pending original producer/native compatibility and false publication/execution authority; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "config/discovery-installed-browser-input-v1.json": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "3d1729b76bede5f93d4c8c7fdcdf7d5bfb8855dc7881a92606866cb55c885a26"
+        "sha256": "0a6fbc85be008e6767b43a419488d1fc4ff40e2ed9cd4cc379540b4a1c1c9bd8"
       },
-      "reason": "Select only the successful exact Alpha61532 original browser packet and all11 raw member identities from common17 transport e31e74d1a5144973e6a22006dbe29ea628a80386, with exact custody/artifact metadata; retain same-mission native and fresh public qualification requirements without rebuilding originals"
+      "reason": "Select only the successful exact Alpha61532 original browser packet and all11 raw member identities from common17 transport e31e74d1a5144973e6a22006dbe29ea628a80386, with exact custody/artifact metadata; retain same-mission native and fresh public qualification requirements without rebuilding originals; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "config/discovery-installed-module-graph-origin-v1.json": {
       "before": null,
@@ -170,17 +170,17 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "54fb20408cf023f931b3f43bf3d4d302e25088b3da4e5917a8e37624c1ab5bc7"
+        "sha256": "8303e38317ec79a354af3a584c7c7f8f67934c1383e507afb0c8fa5d8ad0b375"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "config/discovery-installed-review-request-v1.json": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "dc4ab09435c85c2eecd8a03e9e016f522fe7dff878f2d2334d3ddeb32edca1d4"
+        "sha256": "4feace514416b26f546a5e2d5a257c165e5d2c81eb538c22ef30b534d6d8d1e0"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "config/discovery-lab-alpha-source.json": {
       "before": null,
@@ -243,9 +243,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "6c82a66b549a13087a87b1a7002418e02a3acac4edf58464dacfca33858ccf20"
+        "sha256": "5d9c6cec03870a76a78d4cfbe4e363c29d575ca27d9dbceab3974e5d47ad982b"
       },
-      "reason": "Document the bounded installed local-review receiver, reviewed615 source and browser-input selection, independent archive hash/size/manifest runtime contract, machine-enforced Alpha public-asset acceptance and remaining exact-main/native/scanner/publication gates; preserve zero authority, incomplete-cost and deployment-observation limits and historical publisher evidence; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Document the bounded installed local-review receiver, reviewed615 source and browser-input selection, independent archive hash/size/manifest runtime contract, machine-enforced Alpha public-asset acceptance and remaining exact-main/native/scanner/publication gates; preserve zero authority, incomplete-cost and deployment-observation limits and historical publisher evidence; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "docs/successor/DISCOVERY_LAB.md": {
       "before": null,
@@ -326,17 +326,17 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "e67f3f0de239cdbdf674e5125025b7c57048b3271c5fe840c214ef7f3775796c"
+        "sha256": "0c855b5a5bbb56bf6a4f8e776f32939fd008b7d2dace753842a22dfc1eb5508a"
       },
-      "reason": "Capture the complete bounded installed input set and imported module bytes; require inert independently selected archive hash, positive bounded safe-integer byte count and manifest hash; compare exact extraction custody schema/authority/state/tuple before returning frozen selected capsule provenance, with no manifest-only fallback or new execution authority; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Prepare exact-four-field031b53-source catalog admission while retaining the historical41-source path and unchanged archive/custody/authority requirements; no new installed compatibility is accepted"
+      "reason": "Capture the complete bounded installed input set and imported module bytes; require inert independently selected archive hash, positive bounded safe-integer byte count and manifest hash; compare exact extraction custody schema/authority/state/tuple before returning frozen selected capsule provenance, with no manifest-only fallback or new execution authority; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Prepare exact-four-field031b53-source catalog admission while retaining the historical41-source path and unchanged archive/custody/authority requirements; no new installed compatibility is accepted; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "integrations/alpha-agent/discovery-installed-runtime.test.mjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "3af40bf82d5721912b6c06631e90391f7452095526cdfb7b8496380050a0e5ea"
+        "sha256": "095bd07295911baa2c8b2fa20df0a7c12df4ec8bdc4a132d7ae6c0750498b436"
       },
-      "reason": "Retain bounded inventory and ordinary trusted receiver controls; add inert exact extraction provenance cases rejecting hash/size/schema/authority/state/field drift, omitted or coerced external selection and accessors/proxies before installed capture; no native or release approval; Add3 ordinary catalog regressions for the exact031b identity, preserved41-source metadata and unrelated/missing/changed source refusal"
+      "reason": "Retain bounded inventory and ordinary trusted receiver controls; add inert exact extraction provenance cases rejecting hash/size/schema/authority/state/field drift, omitted or coerced external selection and accessors/proxies before installed capture; no native or release approval; Add3 ordinary catalog regressions for the exact031b identity, preserved41-source metadata and unrelated/missing/changed source refusal; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "integrations/alpha-agent/discovery-lab-contract.mjs": {
       "before": null,
@@ -385,9 +385,9 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "c0333392cf9ab6391e30008c909a4385984a8a60f5139cd320dc92503ffaca28"
+        "sha256": "ec9b78d5ea5c9a08dc85b14f11b2df360a419f86993f5642cabf7e0f0542b946"
       },
-      "reason": "Preserve proposed rc18 metadata and the Next15.5.28 fixes for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r; patch only direct DOMPurify3.3.0 and nested3.4.16 to3.4.17 for GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr, deduplicating the compatible root node while preserving all seven protected contract/compiler dependency identities; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Patch the observed application dependency advisories using actual Zod4.6.6 and preserve existing schema semantics, fixed source binding and the seven protected root dependency identities"
+      "reason": "Preserve proposed rc18 metadata and the Next15.5.28 fixes for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r; patch only direct DOMPurify3.3.0 and nested3.4.16 to3.4.17 for GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr, deduplicating the compatible root node while preserving all seven protected contract/compiler dependency identities; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Patch the observed application dependency advisories using actual Zod4.6.6 and preserve existing schema semantics, fixed source binding and the seven protected root dependency identities; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "package.json": {
       "before": {
@@ -396,25 +396,25 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "093c528d6edb7b5d771e578f8de78b45552e17e3a84e735d29d291fbe9d1b0df"
+        "sha256": "6f21b1127070411c369184313dfc49eee1fe996352a2c4f23ceff1dc932628f3"
       },
-      "reason": "Preserve proposed rc18 metadata and the Next15.5.28 fixes for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r; patch only direct DOMPurify3.3.0 and nested3.4.16 to3.4.17 for GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr, deduplicating the compatible root node while preserving all seven protected contract/compiler dependency identities; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Patch the observed application dependency advisories using actual Zod4.6.6 and preserve existing schema semantics, fixed source binding and the seven protected root dependency identities"
+      "reason": "Preserve proposed rc18 metadata and the Next15.5.28 fixes for GHSA-2464-fhr4-w9xw and GHSA-p3m5-59mp-jv5r; patch only direct DOMPurify3.3.0 and nested3.4.16 to3.4.17 for GHSA-cg2g-xh64-v4q7 and GHSA-mrv2-3pqr-j5jr, deduplicating the compatible root node while preserving all seven protected contract/compiler dependency identities; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Patch the observed application dependency advisories using actual Zod4.6.6 and preserve existing schema semantics, fixed source binding and the seven protected root dependency identities; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "scripts/release/capture-discovery-browser-input.cjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "170ef450c718e6a54719a970939d68a3b46b443adb017eadf15e35ab6c7adcfe"
+        "sha256": "62646659b364a9cf9edd77d6a6ab02555d9ae0f8fa05522b8b22da53e63172ac"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "scripts/release/capture-discovery-browser-input.test.cjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "bcb2c40c4fb14380cd95639fdea2a140ff27fb13d7bcb9ef1802f57077d9f897"
+        "sha256": "101fd32f26ece2b0dadd03584f582719aeec3756207b9ddbb8aac0de9009d65e"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "scripts/release/discovery-browser-packet-fixtures.cjs": {
       "before": null,
@@ -436,25 +436,25 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "447b47ad50cb3df2c20fd431b732af3ea93be9b0d5b605867821cf55403196f4"
+        "sha256": "228ab1df299ba5c3e97da296ea473cae79fdfebe507a04d4d16d467361c4d88f"
       },
-      "reason": "Retain existing Actions byte selectors, initial JSON media, redirect/authentication/error behavior, shared60s deadline,64MB bound and complete qualification gates; add only fixed own-repository positive releaseasset-ID byte reads using documented initial octet media and anonymous existing approved release storage with the same bounds and safe fixed-route/status diagnostics; select explicit rc19 while preserving reviewed Alpha615 and original source/profile/scanner/asset checks; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Retain default exact-main qualification unchanged; add only an internally validated owned-rc20 recovery epoch that proves original f7 payload and separately qualified current-main tooling through the strict nine-leaf finite delta, binds honest actual-main observations to the tool epoch and all original source/scanner/producer/record checks to f7, without rewriting API data or changing anonymous packet identity; resolve the authenticated CodeQL service observer from the same fully source-proven payload checkout as its inherited/native consumer, preserving the private per-module observed WeakSet and every live service/source/raw scanner gate instead of mixing byte-identical modules from two roots"
+      "reason": "Retain existing Actions byte selectors, initial JSON media, redirect/authentication/error behavior, shared60s deadline,64MB bound and complete qualification gates; add only fixed own-repository positive releaseasset-ID byte reads using documented initial octet media and anonymous existing approved release storage with the same bounds and safe fixed-route/status diagnostics; select explicit rc19 while preserving reviewed Alpha615 and original source/profile/scanner/asset checks; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Retain default exact-main qualification unchanged; add only an internally validated owned-rc20 recovery epoch that proves original f7 payload and separately qualified current-main tooling through the strict nine-leaf finite delta, binds honest actual-main observations to the tool epoch and all original source/scanner/producer/record checks to f7, without rewriting API data or changing anonymous packet identity; resolve the authenticated CodeQL service observer from the same fully source-proven payload checkout as its inherited/native consumer, preserving the private per-module observed WeakSet and every live service/source/raw scanner gate instead of mixing byte-identical modules from two roots; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "scripts/release/discovery-installed-release-dispatch.cjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "106975281ef29fe99411a82b80a3b543d95ab2d31c898a6ee74d8c9472fbb384"
+        "sha256": "2f6227d77ae92179a5f61a28daedafb8be2e0a91cfee3ff32c03f849d53940df"
       },
-      "reason": "Explicitly recognize rc17 plus installed rc18 and rc19 only; retain rc18 as the existing installed-suite output name for both installed editions, the full original rc17 command, every installed check and the historical publisher selected=false boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Explicitly recognize rc17 plus installed rc18 and rc19 only; retain rc18 as the existing installed-suite output name for both installed editions, the full original rc17 command, every installed check and the historical publisher selected=false boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "scripts/release/discovery-installed-release.test.cjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "3562a3b800d290fae3ae3559840a7d96e7c097507438d9c329dcfe3dfef35410"
+        "sha256": "e12f23fd31c4ad10223e9d5bafb1d303b919b49cbb9c6348d2979943945752e5"
       },
-      "reason": "Retain all75 preceding release/caller/private-fixture/transport/diagnostic cases and assertions, updating only draft-lease inventory/by-ID fixture framing and explicit rc19 dispatcher compatibility versus unknown rc20; append14 inert owned cases for complete bounded pagination, private collisions, exact new draft metadata, fixed-ID seven-asset uploads and readbacks, returned-ID substitution, safe HTTP diagnostics, full actualP.publish ID retention and pre-output collision refusal without network or real release commands; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Append only the24-case owned-rc20 recovery regression module to the existing test command, preserving all94 preceding cases and assertions and original workflow gates"
+      "reason": "Retain all75 preceding release/caller/private-fixture/transport/diagnostic cases and assertions, updating only draft-lease inventory/by-ID fixture framing and explicit rc19 dispatcher compatibility versus unknown rc20; append14 inert owned cases for complete bounded pagination, private collisions, exact new draft metadata, fixed-ID seven-asset uploads and readbacks, returned-ID substitution, safe HTTP diagnostics, full actualP.publish ID retention and pre-output collision refusal without network or real release commands; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Append only the24-case owned-rc20 recovery regression module to the existing test command, preserving all94 preceding cases and assertions and original workflow gates; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "scripts/release/discovery-lab-profile.py": {
       "before": null,
@@ -492,17 +492,17 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "41800950cd4d7f4ed9e7d89ead7fb3112b54d138ee4dc4b79790188e2dce85cd"
+        "sha256": "a441e6d760c5e1a4d09694d36ee3ce6b0f52a80f4c074c318e0782049dfe3665"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification"
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "scripts/release/test-discovery-installed-profile.py": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "6b337cb2353207dce5eb343a3ed26514493c2c9860c18e3c76bf923f075c8be6"
+        "sha256": "3f4c968357d3c1f6a9faa5f3c26784b2ac76134bf17cfae4c55affd4fddf40c9"
       },
-      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification; Add14 ordinary metadata/catalog/proposal regressions including original UNSET, exact predecessor and target, false flags and no capture/output on refusal; source capture is explicitly mocked"
+      "reason": "Implement separately gated source-bound installed archive, immutable Alpha transition, operator, retained mission evidence and release qualification; Add14 ordinary metadata/catalog/proposal regressions including original UNSET, exact predecessor and target, false flags and no capture/output on refusal; source capture is explicitly mocked; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "scripts/release/test-discovery-lab-profile.py": {
       "before": null,
@@ -519,9 +519,9 @@
       },
       "after": {
         "mode": "100644",
-        "sha256": "2ddef380e9b4a75f4dda71cc3358225a560536f4eb76e2af1605b94e7b2c58d0"
+        "sha256": "f55e21614c3a1cc98af0464125c0d0cf33301569b34d516214e5cf66a1e21dfd"
       },
-      "reason": "Preserve hardened immutable committed-package selection, original dependency identities and complete authenticated generated-source comparison; recognize only explicitly enumerated installed rc18 and rc19 versions so rc19 cannot fall through to legacy handling; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Preserve hardened immutable committed-package selection, original dependency identities and complete authenticated generated-source comparison; recognize only explicitly enumerated installed rc18 and rc19 versions so rc19 cannot fall through to legacy handling; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "scripts/security/test/dependency-preservation.test.cjs": {
       "before": {
@@ -617,25 +617,25 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "d7913557e86d0f092601dea91efc9c1118980b1a91b18c1b3477a5196faffc6b"
+        "sha256": "eaebdc994973a97e8d491450a302c50939a9e0dfd80fa7aa3daf28ebab366478"
       },
-      "reason": "Preserve all preceding owned Git/source/generated-output fixtures byte-for-byte; append one inert rc19 committed-edition case proving strict Git context and current package-byte authentication remain mandatory; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Preserve all preceding owned Git/source/generated-output fixtures byte-for-byte; append one inert rc19 committed-edition case proving strict Git context and current package-byte authentication remain mandatory; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "tools/security/discovery-installed-ledger-prefix.mjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "3b41332df1297be0bb1514eb96fb3a871cf82f15eea87019e514e9e5298e8a63"
+        "sha256": "af463726a5ea67f492ce1b95b8507ca279154c4e42296e34121c2a893ac00414"
       },
-      "reason": "Preserve original96 ledger, all288 historical protected path/mode/blob identities, complete ancestry/source/index closure and independent installed additions; recognize only exact committed rc18 and rc19 versions under the same hardened readGit interface; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Preserve original96 ledger, all288 historical protected path/mode/blob identities, complete ancestry/source/index closure and independent installed additions; recognize only exact committed rc18 and rc19 versions under the same hardened readGit interface; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "tools/security/discovery-installed-ledger-prefix.test.mjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "0002f1737c317abdaf2f386735fee8be912c204db09f400068bf8ce03fa08063"
+        "sha256": "2fc7f598bf97e4666477085d8b5775b957f0f3c36c183cfbcf2ab938281faab5"
       },
-      "reason": "Preserve all preceding ledger fixtures byte-for-byte; append one injected data-only case proving exact rc18/rc19 select installed controls while unknown rc20 and tampered rc19 do not; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Preserve all preceding ledger fixtures byte-for-byte; append one injected data-only case proving exact rc18/rc19 select installed controls while unknown rc20 and tampered rc19 do not; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "agent-gateway/validator.ts": {
       "before": {
@@ -701,9 +701,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "ebe8f04fbb4ee16b51dcc1f0dc38bdb963ec1207dc5b0c71fc1abfda4826f69a"
+        "sha256": "e223d725f20de4ece38f60d08996964efaab096f4fb744df29112b692d3479f8"
       },
-      "reason": "Add25 inert owned recovery/diagnostic/dual-epoch regressions using the exact original creation ZIP; refuse identity/source/asset substitutions, duplicate tags, changed main,403publication, uncertain-outcome duplicate mutation, unqualified tooling, expanded runtime deltas and unauthorized caller context without real release operations; add the actual two-root service-module private-brand regression, preserving cross-root, forged, serialized and wrong-epoch refusals plus ordinary same-root behavior; Preserve25 preceding cases; add6 inert phase-transition/raw-Git/ownership/chronology/idempotency regressions with exact post-PATCH commit-date behavior, immutable source-metadata tamper refusal and already-public zeroPATCH reconciliation; preserve all original draft, asset, source, tag and private proof refusals; include last-tool-gate author movement with zero PATCH intent and zero mutation"
+      "reason": "Add25 inert owned recovery/diagnostic/dual-epoch regressions using the exact original creation ZIP; refuse identity/source/asset substitutions, duplicate tags, changed main,403publication, uncertain-outcome duplicate mutation, unqualified tooling, expanded runtime deltas and unauthorized caller context without real release operations; add the actual two-root service-module private-brand regression, preserving cross-root, forged, serialized and wrong-epoch refusals plus ordinary same-root behavior; Preserve25 preceding cases; add6 inert phase-transition/raw-Git/ownership/chronology/idempotency regressions with exact post-PATCH commit-date behavior, immutable source-metadata tamper refusal and already-public zeroPATCH reconciliation; preserve all original draft, asset, source, tag and private proof refusals; include last-tool-gate author movement with zero PATCH intent and zero mutation; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "integrations/alpha-agent/fixtures/alpha141-source-catalog.json": {
       "before": null,
@@ -1083,6 +1083,76 @@
         "sha256": "c60661935f616fae98ddad047b8f2726e8ee4296bdac8c3e8fb7383d3985af0d"
       },
       "reason": "Patch the observed application dependency advisories using actual Zod4.6.6 and preserve existing schema semantics, fixed source binding and the seven protected root dependency identities"
+    },
+    "CHANGELOG.md": {
+      "before": {
+        "mode": "100644",
+        "blob": "862a0a221178006cc1ab2e0d5324b09f25698356"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "283386480ce4e4b402b57b4fc7634929ce453a580ae376d61f3bc0936cb7e8e0"
+      },
+      "reason": "Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
+    },
+    "README.md": {
+      "before": {
+        "blob": "9d0d52e35f8798d9cd22c70ec2adb13e467a3379",
+        "mode": "100644"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "1f6f108b93a3b198f7dabf3bd494d9941fa2f891510f8a774abf7fede149cae0"
+      },
+      "reason": "Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
+    },
+    "config/discovery-alpha141-retained-public-assets-v1.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "56f42c02d933f72022466ef4b782220b8d3d7e94925066f8adfc1c3902789d6a"
+      },
+      "reason": "Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
+    },
+    "scripts/release/alpha141-retained-public-assets.cjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "009ee8fb81824ba71c6d4149737f5c07089b1268a2fee239be3140c77798b13f"
+      },
+      "reason": "Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
+    },
+    "scripts/release/alpha141-retained-public-assets.test.cjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "9b958fad35d413e2186b56148af1d4fc392f770c3a3d90a0d2845dfc72c79aed"
+      },
+      "reason": "Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
+    },
+    "scripts/release/fixtures/alpha141-original-browser-producer.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "d4e837ab66e511f83923d3328e8304981ab70312b67670103d90ae32a67f852b"
+      },
+      "reason": "Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
+    },
+    "scripts/release/fixtures/alpha615-reviewed-pin.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "7b6ac047905dc27da219cb2608a92b590380bb2781d155afe15734af1173b0f3"
+      },
+      "reason": "Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
+    },
+    "scripts/release/fixtures/alpha615-reviewed-transition.json": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "0deb6eb67ee8e10d54d17ba6e3146b581c13909eb44bc9f801328adae7e9e47a"
+      },
+      "reason": "Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     }
   },
   "decisions": {

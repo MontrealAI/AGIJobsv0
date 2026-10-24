@@ -238,8 +238,11 @@ class Alpha141Preparation(unittest.TestCase):
         cls.scope = cls.helper['proposal'].__globals__
         cls.profile = cls.scope['P']
         cls.package = cls.scope['B']
-        cls.pin_raw = (ROOT/cls.profile['ALPHA_PIN']).read_bytes()
-        cls.transition_raw = (ROOT/cls.profile['ALPHA_TRANSITION']).read_bytes()
+        # Historical predecessor bytes stay fixed after the live pin advances.
+        cls.pin_raw = (ROOT/'scripts/release/fixtures/alpha615-reviewed-pin.json').read_bytes()
+        cls.transition_raw = (ROOT/'scripts/release/fixtures/alpha615-reviewed-transition.json').read_bytes()
+        assert cls.profile['sha'](cls.pin_raw) == cls.helper['ALPHA_615_PIN_SHA256']
+        assert cls.profile['sha'](cls.transition_raw) == cls.helper['ALPHA_615_TRANSITION_SHA256']
         cls.catalog_raw = (ROOT/'integrations/alpha-agent/fixtures/alpha141-source-catalog.json').read_bytes()
         cls.catalog = json.loads(cls.catalog_raw)
 
@@ -376,9 +379,15 @@ class Alpha141Preparation(unittest.TestCase):
             self.assertEqual(result['authority'], 'none')
             self.assertIs(result['publicationApproved'], False)
             self.assertEqual(result['state'], 'SOURCE_REVIEW_PROPOSAL_NOT_INSTALLED')
+            return pin_raw, (output/'discovery-installed-alpha-transition-v1.json').read_bytes()
 
     def test_explicit_successor_proposal_writes_only_uninstalled_metadata(self):
         self.proposal_fixture()
+
+    def test_prepared_alpha141_transition_cannot_be_reused_as_a615_predecessor(self):
+        pin_raw, transition_raw = self.proposal_fixture()
+        with self.assertRaisesRegex(ValueError, 'exact reviewed615 predecessor pin'):
+            self.helper['alpha141_successor_basis'](pin_raw, transition_raw, self.review())
 
     def test_original_unset_proposal_path_still_builds_only_review_metadata(self):
         self.proposal_fixture(successor=False, legacy=True)

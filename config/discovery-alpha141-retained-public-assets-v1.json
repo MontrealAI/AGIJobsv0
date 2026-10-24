@@ -1,0 +1,761 @@
+{
+  "schema": "delivery/public-alpha141-asset-verification/v1",
+  "source": "031bdb5d055c8bad896daa076baea2b5e17b242c",
+  "releaseId": 422636845,
+  "tag": "v1.41.0",
+  "publicationMutations": 0,
+  "installationsExecuted": 0,
+  "manualRetries": 0,
+  "metadataSha256": "74046962845ba4c78e7645abe71a2849859b5a08eb6a9241faed1f62ba1cf02f",
+  "manifestSha256": "9b67403b871e8e6fb2f2ae0bdfcd6797d5022c2dd2024e084d836185972ab3c5",
+  "checksumSetSha256": "d90d4a4a6a307b077ee1426e56d5477c5b4903e4c6a2aa1aa43fb1755a5d855d",
+  "exactInventoryAndChecksumSet": true,
+  "elapsedSeconds": 182.1968367099762,
+  "assets": [
+    {
+      "name": "AGI_ALPHA_Unified_Publication_Final.md",
+      "id": 671841621,
+      "bytes": 384370,
+      "sha256": "4217bd4041c4fa066a5a77d38404c3f5963feb79a7e0730d27467432be50c99f",
+      "publicGET": true
+    },
+    {
+      "name": "AGI_ALPHA_Unified_Publication_Final.pdf",
+      "id": 671841670,
+      "bytes": 5926237,
+      "sha256": "4b290d5a8232364b8808c0af8a96e7c9b152afd7ac3f5ba05668a538e073791a",
+      "publicGET": true
+    },
+    {
+      "name": "ASCENSION_CYCLE.md",
+      "id": 671841745,
+      "bytes": 27595,
+      "sha256": "fde220f02b6618882b9000d3b64b052b75bbeebf366ec94c30f91cdd3a44be44",
+      "publicGET": true
+    },
+    {
+      "name": "ASCENSION_CYCLE_ENGINEERING.md",
+      "id": 671841789,
+      "bytes": 52539,
+      "sha256": "da9e81977db3a9cb15026d6eb4c83ecbea5cf053f4123ffb5a13917aa2084e00",
+      "publicGET": true
+    },
+    {
+      "name": "ASCENSION_CYCLE_HANDOFF.md",
+      "id": 671841836,
+      "bytes": 16704,
+      "sha256": "034745059cffacd974a3c56171b0ba032395a6f26d1904bc0412723979b49be6",
+      "publicGET": true
+    },
+    {
+      "name": "ASCENSION_PROTOCOL.md",
+      "id": 671841887,
+      "bytes": 14642,
+      "sha256": "8c3d628e2a4d3162afd991d9ed5f596a25a3f3cbed259a8204c3e6cadb3ae6ce",
+      "publicGET": true
+    },
+    {
+      "name": "ASCENSION_STACK_RELEASE.md",
+      "id": 671841935,
+      "bytes": 10939,
+      "sha256": "f692bdb1e2ef4c2e3a024cf4684bc3ef59754dae0f2aeb6d793f8de6ac4c6921",
+      "publicGET": true
+    },
+    {
+      "name": "BUSINESS3.md",
+      "id": 671841974,
+      "bytes": 6922,
+      "sha256": "434877f34375c28427b1812b858d59f813713678fc35921415182decbe50a9ac",
+      "publicGET": true
+    },
+    {
+      "name": "CAPABILITIES.md",
+      "id": 671842011,
+      "bytes": 11054,
+      "sha256": "cc6fa29113d7b18a8e8730ff7d70864049d0e2999f06b4700e03bd4c33d50467",
+      "publicGET": true
+    },
+    {
+      "name": "CAPABILITY_WORKSPACE.md",
+      "id": 671842036,
+      "bytes": 10614,
+      "sha256": "414f0f5ae2541935598d9259cca7cdc288b505f3fcbaaf11ff0fd4a4eb05fdb9",
+      "publicGET": true
+    },
+    {
+      "name": "COMPOUNDING_LAB.md",
+      "id": 671842073,
+      "bytes": 8585,
+      "sha256": "75cd413d2dcec861836c29b3fe2f7c7ede1b58c285fd8a8339ecf4b3e77ddde0",
+      "publicGET": true
+    },
+    {
+      "name": "CURRENT_MAINNET_DEPLOYMENT.md",
+      "id": 671842099,
+      "bytes": 5947,
+      "sha256": "b6e9b5c9c8ebf841c478ec8161bd0486b884fa1ed6cc7eab64841be09e18a708",
+      "publicGET": true
+    },
+    {
+      "name": "CURRICULUM_LAB.md",
+      "id": 671842129,
+      "bytes": 7588,
+      "sha256": "5dd97e6e9f702236ed49a423e20f4a833ddd4682b03cf97c9615c8bb959d2ec3",
+      "publicGET": true
+    },
+    {
+      "name": "DECISION_STUDIO.md",
+      "id": 671842160,
+      "bytes": 11841,
+      "sha256": "68c4f30d7976e81faae7f98d1b4fb254f486be1fb2b4c6df92fa7cdac7acc201",
+      "publicGET": true
+    },
+    {
+      "name": "DEMOS.md",
+      "id": 671842190,
+      "bytes": 13430,
+      "sha256": "32c85446d6ae844aece76c72bda318085707f743d5919ddbb5da0c84068806d5",
+      "publicGET": true
+    },
+    {
+      "name": "DEMO_AUDIT_2026-10-01.md",
+      "id": 671842218,
+      "bytes": 6420,
+      "sha256": "bddb6d3274afc4ffeeb86e17fa95a80f6828cd85ba522d1698667bc74cd7fb93",
+      "publicGET": true
+    },
+    {
+      "name": "DEMO_VALIDATION.md",
+      "id": 671842243,
+      "bytes": 15440,
+      "sha256": "21ef6374b2c755fc63f5c83c70a1be30ba4797863bf17601ddcb47bf8e8ad3a2",
+      "publicGET": true
+    },
+    {
+      "name": "DISCOVERY.md",
+      "id": 671842269,
+      "bytes": 2324,
+      "sha256": "0c6d390db71a73b4863eeafe2b9b4ae83cdb19b6f12477434da574fb6e1eb38b",
+      "publicGET": true
+    },
+    {
+      "name": "DISCOVERY_LAB_CONTINUATION_2026-10-21.md",
+      "id": 671842307,
+      "bytes": 3097,
+      "sha256": "6accf8cea39be4d1f54a3466b6b814854d6f3496301e1480c84069eb6c2f6e1b",
+      "publicGET": true
+    },
+    {
+      "name": "DISCOVERY_LAB_DEPLOYMENT_COMPATIBILITY.json",
+      "id": 671842346,
+      "bytes": 75931,
+      "sha256": "40210f1a91deb3aa9089710a7902d39c6149db4c2ff2840f66d28b8adb396608",
+      "publicGET": true
+    },
+    {
+      "name": "DISCOVERY_LAB_DEPLOYMENT_COMPATIBILITY.md",
+      "id": 671842400,
+      "bytes": 5451,
+      "sha256": "7cdd5c77ad802aa9b15711c2a79873ed318067130032f643447aa8e3672ef4df",
+      "publicGET": true
+    },
+    {
+      "name": "DISCOVERY_LAB_EVIDENCE_DOCKET.md",
+      "id": 671842436,
+      "bytes": 11077,
+      "sha256": "18d340605c5b1b63a3671647b926b8b2adb06f02424040c6bfb6cf35b53427bb",
+      "publicGET": true
+    },
+    {
+      "name": "DISCOVERY_LAB_FOUNDATION_REPRODUCTION.json",
+      "id": 671842481,
+      "bytes": 2229,
+      "sha256": "633afbc0454f148f9bf98f44c9dc606a539eb7ea422843efbdadf7578bf4f353",
+      "publicGET": true
+    },
+    {
+      "name": "DISCOVERY_LAB_FUTURE_PROTOCOL.md",
+      "id": 671842524,
+      "bytes": 5060,
+      "sha256": "a1df9d1a13f24c793a8cbc901737373e22e5db5cb284c7f4c7750c909d272aec",
+      "publicGET": true
+    },
+    {
+      "name": "DISCOVERY_LAB_MODEL_REVIEW.json",
+      "id": 671842561,
+      "bytes": 18208,
+      "sha256": "ecdfd45ee11b19cd7eb36779f06f6e3f2fb776391979f426c1e0965ef97e709b",
+      "publicGET": true
+    },
+    {
+      "name": "DISCOVERY_LAB_PAPER_TO_CODE.md",
+      "id": 671842599,
+      "bytes": 17016,
+      "sha256": "d4cf50b7042845094b6b4c1d7b42f22f2163cf65b4c3e37c801fbc77fdb8443b",
+      "publicGET": true
+    },
+    {
+      "name": "DISCOVERY_LAB_README.md",
+      "id": 671842637,
+      "bytes": 7423,
+      "sha256": "e20f5db00edd68f8fb490668f8abe89c55bfbd3fd3f42175d7e9a1d5e99d80dc",
+      "publicGET": true
+    },
+    {
+      "name": "DISCOVERY_LAB_REAL_TASK_ADAPTER.md",
+      "id": 671842666,
+      "bytes": 8207,
+      "sha256": "92623c4cf3873fa350320291447977bc485f6c6b1256383bcc306ca141d94592",
+      "publicGET": true
+    },
+    {
+      "name": "DISCOVERY_LAB_RELEASE_NOTES.md",
+      "id": 671842701,
+      "bytes": 3748,
+      "sha256": "54e3ae598624cfcf1af6439b59b0aedb6bd957f848f5d92382b5504f44e36a3a",
+      "publicGET": true
+    },
+    {
+      "name": "DISCOVERY_LAB_SOURCES.json",
+      "id": 671842731,
+      "bytes": 7423,
+      "sha256": "cecffd854260b5debcf19447f60014b205aa824be18546ac03d3210304a5f22d",
+      "publicGET": true
+    },
+    {
+      "name": "DISCOVERY_LAB_SPECIFICATION.md",
+      "id": 671842756,
+      "bytes": 14703,
+      "sha256": "0b6013c1e90cde445174ad768b43c9d9ff494f7cc68593915d987461a84e41b3",
+      "publicGET": true
+    },
+    {
+      "name": "ECOSYSTEM_ADAPTERS.md",
+      "id": 671842786,
+      "bytes": 9076,
+      "sha256": "406a6855ec76aa5db828d51bc22a04e68cc1ccfb7bb79dd16b894f8fe18c6ead",
+      "publicGET": true
+    },
+    {
+      "name": "EXPERIENCE.md",
+      "id": 671842844,
+      "bytes": 3032,
+      "sha256": "f21c6a990eb6d065bd78bd0bbceca17e8c41e18267d1a87770dc8abe264dbf0d",
+      "publicGET": true
+    },
+    {
+      "name": "FACTORY_GUIDE.md",
+      "id": 671842897,
+      "bytes": 14989,
+      "sha256": "925465ac55fbcc4b01050fc36203ab89376d52d62a2a82d150768c3532abb508",
+      "publicGET": true
+    },
+    {
+      "name": "GOVERNANCE.md",
+      "id": 671842951,
+      "bytes": 5024,
+      "sha256": "0fec20bc8a5485b1e1565373778962deec041bbeead5946bf5c8e720d0cad09e",
+      "publicGET": true
+    },
+    {
+      "name": "INSIGHT_ATLAS.md",
+      "id": 671843009,
+      "bytes": 14887,
+      "sha256": "8a872a73054498aea28b11d029b98dc850e18aba451687fcc2922c24264a799b",
+      "publicGET": true
+    },
+    {
+      "name": "MAINNET_DEPLOYMENT.md",
+      "id": 671843049,
+      "bytes": 14933,
+      "sha256": "ede749f028b4cd013e2e66ce7c5398635caa6bc3b7d14934b30ffde2a3099919",
+      "publicGET": true
+    },
+    {
+      "name": "MAINNET_READINESS.md",
+      "id": 671843082,
+      "bytes": 15172,
+      "sha256": "e002c59eff789b3d1d9bfbf8fd303ba7be00566b820ebabce06ff2268594342b",
+      "publicGET": true
+    },
+    {
+      "name": "MANUSCRIPT_ALIGNMENT.md",
+      "id": 671843172,
+      "bytes": 8597,
+      "sha256": "01326c084e27923d0bab239021ec4a342b13a2de1cb637971b186d43ae16e173",
+      "publicGET": true
+    },
+    {
+      "name": "MARK_WALLET.md",
+      "id": 671843225,
+      "bytes": 12365,
+      "sha256": "08246bc44fb27c0e71edce11733f69d141f9d54461c4988e0784bfeb61176544",
+      "publicGET": true
+    },
+    {
+      "name": "MATS.md",
+      "id": 671843267,
+      "bytes": 3983,
+      "sha256": "8c254cd9d8c45b8ea406b969664d192bb9b5252d77b4a04fa6b2d86760cec191",
+      "publicGET": true
+    },
+    {
+      "name": "MUZERO.md",
+      "id": 671843342,
+      "bytes": 3282,
+      "sha256": "e0978b24ef79c456f0974ff96e6411392f2173c7ffe6a8b42d9b5ad1b77a2a9a",
+      "publicGET": true
+    },
+    {
+      "name": "NATIVE_BUDGET_RESERVATIONS.md",
+      "id": 671843392,
+      "bytes": 8253,
+      "sha256": "74540dd619e743888d854fbe8477d7219912b5976ca41f03e883d483142b71cb",
+      "publicGET": true
+    },
+    {
+      "name": "NOVA_SEED_STUDIO.md",
+      "id": 671843436,
+      "bytes": 15323,
+      "sha256": "da7265a26bcc8bafa2fdf17d2842ea6898bef99c586d41ca1b21eec5021542ab",
+      "publicGET": true
+    },
+    {
+      "name": "NOVA_SEED_STUDIO_ENGINEERING.md",
+      "id": 671843481,
+      "bytes": 18848,
+      "sha256": "51d956a44b4fe149628600e2ea0945d4fc7294fb11793cca7b5896c710a52e07",
+      "publicGET": true
+    },
+    {
+      "name": "ONBOARDING.md",
+      "id": 671843536,
+      "bytes": 7737,
+      "sha256": "a82026436d4e50c97d34c1131b1978f252e1902f86dcaa6bb0f9f32f511d068c",
+      "publicGET": true
+    },
+    {
+      "name": "OPERATIONS.md",
+      "id": 671843587,
+      "bytes": 26868,
+      "sha256": "0651311064a173d7cec6f1a5832b17004034a26bfe9cfe3d0ad97b53d72369ab",
+      "publicGET": true
+    },
+    {
+      "name": "OUT_EXECUTE.md",
+      "id": 671843631,
+      "bytes": 10076,
+      "sha256": "f31c92e1c6841fd555e99e86b4a2454f000367ca0b58f0aa4ceaf34f4b10a361",
+      "publicGET": true
+    },
+    {
+      "name": "PAGES_GUIDE.md",
+      "id": 671843711,
+      "bytes": 12635,
+      "sha256": "b59e9d55859e6b370483f92f4896ede146cb0818542ecfd2e41d823d6a43dad3",
+      "publicGET": true
+    },
+    {
+      "name": "PAPER_UPLOADS.md",
+      "id": 671843768,
+      "bytes": 16874,
+      "sha256": "00729ee5279cb83b0ee9d201685d45c08aedca5c4200063e719574e4662bdfb0",
+      "publicGET": true
+    },
+    {
+      "name": "PROOF_BLOOM.md",
+      "id": 671843820,
+      "bytes": 10940,
+      "sha256": "28fa364ce855ae155ba82d18ba5b077886509c3fe0fe4ec772d83cb014c62d74",
+      "publicGET": true
+    },
+    {
+      "name": "RELEASE_NOTES_1.41.0.md",
+      "id": 671843871,
+      "bytes": 4638,
+      "sha256": "c650b2fcb7828447cd304ee7f7d15fda5535350f9810adedc576e8f5f6dc1e2b",
+      "publicGET": true
+    },
+    {
+      "name": "RELEASE_READINESS.md",
+      "id": 671843947,
+      "bytes": 50034,
+      "sha256": "d29296060fc7991431fa9353f5bd245002554d5a0186fba469147e4d199d709f",
+      "publicGET": true
+    },
+    {
+      "name": "REPOSITORY_GUIDE.md",
+      "id": 671843983,
+      "bytes": 11399,
+      "sha256": "0f4be33d3c4fdf26066fe5db73ee69bf59fe17db596ad5a02658ff801622cf83",
+      "publicGET": true
+    },
+    {
+      "name": "SHA256SUMS",
+      "id": 671844013,
+      "bytes": 9631,
+      "sha256": "d90d4a4a6a307b077ee1426e56d5477c5b4903e4c6a2aa1aa43fb1755a5d855d",
+      "publicGET": true
+    },
+    {
+      "name": "START_HERE.md",
+      "id": 671844045,
+      "bytes": 9464,
+      "sha256": "f5748083a65b1e0eaf65ca4f649bd858bc3a95d52b8c3f879bd6e63200303e92",
+      "publicGET": true
+    },
+    {
+      "name": "SUCCESSOR.md",
+      "id": 671844080,
+      "bytes": 17313,
+      "sha256": "ad56cbd853d96e366bc086507e0e422be85c175d505ce986c4fdc7a6e43b987e",
+      "publicGET": true
+    },
+    {
+      "name": "SUCCESSOR_ACCEPTANCE.md",
+      "id": 671844124,
+      "bytes": 18072,
+      "sha256": "68cac096c59c3edece96c31d5855be8239646b16557ef6b09c633cbc876171dc",
+      "publicGET": true
+    },
+    {
+      "name": "SUCCESSOR_ALPHA.md",
+      "id": 671844168,
+      "bytes": 26075,
+      "sha256": "c83e5d322cfd37d7f781dcb677f247e6d515b68d73492b24f1e9f8fce8e78b6d",
+      "publicGET": true
+    },
+    {
+      "name": "SUCCESSOR_ALPHA_CONTINUITY.md",
+      "id": 671844189,
+      "bytes": 7087,
+      "sha256": "9b3a7d2988d1fd46e9131f74b4084c0b6331a0f2f572d9a98c6c5b276dd7de7e",
+      "publicGET": true
+    },
+    {
+      "name": "SUCCESSOR_ALPHA_DEPLOYMENT.md",
+      "id": 671844246,
+      "bytes": 5508,
+      "sha256": "6139c4e3a2007336a255da8d97bc9326c3bef806b1609358f37421413d37912a",
+      "publicGET": true
+    },
+    {
+      "name": "SUCCESSOR_ARCHITECTURE.md",
+      "id": 671844308,
+      "bytes": 5176,
+      "sha256": "38fb12f7147aba9d85762d1eed6f1a3d02840fd2577a109096984af20fd53c8b",
+      "publicGET": true
+    },
+    {
+      "name": "SUCCESSOR_ASCENSION.md",
+      "id": 671844389,
+      "bytes": 10018,
+      "sha256": "9354012cf58bb7e5d384a9c49068fcf83b27faf95e410860eaa504bdfab5da28",
+      "publicGET": true
+    },
+    {
+      "name": "SUCCESSOR_COMPUTER_USE.md",
+      "id": 671844438,
+      "bytes": 18579,
+      "sha256": "89548b444b44d73915bba6671a9a4a1d87cf8c290d13085e677b3e56a9e802eb",
+      "publicGET": true
+    },
+    {
+      "name": "SUCCESSOR_OPERATIONS.md",
+      "id": 671844502,
+      "bytes": 35478,
+      "sha256": "b6502ca8f90240845b5268c31ecee5cca61f25089a45f0c17f9c359769b65f08",
+      "publicGET": true
+    },
+    {
+      "name": "SUCCESSOR_PACKAGING.md",
+      "id": 671844576,
+      "bytes": 8715,
+      "sha256": "6e7331c4843442d8f2e088d1533ebeddd232263324002d2a87d08cd52adaf5f7",
+      "publicGET": true
+    },
+    {
+      "name": "SUCCESSOR_SOURCES.json",
+      "id": 671844641,
+      "bytes": 2398,
+      "sha256": "d0939a60d5a12ec30f3b856ee24ced7f107a5806f746ddde0272b52a9d447953",
+      "publicGET": true
+    },
+    {
+      "name": "SUPPLIER_BROWSER_ADAPTER.md",
+      "id": 671844686,
+      "bytes": 6984,
+      "sha256": "74a694035c3d5a69b69df38af5296bd152e5b9c81526b3319faa14fd093f0d57",
+      "publicGET": true
+    },
+    {
+      "name": "TRANSFORMATIONAL_DISCOVERY.md",
+      "id": 671844724,
+      "bytes": 5482,
+      "sha256": "d0a60e193debc9d7bd635f381a34847e8f33e64c219d201981b15c979ca39d2f",
+      "publicGET": true
+    },
+    {
+      "name": "TRANSFORMATIONAL_IMPLEMENTATION.md",
+      "id": 671844768,
+      "bytes": 18979,
+      "sha256": "573b2fc2db3720c2cb3c0339f4a7d134db8b9d05621b068576b0f0f3eec69350",
+      "publicGET": true
+    },
+    {
+      "name": "TRANSFORMATIONAL_LOCAL_MODEL.md",
+      "id": 671844824,
+      "bytes": 5430,
+      "sha256": "eb64851aba23377a6efce740f2879bb7924212713ba246cad6e9c9e08875f31a",
+      "publicGET": true
+    },
+    {
+      "name": "TRANSFORMATIONAL_MATH.md",
+      "id": 671844855,
+      "bytes": 9057,
+      "sha256": "0f45f7ddcdaa6fda6101af9b8c694ecb4885c56d8bccb065be0667052c14e7ca",
+      "publicGET": true
+    },
+    {
+      "name": "TRANSFORMATIONAL_POLICY_STUDY.md",
+      "id": 671844889,
+      "bytes": 3493,
+      "sha256": "f0197a1fec998c26384830df21513b7105f1483094f62574bc382fe7631f028d",
+      "publicGET": true
+    },
+    {
+      "name": "TRANSFORMATIONAL_PUBLIC_PILOT.md",
+      "id": 671844918,
+      "bytes": 5795,
+      "sha256": "0935a05f48f094c5b710d61023502748601757d49eaa5648061ba06587b9c70e",
+      "publicGET": true
+    },
+    {
+      "name": "TRANSFORMATIONAL_SOURCE_AUDIT.md",
+      "id": 671844959,
+      "bytes": 15252,
+      "sha256": "9be835d5488554da50d041dafa928148ab1fef2614029146be0e624e872f02da",
+      "publicGET": true
+    },
+    {
+      "name": "VALIDATION.md",
+      "id": 671844994,
+      "bytes": 22795,
+      "sha256": "3fccdb574d67e2c62f844d903b367c4cfdc8bed5471df8f70542f16b7da28ded",
+      "publicGET": true
+    },
+    {
+      "name": "WHITEPAPER_IMPLEMENTATION.md",
+      "id": 671845042,
+      "bytes": 14207,
+      "sha256": "b0a213b790df4d7ac6e0bb5f5e498107140d406b06d425a9c0fed5c217acd5b3",
+      "publicGET": true
+    },
+    {
+      "name": "alpha-agent-v1.41.0-mainnet-record.zip",
+      "id": 671845070,
+      "bytes": 158604,
+      "sha256": "379b59101302bbda136a03857a81f6f6dc9d0d6524bd6fb7ef390659dd3bbfc9",
+      "publicGET": true
+    },
+    {
+      "name": "alpha-agent-v1.41.0-manuscript.zip",
+      "id": 671845108,
+      "bytes": 11107188,
+      "sha256": "d3530b481d680037122751c7a0495b1939780d44c4fed457bff88eeed19b7b5b",
+      "publicGET": true
+    },
+    {
+      "name": "alpha-agent-v1.41.0-operator-guide.zip",
+      "id": 671845147,
+      "bytes": 7308001,
+      "sha256": "17715b4a52777f132ee0e8678201d2ea52cc319aba2f8c1b03eddc624ec4fc32",
+      "publicGET": true
+    },
+    {
+      "name": "alpha-agent-v1.41.0-public-validation-core-001.zip",
+      "id": 671845184,
+      "bytes": 32203846,
+      "sha256": "57ccea2c5fdb584eb4d5ceed4f2389cabed4594fa88d2654805dbf2a6d261700",
+      "publicGET": true
+    },
+    {
+      "name": "alpha-agent-v1.41.0-public-validation-media-002.zip",
+      "id": 671845310,
+      "bytes": 130974875,
+      "sha256": "9d2db02d1ae76b31823de240aeb9f7525e42fabdf8d7872bac0d97e2e2988cc5",
+      "publicGET": true
+    },
+    {
+      "name": "alpha-agent-v1.41.0-public-validation-packs.json",
+      "id": 671845471,
+      "bytes": 241165,
+      "sha256": "930ca8e047697335933b2b3f036e9999788a30da0f9cc70312dbd63442841996",
+      "publicGET": true
+    },
+    {
+      "name": "alpha-agent-v1.41.0-source.zip",
+      "id": 671845512,
+      "bytes": 189563163,
+      "sha256": "63b2aa8717b985666be77366a9ee5d7d999daad50be32ac281de79651fa3b527",
+      "publicGET": true
+    },
+    {
+      "name": "alpha-agent-v1.41.0-validation.zip",
+      "id": 671845814,
+      "bytes": 852427729,
+      "sha256": "3079beed5c56ea1e716db09d7926d4d8ddeba30eee562c9ec7694a5aefb77879",
+      "publicGET": true
+    },
+    {
+      "name": "alpha_factory_v1-1.41.0-py3-none-any.whl",
+      "id": 671846842,
+      "bytes": 5497882,
+      "sha256": "dc668d144f50b6daeff9e0c1de60b4ed0b7ba7fdc7296f4c8b34148fbe7cdd7d",
+      "publicGET": true
+    },
+    {
+      "name": "alpha_factory_v1-1.41.0.tar.gz",
+      "id": 671846905,
+      "bytes": 5587104,
+      "sha256": "ddaf680f06243de7ad222dd0bbed765611fb02f2f29392ae828990a8978a03df",
+      "publicGET": true
+    },
+    {
+      "name": "browser-core-001.zip",
+      "id": 671846956,
+      "bytes": 12658067,
+      "sha256": "993787f0373179282fed20d88012c19e8008f0a1588891a1855137626bb42de3",
+      "publicGET": true
+    },
+    {
+      "name": "browser-media-002.zip",
+      "id": 671847098,
+      "bytes": 2841,
+      "sha256": "da9fa66f0bd92ca74876fa030a124c262c2129f154e428b84627208df1244976",
+      "publicGET": true
+    },
+    {
+      "name": "browser-models-003.zip",
+      "id": 671847131,
+      "bytes": 712597724,
+      "sha256": "0b5c25a143383e75985315a33e297311bf21a21d23597d84a08ff714b6bd10d0",
+      "publicGET": true
+    },
+    {
+      "name": "browser-packs.json",
+      "id": 671848041,
+      "bytes": 22902,
+      "sha256": "58cb4e579a808080b07b699d58c8f00bde0df489294b3ffbaa0ade64ed86f8e0",
+      "publicGET": true
+    },
+    {
+      "name": "computer-use-study-report-pack.zip",
+      "id": 671848098,
+      "bytes": 39471,
+      "sha256": "d29e9951bd2d04c05a4520d885e5ca8f716e280b715445dea6f6a193b537f27b",
+      "publicGET": true
+    },
+    {
+      "name": "ethereum-mainnet-2026-10-18.json",
+      "id": 671848159,
+      "bytes": 13452,
+      "sha256": "0f16cecb1609c5366bc185c244f04b269eb9da6099564b6270346cf672c07755",
+      "publicGET": true
+    },
+    {
+      "name": "install_agent.py",
+      "id": 671848207,
+      "bytes": 6734,
+      "sha256": "e0d165632be031627e601adf6a68b2a26a1dc29ed127de4473b93212a0bb2925",
+      "publicGET": true
+    },
+    {
+      "name": "release-manifest.json",
+      "id": 671848278,
+      "bytes": 2984991,
+      "sha256": "9b67403b871e8e6fb2f2ae0bdfcd6797d5022c2dd2024e084d836185972ab3c5",
+      "publicGET": true
+    },
+    {
+      "name": "release_packs.py",
+      "id": 671848332,
+      "bytes": 22864,
+      "sha256": "8ebeb3d38064289a5b8ddbcea1cd07c875a64998b4ab86e1dc828610576edaf5",
+      "publicGET": true
+    },
+    {
+      "name": "requirements-agent.lock",
+      "id": 671848383,
+      "bytes": 85690,
+      "sha256": "d58df2a38d099f8123d7445f62fec4684d029e588ce4b615151387c4decd1392",
+      "publicGET": true
+    },
+    {
+      "name": "site-core-001.zip",
+      "id": 671848451,
+      "bytes": 70648207,
+      "sha256": "f5dcb6c8e4208a1bd0dc462756014a0347eda95deedea73148e5bac1a87a6ea4",
+      "publicGET": true
+    },
+    {
+      "name": "site-media-002.zip",
+      "id": 671848655,
+      "bytes": 8413397,
+      "sha256": "4ce024f4a072a79c0b919d977945ef062b041866b711f1ab0c332f3a946bfe32",
+      "publicGET": true
+    },
+    {
+      "name": "site-models-003.zip",
+      "id": 671848727,
+      "bytes": 725035011,
+      "sha256": "41094662027d9c3b5d43aa7671933c07d707b897bba56f54bc16c3b730b2c0cb",
+      "publicGET": true
+    },
+    {
+      "name": "site-packs.json",
+      "id": 671849672,
+      "bytes": 634390,
+      "sha256": "437ee75ffcc43f8243f2aaefb051ee6ebe2152ac553803798732e74e5f2fc908",
+      "publicGET": true
+    },
+    {
+      "name": "site-research-004.zip",
+      "id": 671849694,
+      "bytes": 70736344,
+      "sha256": "24cf37ba79fec8f77e847410aa260520f502f305c28a0733b90677b406b10fd9",
+      "publicGET": true
+    },
+    {
+      "name": "source-manifest.json",
+      "id": 671849772,
+      "bytes": 6032,
+      "sha256": "67166aff67f9dfbb1dc49dde51e053ac5bf0f4ce44411cc14c4251cf979954ef",
+      "publicGET": true
+    },
+    {
+      "name": "successor-alpha-workspace.html",
+      "id": 671849801,
+      "bytes": 1334927,
+      "sha256": "bf152f4a197c89970e2ab29f95af4cd1cf48f2ec16bd690c32fba0c02884ee89",
+      "publicGET": true
+    },
+    {
+      "name": "successor-preservation.json",
+      "id": 671849839,
+      "bytes": 1055349,
+      "sha256": "ea8692afb5b495eb4501969cd2799c1287c88f51bbf4ed4f08bd9feb90a04f69",
+      "publicGET": true
+    },
+    {
+      "name": "transformational-intelligence-workspace.html",
+      "id": 671849878,
+      "bytes": 301683,
+      "sha256": "f5639b2f6302bf5749cd4735a96e0afd908b0df6cc13d4d069638600afb16358",
+      "publicGET": true
+    }
+  ],
+  "failures": [],
+  "allPublicAssetsVerified": true,
+  "scope": "Actual public HTTPS bodies and source identity; UI, installation and four-product acceptance are separate."
+}

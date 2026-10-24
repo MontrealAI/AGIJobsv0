@@ -113,7 +113,7 @@ export function captureInstalled(input) {
   assert.equal(sha(manifestBytes),manifestSha256,'Installed manifest differs from selected archive provenance');
   const manifest=parseBounded(manifestBytes.toString('utf8'));
   assert.equal(manifest.schema,'agijobsv0/discovery-installed/v1');assert.equal(manifest.profile,'jobs-discovery-installed-v1');
-  assert.equal(manifest.version,'2.1.0-rc.20');
+  assert.equal(manifest.version,'2.1.0-rc.21');
   assert.equal(manifest.authority,'none');assert.equal(manifest.currencyCapBaseUnits,'0');
   assert.equal(manifest.externalExecution,'unprovisioned');assert.equal(manifest.productionQualified,false);
   assert.ok(git(manifest.jobs?.commit)&&git(manifest.jobs?.tree)&&git(manifest.alpha?.commit)&&git(manifest.alpha?.tree)

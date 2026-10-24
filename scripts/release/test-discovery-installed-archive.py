@@ -123,7 +123,12 @@ class StandaloneArchive(unittest.TestCase):
             'status':'UNSET_PENDING_FINAL_REVIEWED_MAIN','repository':'MontrealAI/AGI-Alpha-Agent-v0',
             'commit':None,'tree':None,'sourceHash':None,'catalogPath':'docs/successor/capabilities/sources.json',
             'catalogSha256':None,'files':{},'qualification':'NOT_RUN'},indent=2)+'\n').encode()
-        transition = json.loads((ROOT/P['ALPHA_TRANSITION']).read_bytes())
+        # Exercise the original unset-pin transition, independently of a later
+        # edition's reviewed live source selection.
+        transition_raw = (ROOT/'scripts/release/fixtures/alpha615-reviewed-transition.json').read_bytes()
+        self.assertEqual(hashlib.sha256(transition_raw).hexdigest(),
+                         '0deb6eb67ee8e10d54d17ba6e3146b581c13909eb44bc9f801328adae7e9e47a')
+        transition = json.loads(transition_raw)
         transition['status'] = 'REVIEWED_PIN_PROPOSAL'
         original = P['alpha_state'].__globals__['read']
         def read(root, name):

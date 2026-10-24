@@ -2,88 +2,88 @@
   "schema": "manager/discovery-browser-input-artifact/v1",
   "state": "REVIEWED_AUTHENTICATED_ALPHA_ARTIFACT",
   "repository": "MontrealAI/AGI-Alpha-Agent-v0",
-  "workflowPath": ".github/workflows/successor-capability.yml",
+  "workflowPath": ".github/workflows/agent-release.yml",
   "producer": {
-    "checkoutCommit": "61532fb82621a065e668fd11e57289dcfb65c67b",
-    "checkoutParents": [
-      "2b92933a5e3955440be770362acc18f06abf1708",
-      "68c8ab81e97544168f58568ed6dbb3d216b39929"
-    ],
-    "checkoutTree": "7814d1bd9dcd3845b349590e0bcac57ba93b3167",
+    "runId": 40076340788,
+    "runAttempt": 1,
+    "workflowId": 366358276,
     "event": "push",
     "headBranch": "main",
-    "headCommit": "61532fb82621a065e668fd11e57289dcfb65c67b",
-    "runAttempt": 1,
-    "runId": 39841271826,
-    "workflowId": 391067735
+    "headCommit": "031bdb5d055c8bad896daa076baea2b5e17b242c",
+    "checkoutCommit": "031bdb5d055c8bad896daa076baea2b5e17b242c",
+    "checkoutTree": "330e0e58268ed32990f04278fc543c71db45fd46",
+    "checkoutParents": [
+      "1b693f4895a0da68f5647b55c8cb10e6d234f566",
+      "e5ecfe96066d687e2fa72cbf1032bda17a450f35"
+    ]
   },
   "artifact": {
-    "digest": "sha256:3f5dda52ed2833b00b38608894b6a640d931f08f4d27904362fff794b8ada8f4",
-    "id": 12453756312,
-    "name": "successor-capability-61532fb82621a065e668fd11e57289dcfb65c67b",
-    "sizeInBytes": 29381858
+    "id": 12552939436,
+    "name": "successor-capability-031bdb5d055c8bad896daa076baea2b5e17b242c",
+    "digest": "sha256:3f0f689fa10aafab8891ebce91a1d421ef0754b2a5ec4551a4d844879041c4b7",
+    "sizeInBytes": 31457545
   },
-  "sourceHash": "644258ac21cc938aff861d02ad728e8f3c9716f6ea78700acc35e4d7400eebf2",
-  "pageSha256": "7ce110be53cf4c699984c0cfd20e0e7d7434c463a676fe1dfb9498589e5319d3",
-  "catalogSha256": "9cddd00ed38a3500efeaac8977bf3db46363face0cfe56e713ec91750662e09a",
-  "inventorySha256": "bc26dbbb451833d24b0319bac777c403ec4cbcd0c76e2ae245df3d634c184740",
+  "sourceHash": "54769dbfde99ae13708a33292866f0ca7e6b8b7792a7a944f76bf2fbf1de1358",
+  "pageSha256": "804f83eab8077d45a2e741a334d4c92be5209de1e9781ea865ed9ffc8487d97e",
+  "catalogSha256": "d1c3cb9a5c3eb96e9e5eb111b83a713786ec18ed1213a407cd77bbaf018c5adb",
+  "inventorySha256": "5800ea115822ad3f15cb9c523de1877a16d7aa33cdec755bcaad8caf6c1d1cd5",
   "members": {
     "discovery-continuation/browser-native-requests.json": {
       "bytes": 1882,
-      "sha256": "b2d2c2a799f33ef1c363a5d46d91cca22730cd2680ddd3448de65766092e02eb"
+      "sha256": "22687513e06dc4b31ec0bfd6336501b38dc1db6b54924e10c34b613e1ee12d7e"
     },
     "discovery-continuation/fleet-browser-request.json": {
       "bytes": 93994,
-      "sha256": "8690f513fb8b576350f34d6f229984513d7a044547246c6b63d0fcd20f7d403c"
+      "sha256": "c1f9e97e6bb1dd4e8504cbbbf895495fe0b0982f74ddc687d4b6bef014858426"
     },
     "discovery-continuation/fleet-browser-workspace.json": {
       "bytes": 109736,
-      "sha256": "5203d4472972b959a135d8d062999d357dcc1aff84f3158a2cb2c950a1a5ee03"
+      "sha256": "7d808ece88b141036fd80328f010d9d38de8747c116b4b545d6588659fcae1f2"
     },
     "discovery-continuation/fleet-native/native-proof.json": {
-      "bytes": 7041,
-      "sha256": "ef1378fb34a64060a7bff113ec46af3f67e98d0f3f0d11aaa5d4059a07de6fbb"
+      "bytes": 7920,
+      "sha256": "134fc41ab5949372344bdfb901686fdd57f48cdc1fe1b66ddaf54b6980f8bbcf"
     },
     "discovery-continuation/jobs-browser-request.json": {
       "bytes": 94004,
-      "sha256": "d13ca8f286284a1079cdd63dbc05d73a09f0ac1261a85fdf371d4548fc893962"
+      "sha256": "00738f7cde51b338de37785e6385a7cc66e49439ba8df3096b1582cdc9c0abe3"
     },
     "discovery-continuation/jobs-browser-workspace.json": {
       "bytes": 109736,
-      "sha256": "5203d4472972b959a135d8d062999d357dcc1aff84f3158a2cb2c950a1a5ee03"
+      "sha256": "7d808ece88b141036fd80328f010d9d38de8747c116b4b545d6588659fcae1f2"
     },
     "discovery-continuation/journey.json": {
-      "bytes": 9069,
-      "sha256": "a27c423d3c3bbb3f95360805aa6e1dbe8c15dee82e0ade00c71c55ba19e0209e"
+      "bytes": 10571,
+      "sha256": "f886450cce60b9b4c84e8656d55b9537d11230ca3fafe7f7faab575ae00e80a4"
     },
     "discovery-continuation/served/index.html": {
-      "bytes": 782569,
-      "sha256": "7ce110be53cf4c699984c0cfd20e0e7d7434c463a676fe1dfb9498589e5319d3"
+      "bytes": 933603,
+      "sha256": "804f83eab8077d45a2e741a334d4c92be5209de1e9781ea865ed9ffc8487d97e"
     },
     "discovery-continuation/served/sources.json": {
-      "bytes": 5416,
-      "sha256": "9cddd00ed38a3500efeaac8977bf3db46363face0cfe56e713ec91750662e09a"
+      "bytes": 6894,
+      "sha256": "d1c3cb9a5c3eb96e9e5eb111b83a713786ec18ed1213a407cd77bbaf018c5adb"
     },
     "exact-checkout.json": {
-      "bytes": 10915,
-      "sha256": "181ac2c64108842dabdb1623c7b691ac60c6642de8ac86699d3ff018aa5af870"
+      "bytes": 13895,
+      "sha256": "0c51876392fdd2a7326f0369047888bcb7bfd37730a0e142ccd83f59fff6f404"
     },
     "source.json": {
-      "bytes": 5600,
-      "sha256": "14cad34eb9a93d5fb3ec78d15799d265afd27949255f0818aabe3c3ea48f309b"
+      "bytes": 7102,
+      "sha256": "ed1be81b877be830124729ef01e7e094903c734c7d489566c5989c197e251899"
     }
   },
-  "campaignDigest": "670e121f438be0528083e358f3737eabfb5109c8f7e011befd62cd80cdc3701b",
-  "missionId": "capability-9d434c16-dfdc-477e-a8eb-d06070eab8bf",
-  "workspaceSha256": "5203d4472972b959a135d8d062999d357dcc1aff84f3158a2cb2c950a1a5ee03",
-  "requestSha256": "8690f513fb8b576350f34d6f229984513d7a044547246c6b63d0fcd20f7d403c",
+  "campaignDigest": "bfd0a7bc21ad197a64fc5e6b590c9aa0cc1d4ee02eebbc4af44275ea9179a3f3",
+  "missionId": "capability-fc911b7d-e209-4bed-b8c2-2682f3f879bd",
+  "workspaceSha256": "7d808ece88b141036fd80328f010d9d38de8747c116b4b545d6588659fcae1f2",
+  "requestSha256": "c1f9e97e6bb1dd4e8504cbbbf895495fe0b0982f74ddc687d4b6bef014858426",
   "transport": {
     "repository": "MontrealAI/AGI-Alpha-Agent-v0",
-    "commit": "e31e74d1a5144973e6a22006dbe29ea628a80386",
-    "tree": "60823a663933991dc5f703735577a40f07a7d3dc",
-    "path": "evidence/discovery-browser-inputs-v1/61532fb82621a065e668fd11e57289dcfb65c67b",
-    "custodySha256": "c27e9c5f113d2a407ec4499c6ddb7cd922460bfaa873b8426f4c32f01281f6c6",
-    "custodyBytes": 42746,
-    "custodyGitBlob": "04905c565fc36ae99effd65567b44848bafc8692"
+    "commit": "f995b97ae9beef118b7705b31b73bfc9ce65c316",
+    "tree": "533dcbb9a3321fd0c4627689c8f8f99f9b4c0c25",
+    "path": "evidence/discovery-browser-inputs-v1/031bdb5d055c8bad896daa076baea2b5e17b242c",
+    "custodySha256": "ff32a104482d5599c143cbeadac1be6ec7b034d5fa50226274766c7fe2f4640f",
+    "custodyBytes": 46211,
+    "custodyGitBlob": "ccf49a7622532b282e728d2e262ab067c2f1179e"
   }
 }
