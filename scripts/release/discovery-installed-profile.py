@@ -30,6 +30,8 @@ SCOPE_VERIFIER = 'tools/security/discovery-installed-protected-scope.mjs'
 ALPHA_PIN = 'config/discovery-installed-alpha-v1.json'
 ALPHA_TRANSITION = 'config/discovery-installed-alpha-transition-v1.json'
 UNSET_ALPHA_SHA256 = '01e32d5283b6858c977659701ab32c24a846b502adf1d1363c9f066d633e9207'
+ALPHA_615_PIN_SHA256 = '7b6ac047905dc27da219cb2608a92b590380bb2781d155afe15734af1173b0f3'
+ALPHA_141_TARGET = {'commit': '031bdb5d055c8bad896daa076baea2b5e17b242c', 'tree': '330e0e58268ed32990f04278fc543c71db45fd46', 'sourceHash': '54769dbfde99ae13708a33292866f0ca7e6b8b7792a7a944f76bf2fbf1de1358', 'catalogSha256': 'd1c3cb9a5c3eb96e9e5eb111b83a713786ec18ed1213a407cd77bbaf018c5adb'}
 OWNER_REVIEW = 'config/discovery-installed-review-request-v1.json'
 # Filled only after all finite preparation inputs have been inspected.
 # BEGIN FIXED DISCOVERY INSTALLED DELTA
@@ -836,7 +838,12 @@ def alpha_state(root):
     transition = strict_json(read(root, ALPHA_TRANSITION)[1])
     require(exact(transition, ('schema', 'status', 'fromPinSha256', 'toPinSha256', 'reviewSha256', 'reviewRaw', 'fromSource'))
             and transition['schema'] == 'agijobsv0/discovery-alpha-pin-transition/v1'
-            and transition['fromPinSha256'] == UNSET_ALPHA_SHA256, 'Alpha transition framing differs')
+            and transition['fromPinSha256'] in (UNSET_ALPHA_SHA256, ALPHA_615_PIN_SHA256),
+            'Alpha transition framing differs')
+    successor_alpha141 = transition['fromPinSha256'] == ALPHA_615_PIN_SHA256
+    if successor_alpha141:
+        require(all(pin.get(key) == value for key, value in ALPHA_141_TARGET.items()),
+                'Reviewed615 successor is restricted to the exact Alpha141 source')
     if pin.get('status') == 'UNSET_PENDING_FINAL_REVIEWED_MAIN':
         require(sha(raw) == UNSET_ALPHA_SHA256, 'Unset predecessor Alpha pin differs')
         require(transition == {'schema': 'agijobsv0/discovery-alpha-pin-transition/v1', 'status': 'UNSET_PENDING_REVIEW',
@@ -871,6 +878,11 @@ def alpha_state(root):
             and isinstance(review.get('evidence'), list) and review['evidence']
             and all(isinstance(item, str) and item.startswith('https://github.com/MontrealAI/AGI-Alpha-Agent-v0/')
                     for item in review['evidence']), 'Case-specific frozen Alpha review differs')
+    if successor_alpha141:
+        require(review.get('publicationApproved') is False
+                and review.get('installedCompatibilityAccepted') is False
+                and review.get('externalExecution') == 'unprovisioned',
+                'Alpha141 source transition cannot claim publication or installed acceptance')
     source = transition['fromSource']
     require(exact(source, ('tree', 'manifestSha256', 'verifierSha256', 'scopeVerifierSha256'))
             and re.fullmatch('[0-9a-f]{40}', source['tree'])
