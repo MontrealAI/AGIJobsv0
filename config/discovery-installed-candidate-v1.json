@@ -45,9 +45,9 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "884d9c9c2a6b00fb8768bef1cc6e3f1eb29203518733bf64230e60340a41e5ed"
+        "sha256": "2060dd76279ee64d6722a14d9f2d5bfd5a77ac39e4d401535c4fb52ea512628d"
       },
-      "reason": "Preserve full-history checkout, actual installed source applicability and both original suites in order; append only exact owner2425 dependency-coherence and historical-ledger-prefix suites as ordinary changed-source qualification, retaining failures and all existing gates; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Preserve full-history checkout, actual installed source applicability and both original suites in order; append only exact owner2425 dependency-coherence and historical-ledger-prefix suites as ordinary changed-source qualification, retaining failures and all existing gates; select only the new explicit rc19 installed release identity, preserving prior rc18 draft/source/assets and every existing authority, source, scanner, dependency and qualification boundary; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     ".github/workflows/source-release-rc16.yml": {
       "before": {
@@ -625,17 +625,17 @@
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "3b41332df1297be0bb1514eb96fb3a871cf82f15eea87019e514e9e5298e8a63"
+        "sha256": "af463726a5ea67f492ce1b95b8507ca279154c4e42296e34121c2a893ac00414"
       },
-      "reason": "Preserve original96 ledger, all288 historical protected path/mode/blob identities, complete ancestry/source/index closure and independent installed additions; recognize only exact committed rc18 and rc19 versions under the same hardened readGit interface; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Preserve original96 ledger, all288 historical protected path/mode/blob identities, complete ancestry/source/index closure and independent installed additions; recognize only exact committed rc18 and rc19 versions under the same hardened readGit interface; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "tools/security/discovery-installed-ledger-prefix.test.mjs": {
       "before": null,
       "after": {
         "mode": "100644",
-        "sha256": "0002f1737c317abdaf2f386735fee8be912c204db09f400068bf8ce03fa08063"
+        "sha256": "2fc7f598bf97e4666477085d8b5775b957f0f3c36c183cfbcf2ab938281faab5"
       },
-      "reason": "Preserve all preceding ledger fixtures byte-for-byte; append one injected data-only case proving exact rc18/rc19 select installed controls while unknown rc20 and tampered rc19 do not; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement"
+      "reason": "Preserve all preceding ledger fixtures byte-for-byte; append one injected data-only case proving exact rc18/rc19 select installed controls while unknown rc20 and tampered rc19 do not; compose the prepared ad63 response-ID publisher correction with explicit rc20 software metadata and complete unchanged installed gates, preserve rc18/rc19 drafts, retain bounded read-only creation reconciliation and refuse interrupted retry without duplicate or replacement; Select the exact reviewed Alpha031b source and original1.41 public packet for the new rc21 edition; preserve historical releases, source identities and all authority restrictions; retain complete source/inventory/metadata checks and explicit accepted-public-body evidence reuse with fresh cross-source packs and live leases"
     },
     "agent-gateway/validator.ts": {
       "before": {

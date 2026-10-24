@@ -26,7 +26,7 @@ export function selectLedgerSource(readGit) {
     'Bounded committed package payload is required');
   // installedGit trims command output. The object size is authoritative; this
   // selection consumes only JSON metadata and does not claim a raw-byte hash.
-  const installed = ['2.1.0-rc.18', '2.1.0-rc.19', '2.1.0-rc.20'].includes(JSON.parse(payload).version);
+  const installed = ['2.1.0-rc.18', '2.1.0-rc.19', '2.1.0-rc.20', '2.1.0-rc.21'].includes(JSON.parse(payload).version);
   return {commit, tree, installed, packageIdentity: {mode: match[1], blob: match[2], declaredBytes: bytes}};
 }
 

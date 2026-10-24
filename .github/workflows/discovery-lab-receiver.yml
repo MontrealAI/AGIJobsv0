@@ -37,7 +37,7 @@ jobs:
           set -euo pipefail
           edition=$(node -p "require('./package.json').version")
           case "$edition" in
-            2.1.0-rc.18|2.1.0-rc.19|2.1.0-rc.20)
+            2.1.0-rc.18|2.1.0-rc.19|2.1.0-rc.20|2.1.0-rc.21)
               python3 -B scripts/release/test-discovery-installed-profile.py > "$RUNNER_TEMP/discovery-lab/source-profile-tests.txt" 2>&1
               cat "$RUNNER_TEMP/discovery-lab/source-profile-tests.txt"
               node --input-type=module <<'NODE' > "$RUNNER_TEMP/discovery-lab/source-profile.json"
