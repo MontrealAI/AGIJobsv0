@@ -55,5 +55,10 @@ abstract contract Governable {
     function owner() public view returns (address) {
         return address(governance);
     }
+
+    /// @notice Explicit accessor for governance timelock address.
+    function governanceAddress() public view returns (address) {
+        return address(governance);
+    }
 }
 
