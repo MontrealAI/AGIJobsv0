@@ -27,6 +27,8 @@ contract OwnerConfigurator is Ownable2Step {
     );
 
     error OwnerConfigurator__ZeroTarget();
+    error OwnerConfigurator__ValueMismatch(uint256 expected, uint256 actual);
+    error OwnerConfigurator__DirectEtherRejected();
 
     /// @notice Deploys the configurator and optionally re-assigns ownership to
     ///         a Safe or administrative EOA. Ownership can later be migrated
@@ -45,6 +47,7 @@ contract OwnerConfigurator is Ownable2Step {
         bytes32 parameterKey;
         bytes oldValue;
         bytes newValue;
+        uint256 value;
     }
 
     function _applyConfiguration(ConfigurationCall memory call)
@@ -55,7 +58,11 @@ contract OwnerConfigurator is Ownable2Step {
             revert OwnerConfigurator__ZeroTarget();
         }
 
-        returnData = call.target.functionCall(call.callData);
+        if (call.value > 0) {
+            returnData = call.target.functionCallWithValue(call.callData, call.value);
+        } else {
+            returnData = call.target.functionCall(call.callData);
+        }
         emit ParameterUpdated(
             call.moduleKey,
             call.parameterKey,
@@ -85,14 +92,15 @@ contract OwnerConfigurator is Ownable2Step {
         bytes32 parameterKey,
         bytes calldata oldValue,
         bytes calldata newValue
-    ) external onlyOwner returns (bytes memory returnData) {
+    ) external payable onlyOwner returns (bytes memory returnData) {
         ConfigurationCall memory call = ConfigurationCall({
             target: target,
             callData: callData,
             moduleKey: moduleKey,
             parameterKey: parameterKey,
             oldValue: oldValue,
-            newValue: newValue
+            newValue: newValue,
+            value: msg.value
         });
 
         returnData = _applyConfiguration(call);
@@ -100,14 +108,29 @@ contract OwnerConfigurator is Ownable2Step {
 
     function configureBatch(ConfigurationCall[] calldata calls)
         external
+        payable
         onlyOwner
         returns (bytes[] memory returnData)
     {
         uint256 length = calls.length;
+        uint256 declaredValue;
+
+        for (uint256 i = 0; i < length; i++) {
+            declaredValue += calls[i].value;
+        }
+
+        if (declaredValue != msg.value) {
+            revert OwnerConfigurator__ValueMismatch(declaredValue, msg.value);
+        }
+
         returnData = new bytes[](length);
 
         for (uint256 i = 0; i < length; i++) {
             returnData[i] = _applyConfiguration(calls[i]);
         }
+    }
+
+    receive() external payable {
+        revert OwnerConfigurator__DirectEtherRejected();
     }
 }
