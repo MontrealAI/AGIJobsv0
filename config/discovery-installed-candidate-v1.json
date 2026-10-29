@@ -1218,6 +1218,17 @@
         "sha256": "a8186d81e58887f70a4de98cb8d665d43843faf4df58cca8d152325b51e18b48"
       },
       "reason": "Require Alpine Python >=3.12.16-r0 in both existing orchestrator stages to remediate CVE-2026-115557 and invalidate stale vulnerable package layers; preserve Node/Alpine base, libexpat minimum, runtime behavior and scanner severity thresholds."
+    },
+    "deploy/docker/attester.Dockerfile": {
+      "before": {
+        "blob": "497a6e742060591f3c1588cdebebe1b811d63e28",
+        "mode": "100644"
+      },
+      "after": {
+        "mode": "100644",
+        "sha256": "323e8e6c1bf4c33f7b9fe85d22b2917cd3de40d1fa8ba64f376c39aea896517d"
+      },
+      "reason": "Require Alpine Python >=3.12.16-r0 in the separate existing attester stage to remediate CVE-2026-115557 and invalidate stale vulnerable package layers; preserve Node/Alpine base and runtime behavior and scanner severity thresholds."
     }
   },
   "decisions": {
