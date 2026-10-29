@@ -1175,6 +1175,38 @@
         "sha256": "b5c1432fdd0dd1bdda201dbf2edb3c5c8a9f2212c1d9f955479a818fe18211d1"
       },
       "reason": "Wait only for incomplete exact-job CodeQL analyze-step API projections under a fixed capture-only observation and wall-clock budget; preserve original completed/success predicates in both views, final processed-service/source/raw/query/artifact controls and every historical denial; retain failed2e attempts without unchanged retry or publication waiver"
+    },
+    ".github/workflows/enterprise-receiver.yml": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "b7830f01893a7d9a26ed0f85f42664770c5081057df2dffd97c6a4bab693390f"
+      },
+      "reason": "Add only the exact preserved zero-cap enterprise receiver and original tests, current source-only guide and exact-head literal CI; no Alpha pin, authority, deployment, threshold, historic source or release acceptance changes."
+    },
+    "docs/successor/AUTONOMOUS_ENTERPRISES.md": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "222ebf6f6b12c9ac50b084a87838a04f4bbd9796bff5b8c9e677e9628cbfc346"
+      },
+      "reason": "Add only the exact preserved zero-cap enterprise receiver and original tests, current source-only guide and exact-head literal CI; no Alpha pin, authority, deployment, threshold, historic source or release acceptance changes."
+    },
+    "integrations/alpha-agent/enterprise-work-request.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "eaac75929169aa4236ef88f625de6c171ba8c4a42bd663a294b129bed70da012"
+      },
+      "reason": "Add only the exact preserved zero-cap enterprise receiver and original tests, current source-only guide and exact-head literal CI; no Alpha pin, authority, deployment, threshold, historic source or release acceptance changes."
+    },
+    "integrations/alpha-agent/enterprise-work-request.test.mjs": {
+      "before": null,
+      "after": {
+        "mode": "100644",
+        "sha256": "fdcf82b0bdc068e0afaa0134a441de6e2f453b939dc45e4d796fb97bcb395b21"
+      },
+      "reason": "Add only the exact preserved zero-cap enterprise receiver and original tests, current source-only guide and exact-head literal CI; no Alpha pin, authority, deployment, threshold, historic source or release acceptance changes."
     }
   },
   "decisions": {
